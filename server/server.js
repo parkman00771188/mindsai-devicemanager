@@ -92,9 +92,10 @@ async function ensureQrCodes(origin = "http://localhost:3000") {
   const devices = await store.listDevices({});
   await Promise.all(
     devices.map((device) =>
-      fs.existsSync(absoluteQrPath(device.device_id))
-        ? Promise.resolve()
-        : generateQrForDevice(device.device_id, origin)
+      Promise.all([
+        generateQrForDevice(device.device_id, origin),
+        generateQrLabelForDevice(device.device_id, origin)
+      ])
     )
   );
 }
@@ -380,7 +381,7 @@ app.put(
       userId: currentUser(req),
       ipAddress: req.ip
     });
-    if (!fs.existsSync(absoluteQrPath(device.device_id))) await generateQrForDevice(device.device_id, clientOrigin(req));
+    await generateQrForDevice(device.device_id, clientOrigin(req));
     res.json(device);
   })
 );

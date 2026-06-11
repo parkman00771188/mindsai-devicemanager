@@ -1,3 +1,5 @@
+import QRCode from "qrcode/lib/browser.js";
+
 const STATE_KEY = "workbook-v1";
 
 const SHEETS = [
@@ -1320,20 +1322,58 @@ async function serveQrCode(context, path) {
   if (!deviceId) return json({ message: "QR path not found" }, 404);
   const url = new URL(context.request.url);
   const style = url.searchParams.get("style") === "label" ? "label" : "plain";
-  const fileName = `${safeSegment(decodeURIComponent(deviceId))}${style === "label" ? "-label.svg" : ".png"}`;
-  const assetPath = `/uploads/qrcodes/${fileName}`;
-  const response = await assetFetch(context, assetPath);
-  if (!response.ok) return json({ message: "QR image not found" }, 404);
-  const headers = new Headers(response.headers);
-  if (style === "label") headers.set("content-type", "image/svg+xml");
-  else headers.set("content-type", "image/png");
+  const decodedDeviceId = decodeURIComponent(deviceId);
+  const fileName = `${safeSegment(decodedDeviceId)}${style === "label" ? "-qr-label.svg" : "-qr.svg"}`;
+  const svg = style === "label" ? await qrLabelSvg(decodedDeviceId) : await qrSvg(decodedDeviceId, 720, 2);
+  const headers = new Headers({
+    ...commonHeaders(),
+    "content-type": "image/svg+xml; charset=utf-8",
+    "cache-control": "public, max-age=3600"
+  });
   if (["1", "true"].includes(url.searchParams.get("download") || "")) {
     headers.set("content-disposition", `attachment; filename="${fileName}"`);
   }
-  return new Response(response.body, { status: 200, headers });
+  return new Response(svg, { status: 200, headers });
 }
 
-async function assetFetch(context, assetPath) {
-  const request = new Request(new URL(assetPath, context.request.url).toString(), { method: "GET" });
-  return context.env.ASSETS ? context.env.ASSETS.fetch(request) : fetch(request);
+async function qrSvg(deviceId, width = 720, margin = 2) {
+  return QRCode.toString(text(deviceId), {
+    type: "svg",
+    width,
+    margin,
+    color: { dark: "#172033", light: "#ffffff" }
+  });
+}
+
+async function qrLabelSvg(deviceId) {
+  const qr = await qrSvg(deviceId, 660, 1);
+  const encodedQr = bytesToBase64(new TextEncoder().encode(qr));
+  const idText = escapeXml(deviceId);
+  const idFontSize = Math.max(34, Math.min(58, Math.floor(720 / Math.max(String(deviceId).length * 0.62, 10))));
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="900" viewBox="0 0 720 900" role="img" aria-label="${idText} QR code">
+  <rect width="720" height="900" fill="#000000"/>
+  <rect x="24" y="24" width="672" height="672" fill="#ffffff"/>
+  <image href="data:image/svg+xml;base64,${encodedQr}" x="30" y="30" width="660" height="660"/>
+  <text x="360" y="770" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="400">Device No.</text>
+  <text x="360" y="842" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800">${idText}</text>
+</svg>
+`;
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function escapeXml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

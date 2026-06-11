@@ -60,10 +60,27 @@ async function downloadLabelQrPng(deviceId) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+async function downloadPlainQrPng(deviceId) {
+  const image = await loadImage(qrImageUrl(deviceId, "plain"));
+  const canvas = document.createElement("canvas");
+  canvas.width = 720;
+  canvas.height = 720;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("QR PNG瑜??앹꽦?섏? 紐삵뻽?듬땲??");
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, `${safeFileSegment(deviceId)}-qr.png`);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export async function downloadQrImage(deviceId, style = "plain") {
   if (style === "label") {
     await downloadLabelQrPng(deviceId);
     return;
   }
-  triggerDownload(qrImageUrl(deviceId, "plain", true), `${safeFileSegment(deviceId)}-qr.png`);
+  await downloadPlainQrPng(deviceId);
 }

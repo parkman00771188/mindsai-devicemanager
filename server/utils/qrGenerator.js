@@ -17,8 +17,8 @@ function escapeXml(value) {
     .replace(/"/g, "&quot;");
 }
 
-function qrTarget(deviceId, origin = "http://localhost:3000") {
-  return `${origin.replace(/\/$/, "")}/d/${encodeURIComponent(deviceId)}`;
+function qrPayload(deviceId) {
+  return String(deviceId || "").trim();
 }
 
 function publicQrPath(deviceId) {
@@ -41,7 +41,7 @@ async function generateQrForDevice(deviceId, origin = "http://localhost:3000") {
   fs.mkdirSync(qrcodeDir, { recursive: true });
   await QRCode.toFile(
     absoluteQrPath(deviceId),
-    qrTarget(deviceId, origin),
+    qrPayload(deviceId),
     {
       width: 720,
       margin: 2,
@@ -53,7 +53,7 @@ async function generateQrForDevice(deviceId, origin = "http://localhost:3000") {
 
 async function generateQrLabelForDevice(deviceId, origin = "http://localhost:3000") {
   fs.mkdirSync(qrcodeDir, { recursive: true });
-  const qrSvg = await QRCode.toString(qrTarget(deviceId, origin), {
+  const qrSvg = await QRCode.toString(qrPayload(deviceId), {
     type: "svg",
     width: 660,
     margin: 1,
@@ -82,5 +82,6 @@ module.exports = {
   generateQrLabelForDevice,
   publicQrLabelPath,
   publicQrPath,
+  qrPayload,
   safeSegment
 };
