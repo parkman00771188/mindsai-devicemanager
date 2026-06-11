@@ -42,7 +42,7 @@ const optionSections = [
 
 const tabs = [
   { id: "profile", label: "프로필 설정", icon: UserRoundCog, adminOnly: false },
-  { id: "categories", label: "분류 관리", icon: Layers3, adminOnly: true },
+  { id: "categories", label: "기기 관리", icon: Layers3, adminOnly: true },
   { id: "reasons", label: "사유 관리", icon: ClipboardList, adminOnly: true },
   { id: "user-options", label: "소속/부서/직책 관리", icon: Building2, adminOnly: true },
   { id: "institutions", label: "기관 관리", icon: Building2, adminOnly: true },
