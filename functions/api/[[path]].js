@@ -28,6 +28,7 @@ const STATUS_KEYS = ["AVAILABLE", "RENTED", "DELIVERED", "MAINTENANCE", "BROKEN"
 const ENCRYPTION_PREFIX = "enc:v1:";
 const SESSION_TOKEN_PREFIX = "dm1";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const STATE_CACHE_TTL_MS = 1000 * 15;
 const ENCRYPTED_FIELDS = {
   Devices: [
     "serial_number",
@@ -90,6 +91,10 @@ let cachedEncryptionSecret = "";
 let cachedEncryptionKey = null;
 let cachedSessionSecret = "";
 let cachedSessionKey = null;
+let cachedState = null;
+let cachedStateExpiresAt = 0;
+let pendingStateLoad = null;
+let pendingEnsureDb = null;
 
 export async function onRequest(context) {
   const requestId = crypto.randomUUID();
@@ -218,33 +223,75 @@ function segments(path) {
 
 async function ensureDb(db) {
   if (!db) throw Object.assign(new Error("Cloudflare D1 binding DB is not configured."), { statusCode: 500 });
-  await withD1Retry("ensureDb", () =>
-    db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)")
-  );
+  if (!pendingEnsureDb) {
+    pendingEnsureDb = withD1Retry("ensureDb", () =>
+      db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)")
+    ).catch((error) => {
+      pendingEnsureDb = null;
+      throw error;
+    });
+  }
+  await pendingEnsureDb;
 }
 
 async function loadState(context) {
   await ensureDb(context.env.DB);
-  const row = await withD1Retry("loadState", () =>
-    context.env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(STATE_KEY).first()
-  );
-  if (row?.value) return decryptStateForRuntime(context.env, normalizeState(JSON.parse(row.value)));
-  return normalizeState();
+
+  const state = await getCachedState(context);
+  return needsMutableState(context.request.method) ? cloneState(state) : state;
 }
 
 async function saveState(env, state) {
   await ensureDb(env.DB);
   const storageState = await encryptStateForStorage(env, state);
   const jsonState = JSON.stringify(storageState);
+  const updatedAt = now();
   await withD1Retry("saveState", () =>
     env.DB
       .prepare(
         "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) " +
           "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
       )
-      .bind(STATE_KEY, jsonState, now())
+      .bind(STATE_KEY, jsonState, updatedAt)
       .run()
   );
+  rememberState(state);
+}
+
+async function getCachedState(context) {
+  const current = Date.now();
+  if (cachedState && current < cachedStateExpiresAt) return cachedState;
+
+  if (!pendingStateLoad) {
+    pendingStateLoad = loadStateFromD1(context)
+      .then((state) => rememberState(state))
+      .finally(() => {
+        pendingStateLoad = null;
+      });
+  }
+
+  return pendingStateLoad;
+}
+
+async function loadStateFromD1(context) {
+  const row = await withD1Retry("loadState", () =>
+    context.env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(STATE_KEY).first()
+  );
+  return row?.value ? decryptStateForRuntime(context.env, normalizeState(JSON.parse(row.value))) : normalizeState();
+}
+
+function rememberState(state) {
+  cachedState = state;
+  cachedStateExpiresAt = Date.now() + STATE_CACHE_TTL_MS;
+  return cachedState;
+}
+
+function needsMutableState(method) {
+  return !["GET", "HEAD", "OPTIONS"].includes(method);
+}
+
+function cloneState(state) {
+  return JSON.parse(JSON.stringify(normalizeState(state)));
 }
 
 async function encryptStateForStorage(env, state) {
