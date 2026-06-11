@@ -18,6 +18,19 @@ body {
     #f4f5fb;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
 @layer components {
   .panel {
     @apply min-w-0 rounded-lg border border-line bg-white/95 shadow-soft;
@@ -136,7 +149,7 @@ body {
   }
 
   .mobile-card {
-    @apply rounded-lg border border-line bg-white p-4 shadow-soft;
+    @apply rounded-lg border border-line bg-white p-4 shadow-soft transition hover:border-[#c9c4ff];
   }
 
   .metric-card {
@@ -161,6 +174,17 @@ body {
 
   .chip-active {
     @apply border-brand bg-brand text-white;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -214,6 +238,11 @@ body {
 
     .metric-card {
       @apply p-3;
+    }
+
+    .mobile-card,
+    .soft-row {
+      @apply px-3 py-3;
     }
 
     .input,

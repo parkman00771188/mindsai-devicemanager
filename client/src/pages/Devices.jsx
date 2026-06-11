@@ -200,11 +200,11 @@ function applyDeviceExcelColumnWidths(sheet, rows = []) {
 
 function CategoryTabs({ categories, value, mine, onChange }) {
   return (
-    <div className="overflow-x-auto border-b border-line bg-white">
-      <div className="flex min-w-max gap-5 px-4 pt-1 sm:gap-8 sm:px-5 sm:pt-2">
+    <div className="scrollbar-none overflow-x-auto border-b border-line bg-white">
+      <div className="flex min-w-max snap-x gap-4 px-3 pt-1 sm:gap-7 sm:px-5 sm:pt-2">
         <button
           type="button"
-          className={`flex min-h-11 items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
+          className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
             !value && !mine ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
           }`}
           onClick={() => onChange("")}
@@ -215,7 +215,7 @@ function CategoryTabs({ categories, value, mine, onChange }) {
           <button
             key={category}
             type="button"
-            className={`flex min-h-11 items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
+            className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
               value === category ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
             }`}
             onClick={() => onChange(category)}
@@ -232,10 +232,10 @@ function StatusFilters({ value, mine, onChange, onMine }) {
   return (
     <div className="grid gap-3 border-t border-line pt-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start lg:pt-4">
       <p className="text-sm font-extrabold text-ink lg:pt-2 lg:text-base">상태</p>
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+      <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
         {onMine ? (
           <button
-            className={`chip min-h-10 shrink-0 px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${mine ? "chip-active" : ""}`}
+            className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${mine ? "chip-active" : ""}`}
             type="button"
             onClick={onMine}
           >
@@ -243,7 +243,7 @@ function StatusFilters({ value, mine, onChange, onMine }) {
           </button>
         ) : null}
         <button
-          className={`chip min-h-10 shrink-0 px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${!value ? "chip-active" : ""}`}
+          className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${!value ? "chip-active" : ""}`}
           type="button"
           onClick={() => onChange("")}
         >
@@ -252,7 +252,7 @@ function StatusFilters({ value, mine, onChange, onMine }) {
         {STATUS_OPTIONS.map(([status, label]) => (
           <button
             key={status}
-            className={`chip min-h-10 shrink-0 px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${value === status ? "chip-active" : ""}`}
+              className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${value === status ? "chip-active" : ""}`}
             type="button"
             onClick={() => onChange(status)}
           >

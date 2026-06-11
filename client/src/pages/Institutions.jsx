@@ -207,7 +207,7 @@ export default function Institutions() {
         </button>
       </form>
 
-      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
+      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
         <aside className="panel p-3 sm:p-4">
           {selected ? (
             <div>

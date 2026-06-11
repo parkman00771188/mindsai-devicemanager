@@ -41,7 +41,7 @@ export default function Maintenance() {
         <p className="mt-1 text-sm text-slate-500">점검, 고장, 수리 이력을 관리합니다.</p>
       </section>
       {error ? <div className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
-      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
+      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
         <form className="panel p-4" onSubmit={submit}>
           <h2 className="section-title">점검 등록</h2>
           <div className="mt-4 grid gap-3">

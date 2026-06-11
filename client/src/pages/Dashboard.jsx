@@ -207,7 +207,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
         <StatCard label="전체 장비" value={summary.total} icon={TabletSmartphone} tone="bg-[#f1efff] text-brand" to="/devices" />
         <StatCard label="대여 가능" value={summary.available} icon={ClipboardList} tone="bg-[#ecfbf7] text-[#1eb6a5]" to="/devices?status=AVAILABLE" />
         <StatCard label="대여 중" value={summary.rented} icon={PackageCheck} tone="bg-[#f1efff] text-[#6554dc]" to="/devices?status=RENTED" />

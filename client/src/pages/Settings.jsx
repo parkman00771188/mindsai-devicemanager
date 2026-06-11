@@ -244,13 +244,13 @@ function DeviceCollectionBody({ devices, error, emptyText, busy, onOpenDetail, o
 
 function UnderlineTabs({ items, value, onChange }) {
   return (
-    <div className="overflow-x-auto border-b border-line bg-white">
-      <div className="flex min-w-max gap-8 px-5 pt-2">
+    <div className="scrollbar-none overflow-x-auto border-b border-line bg-white">
+      <div className="flex min-w-max snap-x gap-5 px-3 pt-1 sm:gap-8 sm:px-5 sm:pt-2">
         {items.map((item) => (
           <button
             key={item.value}
             type="button"
-            className={`flex min-h-14 items-center border-b-[3px] px-1 pb-1 text-base font-extrabold transition ${
+            className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
               value === item.value ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
             }`}
             onClick={() => onChange(item.value)}
@@ -270,13 +270,13 @@ function UnderlineTabs({ items, value, onChange }) {
 
 function SegmentedTabs({ items, value, onChange }) {
   return (
-    <div className="border-b border-line bg-[#f7f7fd] px-4 py-4">
-      <div className="flex w-full flex-wrap gap-1 rounded-lg border border-line bg-white p-1 shadow-soft sm:inline-flex sm:w-auto">
+    <div className="border-b border-line bg-[#f7f7fd] px-3 py-3 sm:px-4 sm:py-4">
+      <div className="scrollbar-none flex w-full gap-1 overflow-x-auto rounded-lg border border-line bg-white p-1 shadow-soft sm:inline-flex sm:w-auto">
         {items.map((item) => (
           <button
             key={item.value}
             type="button"
-            className={`flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-4 py-2 text-sm font-extrabold transition sm:min-w-28 sm:flex-none sm:px-5 ${
+            className={`flex min-h-11 min-w-24 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-sm font-extrabold transition sm:min-w-28 sm:px-5 ${
               value === item.value ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#f2f0ff] hover:text-brand"
             }`}
             onClick={() => onChange(item.value)}
@@ -1384,7 +1384,7 @@ export default function Settings() {
         <SegmentedTabs items={managerTabs} value={categoryManagerTab} onChange={setCategoryManagerTab} />
 
         {categoryManagerTab === "categories" ? (
-          <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
             <section className="rounded-lg border border-line bg-white p-4">
               <div className="mb-4">
                 <p className="page-kicker">Category</p>
@@ -1460,7 +1460,7 @@ export default function Settings() {
             </section>
           </div>
         ) : (
-          <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
             <section className="rounded-lg border border-line bg-white p-4">
               <div className="mb-4">
                 <p className="page-kicker">Device Item</p>
@@ -1556,7 +1556,7 @@ export default function Settings() {
     return (
       <section className="panel overflow-hidden">
         <SegmentedTabs items={reasonTabs} value={reasonManagerTab} onChange={setReasonManagerTab} />
-        <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <section className="rounded-lg border border-line bg-white p-4">
             <div className="mb-4">
               <p className="page-kicker">Reasons</p>
@@ -1652,7 +1652,7 @@ export default function Settings() {
           }}
         />
 
-        <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <section className="rounded-lg border border-line bg-white p-4">
             <div className="mb-4">
               <p className="page-kicker">User Options</p>
@@ -1741,7 +1741,7 @@ export default function Settings() {
 
     return (
       <section className="panel overflow-hidden">
-        <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
+        <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
           <section className="rounded-lg border border-line bg-white p-4">
             <div className="mb-4">
               <p className="page-kicker">Institution</p>
@@ -1883,7 +1883,7 @@ export default function Settings() {
         </div>
       </section>
       <Message message={message} />
-      <nav className="panel flex max-w-full gap-2 overflow-x-auto p-2">
+      <nav className="panel scrollbar-none sticky top-[3.65rem] z-10 flex max-w-full gap-2 overflow-x-auto p-2 sm:top-[5.75rem] lg:top-[4.5rem]">
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;

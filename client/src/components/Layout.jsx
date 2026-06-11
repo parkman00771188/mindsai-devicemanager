@@ -121,9 +121,9 @@ export default function Layout() {
     [isAdmin]
   );
   const mobilePrimaryItems = useMemo(() => {
-    const primaryPaths = isAdmin ? ["/", "/devices", "/transactions", "/deliveries"] : ["/", "/devices", "/transactions", "/settings"];
+    const primaryPaths = ["/", "/devices", "/transactions"];
     return primaryPaths.map((path) => visibleNavItems.find((item) => item.to === path)).filter(Boolean);
-  }, [isAdmin, visibleNavItems]);
+  }, [visibleNavItems]);
   const secondaryNavItems = visibleNavItems.filter((item) => !mobilePrimaryItems.some((primary) => primary.to === item.to));
   const moreActive = secondaryNavItems.some((item) => isNavPathActive(location.pathname, item));
   const bottomNavColumnCount = mobilePrimaryItems.length + (secondaryNavItems.length ? 1 : 0);
@@ -372,7 +372,7 @@ export default function Layout() {
                   ) : null}
                 </button>
                 {notificationOpen ? (
-                  <div className="fixed left-3 right-3 top-16 z-40 max-h-[calc(100dvh-5rem)] w-auto overflow-hidden rounded-lg border border-line bg-white shadow-lift sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-[min(92vw,380px)]">
+                  <div className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-lg border border-line bg-white shadow-lift sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-[min(92vw,380px)]">
                     <div className="flex items-center justify-between gap-3 border-b border-line bg-[#f7f7fd] px-4 py-3">
                       <div>
                         <p className="text-sm font-extrabold text-ink">알림</p>
@@ -395,7 +395,7 @@ export default function Layout() {
                         </button>
                       </div>
                     </div>
-                    <div className="max-h-[420px] overflow-auto p-2">
+                    <div className="h-full max-h-[420px] overflow-auto p-2 sm:h-auto">
                       {notifications.length ? notifications.slice(0, 20).map((notification) => {
                         const deletable = canDeleteNotification(notification);
                         return (
@@ -452,13 +452,13 @@ export default function Layout() {
           </div>
         </header>
 
-        <div className="px-3 py-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-5 lg:px-6 lg:pb-8">
+        <div className="px-3 py-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-5 lg:px-6 lg:pb-8">
           <Outlet />
         </div>
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white/95 px-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-1.5 shadow-lift backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-lift backdrop-blur lg:hidden"
         style={{ gridTemplateColumns: `repeat(${bottomNavColumnCount}, minmax(0, 1fr))` }}
       >
         {mobilePrimaryItems.map((item) => {
@@ -469,19 +469,19 @@ export default function Layout() {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-extrabold transition sm:text-[11px] ${
+                `flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
                   isActive ? "bg-[#f2f0ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
                 }`
               }
             >
-              <Icon className="shrink-0" size={17} />
+              <Icon className="shrink-0" size={18} />
               <span className="max-w-full truncate">{item.label.replace("장비 ", "")}</span>
             </NavLink>
           );
         })}
         {secondaryNavItems.length ? (
           <button
-            className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-extrabold transition sm:text-[11px] ${
+            className={`flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
               moreActive || open ? "bg-[#f2f0ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
             }`}
             type="button"

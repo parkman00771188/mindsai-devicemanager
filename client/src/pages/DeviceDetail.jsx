@@ -134,7 +134,7 @@ function DetailLine({ label, value }) {
 function PhotoStrip({ paths, label, onOpen }) {
   if (!paths.length) return null;
   return (
-    <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+    <div className="scrollbar-none mt-3 flex snap-x gap-2 overflow-x-auto pb-1">
       {paths.map((path, index) => (
         <button
           key={`${path}-${index}`}
@@ -143,7 +143,7 @@ function PhotoStrip({ paths, label, onOpen }) {
             event.stopPropagation();
             onOpen(index);
           }}
-          className="block h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-line bg-slate-100 transition hover:border-cyan-300"
+          className="block h-20 w-20 shrink-0 snap-start overflow-hidden rounded-lg border border-line bg-slate-100 transition hover:border-cyan-300"
           title="사진 크게 보기"
         >
           <img src={path} alt={`${label} 사진 ${index + 1}`} className="h-full w-full object-cover" />
@@ -206,7 +206,7 @@ function HistorySummaryModal({ rows, onClose }) {
           </button>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-lg border border-line">
+        <div className="scrollbar-none mt-4 overflow-x-auto rounded-lg border border-line">
           <table className="min-w-[940px] w-full table-fixed">
             <thead className="table-head">
               <tr>

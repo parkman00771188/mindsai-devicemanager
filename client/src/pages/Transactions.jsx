@@ -187,9 +187,9 @@ export default function Transactions() {
 
         <div className="grid gap-3 border-t border-line pt-4 xl:grid-cols-[88px_minmax(0,1fr)] xl:items-start">
           <p className="text-sm font-extrabold text-ink xl:pt-2 xl:text-base">작업</p>
-          <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:flex-wrap xl:overflow-visible xl:px-0 xl:pb-0">
+          <div className="scrollbar-none -mx-1 flex max-w-full snap-x gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:flex-wrap xl:overflow-visible xl:px-0 xl:pb-0">
             <button
-                className={`chip min-h-10 shrink-0 px-3 text-sm xl:min-h-11 xl:px-4 xl:text-base ${!filters.action_type ? "chip-active" : ""}`}
+                className={`chip min-h-10 shrink-0 snap-start px-3 text-sm xl:min-h-11 xl:px-4 xl:text-base ${!filters.action_type ? "chip-active" : ""}`}
               type="button"
               onClick={() => selectAction("")}
             >
@@ -198,7 +198,7 @@ export default function Transactions() {
             {actionChoices.map((action) => (
               <button
                 key={action}
-                className={`chip min-h-10 shrink-0 px-3 text-sm xl:min-h-11 xl:px-4 xl:text-base ${filters.action_type === action ? "chip-active" : ""}`}
+                className={`chip min-h-10 shrink-0 snap-start px-3 text-sm xl:min-h-11 xl:px-4 xl:text-base ${filters.action_type === action ? "chip-active" : ""}`}
                 type="button"
                 onClick={() => selectAction(action)}
               >
