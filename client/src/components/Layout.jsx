@@ -212,6 +212,7 @@ export default function Layout() {
       .then((fresh) => {
         if (ignore) return;
         const nextUser = {
+          ...user,
           user_id: fresh.user_id,
           name: fresh.name || user.name,
           role: fresh.role || user.role,

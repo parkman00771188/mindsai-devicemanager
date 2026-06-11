@@ -13,7 +13,16 @@ function authHeaders() {
   }
 }
 
-async function parseResponse(response) {
+function clearStoredUser() {
+  try {
+    localStorage.removeItem("deviceManagerUser");
+    window.dispatchEvent(new Event("deviceManagerUserChanged"));
+  } catch {
+    // Ignore storage errors in non-browser contexts.
+  }
+}
+
+async function parseResponse(response, path) {
   if (!response.ok) {
     let message = "요청 처리 중 오류가 발생했습니다.";
     try {
@@ -22,6 +31,7 @@ async function parseResponse(response) {
     } catch {
       message = response.statusText || message;
     }
+    if (response.status === 401 && path !== "/login") clearStoredUser();
     throw new Error(message);
   }
   const contentType = response.headers.get("content-type") || "";
@@ -52,7 +62,7 @@ export async function api(path, options = {}) {
         ? JSON.stringify(options.body)
         : options.body
   });
-  return parseResponse(response);
+  return parseResponse(response, path);
 }
 
 export function downloadUrl(path) {

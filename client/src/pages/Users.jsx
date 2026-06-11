@@ -72,6 +72,7 @@ function syncStoredUserIfCurrent(user) {
   localStorage.setItem(
     "deviceManagerUser",
     JSON.stringify({
+      ...current,
       user_id: current.user_id,
       name: user.name || current.name,
       role: user.role || current.role,

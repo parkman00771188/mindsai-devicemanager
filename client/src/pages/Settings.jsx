@@ -872,7 +872,9 @@ export default function Settings() {
   }
 
   function syncStoredCurrentUser(user) {
+    const current = getCurrentUser();
     const nextUser = {
+      ...current,
       user_id: user.user_id,
       name: user.name || "",
       role: user.role || "USER",
