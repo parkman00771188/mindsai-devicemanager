@@ -1,34 +1,13 @@
 import { LockKeyhole, TabletSmartphone } from "lucide-react";
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
-
-function locationPath(value) {
-  if (!value) return "";
-  return `${value.pathname || ""}${value.search || ""}${value.hash || ""}`;
-}
-
-function isSafeReturnPath(value) {
-  return value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/login");
-}
-
-function getReturnPath(location) {
-  const statePath = locationPath(location.state?.from);
-  if (isSafeReturnPath(statePath)) return statePath;
-
-  const nextPath = new URLSearchParams(location.search).get("next") || "";
-  if (isSafeReturnPath(nextPath)) return nextPath;
-
-  return "/";
-}
 
 export default function Login() {
   const [form, setForm] = useState({ user_id: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const returnPath = getReturnPath(location);
 
   async function submit(event) {
     event.preventDefault();
@@ -38,7 +17,7 @@ export default function Login() {
       const result = await api("/login", { method: "POST", body: form });
       localStorage.setItem("deviceManagerUser", JSON.stringify(result.user));
       window.dispatchEvent(new Event("deviceManagerUserChanged"));
-      navigate(returnPath, { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -47,7 +26,7 @@ export default function Login() {
   }
 
   if (localStorage.getItem("deviceManagerUser")) {
-    return <Navigate to={returnPath} replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
