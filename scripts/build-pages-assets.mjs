@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(root, "client", "dist");
 const uploadsDir = path.join(root, "server", "uploads");
+const distUploadsDir = path.join(distDir, "uploads");
 
 function copyDir(source, target, options = {}) {
   if (!fs.existsSync(source)) return;
@@ -22,9 +23,10 @@ if (!fs.existsSync(distDir)) {
   throw new Error(`Build output not found: ${distDir}`);
 }
 
-copyDir(uploadsDir, path.join(distDir, "uploads"), {
+copyDir(uploadsDir, distUploadsDir, {
   exclude: (name, sourcePath) =>
-    ["backups", "profiles"].includes(name) && fs.statSync(sourcePath).isDirectory()
+    ["backups", "profiles", "qrcodes"].includes(name) && fs.statSync(sourcePath).isDirectory()
 });
+fs.rmSync(path.join(distUploadsDir, "qrcodes"), { recursive: true, force: true });
 
 console.log("Cloudflare Pages assets prepared.");

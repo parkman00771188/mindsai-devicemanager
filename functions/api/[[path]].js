@@ -422,7 +422,7 @@ async function handleDevices(context, state, parts, params, body) {
   if (parts.length === 2) {
     if (method === "GET") return { data: attachDevice(state, device, true) };
     if (method === "PUT") {
-      updateDevice(device, body);
+      updateDevice(state, device, body);
       addTransaction(state, device, "UPDATE", body, userId, device.status, device.status);
       return { data: attachDevice(state, device, true), save: true };
     }
@@ -481,13 +481,37 @@ function createDevice(state, input, userId) {
   return row;
 }
 
-function updateDevice(device, input) {
+function updateDevice(state, device, input) {
+  const previousDeviceId = device.device_id;
   const protectedFields = new Set(["device_id", "created_at", "is_deleted"]);
   Object.entries(input || {}).forEach(([key, value]) => {
     if (!protectedFields.has(key)) device[key] = value;
   });
+  reassignDeviceId(state, device, previousDeviceId);
   if (!device.main_photo_path) device.main_photo_path = firstPath(device.photo_paths);
   device.updated_at = now();
+}
+
+function reassignDeviceId(state, device, previousDeviceId = device.device_id) {
+  const base = deviceIdBase(state, device.category || "", device.model_name || "", device.capacity_gb || "");
+  if (!base || String(device.device_id || "").startsWith(`${base}-`)) return;
+  const nextId = nextDeviceId(state, device.category || "", device.model_name || "", device.capacity_gb || "", previousDeviceId);
+  if (!nextId || nextId === device.device_id) return;
+  device.device_id = nextId;
+  device.qr_code_path = `/uploads/qrcodes/${safeSegment(nextId)}.png`;
+  updateDeviceReferences(state, previousDeviceId, nextId);
+}
+
+function updateDeviceReferences(state, previousDeviceId, nextDeviceIdValue) {
+  if (!previousDeviceId || !nextDeviceIdValue || previousDeviceId === nextDeviceIdValue) return;
+  ["Transactions", "Maintenance", "Notifications"].forEach((sheet) => {
+    (state[sheet] || []).forEach((row) => {
+      if (row.device_id === previousDeviceId) row.device_id = nextDeviceIdValue;
+    });
+  });
+  (state.AuditLogs || []).forEach((row) => {
+    if (row.target_type === "Device" && row.target_id === previousDeviceId) row.target_id = nextDeviceIdValue;
+  });
 }
 
 function mutateDeviceProcess(state, device, action, body, userId, method) {
@@ -1221,7 +1245,7 @@ function nextSequence(rows, field) {
   return max + 1;
 }
 
-function nextDeviceId(state, category, modelName, capacityGb) {
+function deviceIdBase(state, category, modelName, capacityGb) {
   const categoryRow = active(state.Categories).find((row) => row.category_name === category);
   const typeRow = active(state.DeviceTypes).find(
     (row) => row.category_name === category && (!modelName || row.type_name === modelName)
@@ -1229,8 +1253,20 @@ function nextDeviceId(state, category, modelName, capacityGb) {
   const categoryPrefix = categoryRow?.prefix || `MAI-${slug(category || "EQ")}`;
   const typePrefix = typeRow?.type_prefix || "";
   const capacity = capacityGb ? slug(`${capacityGb}GB`) : "";
-  const base = [categoryPrefix, typePrefix, capacity].filter(Boolean).join("-");
-  const seq = active(state.Devices).filter((row) => String(row.device_id || "").startsWith(base)).length + 1;
+  return [categoryPrefix, typePrefix, capacity].filter(Boolean).join("-");
+}
+
+function nextDeviceId(state, category, modelName, capacityGb, excludeDeviceId = "") {
+  const base = deviceIdBase(state, category, modelName, capacityGb);
+  const max = active(state.Devices)
+    .filter((row) => row.device_id !== excludeDeviceId)
+    .filter((row) => String(row.device_id || "").startsWith(base))
+    .reduce((current, row) => {
+      const match = String(row.device_id || "").match(/-(\d+)$/);
+      const value = match ? Number(match[1]) : 0;
+      return Number.isFinite(value) ? Math.max(current, value) : current;
+    }, 0);
+  const seq = max + 1;
   return `${base}-${String(seq).padStart(3, "0")}`;
 }
 

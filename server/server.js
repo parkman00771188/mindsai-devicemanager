@@ -5,7 +5,15 @@ const express = require("express");
 const morgan = require("morgan");
 const multer = require("multer");
 const store = require("./utils/excelStore");
-const { absoluteQrLabelPath, absoluteQrPath, generateQrForDevice, generateQrLabelForDevice, safeSegment } = require("./utils/qrGenerator");
+const {
+  absoluteQrLabelPath,
+  absoluteQrPath,
+  deleteQrForDevice,
+  generateQrForDevice,
+  generateQrLabelForDevice,
+  pruneQrCodes,
+  safeSegment
+} = require("./utils/qrGenerator");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -90,6 +98,7 @@ const profilePhotoUpload = uploadFor("profiles");
 
 async function ensureQrCodes(origin = "http://localhost:3000") {
   const devices = await store.listDevices({});
+  pruneQrCodes(devices.map((device) => device.device_id));
   await Promise.all(
     devices.map((device) =>
       Promise.all([
@@ -362,6 +371,7 @@ app.post(
   asyncRoute(async (req, res) => {
     req.body.device_id = await store.getNextDeviceId(req.body.category || "", req.body.model_name || "", req.body.capacity_gb || "");
     const qrPath = await generateQrForDevice(req.body.device_id, clientOrigin(req));
+    await generateQrLabelForDevice(req.body.device_id, clientOrigin(req));
     const device = await store.createDevice(req.body, {
       photoPaths: publicFilePaths(req.files),
       qrPath,
@@ -376,12 +386,15 @@ app.put(
   "/api/devices/:deviceId",
   devicePhotoUpload.array("photos", 10),
   asyncRoute(async (req, res) => {
+    const previousDeviceId = req.params.deviceId;
     const device = await store.updateDevice(req.params.deviceId, req.body, {
       photoPaths: publicFilePaths(req.files),
       userId: currentUser(req),
       ipAddress: req.ip
     });
+    if (device.device_id !== previousDeviceId) deleteQrForDevice(previousDeviceId);
     await generateQrForDevice(device.device_id, clientOrigin(req));
+    await generateQrLabelForDevice(device.device_id, clientOrigin(req));
     res.json(device);
   })
 );
@@ -389,12 +402,14 @@ app.put(
 app.delete(
   "/api/devices/:deviceId",
   asyncRoute(async (req, res) => {
+    const shouldDeleteQr = req.query.delete === "true" || req.query.remove === "true" || req.query.hard === "true";
     const result =
       req.query.delete === "true" || req.query.remove === "true"
         ? await store.deleteDevice(req.params.deviceId, { userId: currentUser(req), ipAddress: req.ip, reason: req.body?.reason })
         : req.query.hard === "true"
         ? await store.hardDeleteDevice(req.params.deviceId, { userId: currentUser(req), ipAddress: req.ip })
         : await store.disposeDevice(req.params.deviceId, { userId: currentUser(req), ipAddress: req.ip, reason: req.body?.reason });
+    if (shouldDeleteQr) deleteQrForDevice(req.params.deviceId);
     res.json(result);
   })
 );

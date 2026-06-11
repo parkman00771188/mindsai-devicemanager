@@ -37,6 +37,49 @@ function absoluteQrLabelPath(deviceId) {
   return path.join(qrcodeDir, `${safeSegment(deviceId)}-label.svg`);
 }
 
+function qrFilePaths(deviceId) {
+  const segment = safeSegment(deviceId);
+  return [
+    path.join(qrcodeDir, `${segment}.png`),
+    path.join(qrcodeDir, `${segment}-label.svg`),
+    path.join(qrcodeDir, `${segment}-qr.svg`),
+    path.join(qrcodeDir, `${segment}-qr-label.svg`)
+  ];
+}
+
+function deleteQrForDevice(deviceId) {
+  qrFilePaths(deviceId).forEach((filePath) => {
+    try {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch {
+      // QR cleanup should not block device updates.
+    }
+  });
+}
+
+function qrSegmentFromFile(name) {
+  if (name.endsWith("-qr-label.svg")) return name.slice(0, -"-qr-label.svg".length);
+  if (name.endsWith("-label.svg")) return name.slice(0, -"-label.svg".length);
+  if (name.endsWith("-qr.svg")) return name.slice(0, -"-qr.svg".length);
+  if (name.endsWith(".png")) return name.slice(0, -".png".length);
+  return "";
+}
+
+function pruneQrCodes(deviceIds = []) {
+  if (!fs.existsSync(qrcodeDir)) return;
+  const validSegments = new Set(deviceIds.map(safeSegment).filter(Boolean));
+  fs.readdirSync(qrcodeDir, { withFileTypes: true }).forEach((entry) => {
+    if (!entry.isFile()) return;
+    const segment = qrSegmentFromFile(entry.name);
+    if (!segment || validSegments.has(segment)) return;
+    try {
+      fs.unlinkSync(path.join(qrcodeDir, entry.name));
+    } catch {
+      // Stale QR files can be cleaned up on a later pass.
+    }
+  });
+}
+
 async function generateQrForDevice(deviceId, origin = "http://localhost:3000") {
   fs.mkdirSync(qrcodeDir, { recursive: true });
   await QRCode.toFile(
@@ -78,8 +121,10 @@ async function generateQrLabelForDevice(deviceId, origin = "http://localhost:300
 module.exports = {
   absoluteQrLabelPath,
   absoluteQrPath,
+  deleteQrForDevice,
   generateQrForDevice,
   generateQrLabelForDevice,
+  pruneQrCodes,
   publicQrLabelPath,
   publicQrPath,
   qrPayload,
