@@ -1,0 +1,8 @@
+name = "mindsai-devicemanager"
+compatibility_date = "2026-06-11"
+pages_build_output_dir = "client/dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mindsai-devicemanager-db"
+database_id = "9df84d75-935d-483c-a9ae-8c8d3997f4a7"

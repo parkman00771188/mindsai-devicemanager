@@ -1,0 +1,43 @@
+{
+  "name": "device-manager-local",
+  "version": "1.0.0",
+  "description": "Local equipment rental and return manager backed by Excel.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev:api\" \"npm run dev:client\"",
+    "dev:api": "cross-env NODE_ENV=development PORT=3001 nodemon server/server.js",
+    "dev:client": "vite --config vite.config.mjs --host 0.0.0.0 --port 3000",
+    "dev:client:https": "cross-env HTTPS=true vite --config vite.config.mjs --host 0.0.0.0 --port 3000",
+    "dev:https": "concurrently -k \"npm run dev:api\" \"npm run dev:client:https\"",
+    "build": "vite build --config vite.config.mjs",
+    "build:pages": "npm run build && node scripts/build-pages-assets.mjs",
+    "deploy:pages": "npm run build:pages && npx wrangler pages deploy client/dist --project-name mindsai-devicemanager",
+    "seed:pages": "node scripts/seed-pages-data.mjs",
+    "start": "node server/server.js",
+    "start:prod": "powershell -ExecutionPolicy Bypass -File scripts/start-prod.ps1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "html5-qrcode": "^2.3.8",
+    "lucide-react": "^0.468.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.2",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.18",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.1.4"
+  }
+}
