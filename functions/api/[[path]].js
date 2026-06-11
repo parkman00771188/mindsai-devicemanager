@@ -88,19 +88,22 @@ let cachedEncryptionSecret = "";
 let cachedEncryptionKey = null;
 
 export async function onRequest(context) {
+  const requestId = crypto.randomUUID();
+  const method = context.request.method;
+  let path = "";
   try {
-    if (context.request.method === "OPTIONS") return emptyResponse(204);
+    if (method === "OPTIONS") return emptyResponse(204);
 
     const url = new URL(context.request.url);
-    const path = apiPath(url.pathname);
+    path = apiPath(url.pathname);
 
-    if (path === "/admin/seed" && context.request.method === "POST") {
+    if (path === "/admin/seed" && method === "POST") {
       return seedState(context);
     }
-    if (path === "/admin/reencrypt" && context.request.method === "POST") {
+    if (path === "/admin/reencrypt" && method === "POST") {
       return reencryptState(context);
     }
-    if (context.request.method === "GET" && /^\/devices\/[^/]+\/qrcode$/.test(path)) {
+    if (method === "GET" && /^\/devices\/[^/]+\/qrcode$/.test(path)) {
       return serveQrCode(context, path);
     }
 
@@ -113,9 +116,69 @@ export async function onRequest(context) {
     if (result.response) return result.response;
     return json(result.data, result.status || 200);
   } catch (error) {
-    console.error(error);
-    return json({ message: error.message || "Request failed" }, error.statusCode || 500);
+    const status = errorStatus(error);
+    console.error("[Device Manager API] request failed", {
+      requestId,
+      method,
+      path,
+      status,
+      message: errorMessage(error),
+      stack: error?.stack
+    });
+    return json({ message: errorResponseMessage(error, status), request_id: requestId }, status);
   }
+}
+
+const D1_RETRY_DELAYS_MS = [120, 300, 700];
+const TRANSIENT_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function errorMessage(error) {
+  return String(error?.message || error || "");
+}
+
+function errorStatus(error) {
+  const status = Number(error?.statusCode || error?.status || error?.cause?.status || 0);
+  if (status >= 400 && status <= 599) return status;
+  return isTransientDataError(error) ? 503 : 500;
+}
+
+function errorResponseMessage(error, status) {
+  if (status === 503) return "서버 데이터 연결이 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.";
+  return errorMessage(error) || "Request failed";
+}
+
+function isTransientDataError(error) {
+  const status = Number(error?.statusCode || error?.status || error?.cause?.status || 0);
+  const message = errorMessage(error);
+  return (
+    TRANSIENT_STATUS_CODES.has(status) ||
+    /D1|database is locked|busy|temporar|timeout|timed out|network|fetch failed|unavailable|internal error|rate limit/i.test(message)
+  );
+}
+
+async function withD1Retry(label, operation) {
+  let lastError;
+  for (let attempt = 0; attempt <= D1_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isTransientDataError(error) || attempt === D1_RETRY_DELAYS_MS.length) throw error;
+      const delayMs = D1_RETRY_DELAYS_MS[attempt];
+      console.warn("[Device Manager API] retrying D1 operation", {
+        label,
+        attempt: attempt + 1,
+        delayMs,
+        message: errorMessage(error)
+      });
+      await wait(delayMs);
+    }
+  }
+  throw lastError;
 }
 
 function emptyResponse(status) {
@@ -151,14 +214,16 @@ function segments(path) {
 
 async function ensureDb(db) {
   if (!db) throw Object.assign(new Error("Cloudflare D1 binding DB is not configured."), { statusCode: 500 });
-  await db.exec(
-    "CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)"
+  await withD1Retry("ensureDb", () =>
+    db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)")
   );
 }
 
 async function loadState(context) {
   await ensureDb(context.env.DB);
-  const row = await context.env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(STATE_KEY).first();
+  const row = await withD1Retry("loadState", () =>
+    context.env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(STATE_KEY).first()
+  );
   if (row?.value) return decryptStateForRuntime(context.env, normalizeState(JSON.parse(row.value)));
   return normalizeState();
 }
@@ -167,13 +232,15 @@ async function saveState(env, state) {
   await ensureDb(env.DB);
   const storageState = await encryptStateForStorage(env, state);
   const jsonState = JSON.stringify(storageState);
-  await env.DB
-    .prepare(
-      "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) " +
-        "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
-    )
-    .bind(STATE_KEY, jsonState, now())
-    .run();
+  await withD1Retry("saveState", () =>
+    env.DB
+      .prepare(
+        "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) " +
+          "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
+      )
+      .bind(STATE_KEY, jsonState, now())
+      .run()
+  );
 }
 
 async function encryptStateForStorage(env, state) {

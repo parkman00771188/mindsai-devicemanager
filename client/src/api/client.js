@@ -1,4 +1,19 @@
 const API_BASE = "/api";
+const API_RETRY_DELAYS_MS = [250, 800];
+const RETRY_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function requestMethod(options = {}) {
+  return String(options.method || "GET").toUpperCase();
+}
+
+function canRetryRequest(path, options = {}) {
+  const method = requestMethod(options);
+  return method === "GET" || (method === "POST" && path === "/login");
+}
 
 function storedUser() {
   try {
@@ -74,22 +89,44 @@ export async function api(path, options = {}) {
     ...(options.headers || {})
   };
 
-  let response;
-  try {
-    response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers,
-      body:
-        options.body && !(options.body instanceof FormData) && typeof options.body !== "string"
-          ? JSON.stringify(options.body)
-          : options.body
-    });
-  } catch (error) {
-    console.error("[Device Manager API] Network error", { path, error });
-    throw error;
-  }
+  const retryable = canRetryRequest(path, options);
+  for (let attempt = 0; attempt <= API_RETRY_DELAYS_MS.length; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+        body:
+          options.body && !(options.body instanceof FormData) && typeof options.body !== "string"
+            ? JSON.stringify(options.body)
+            : options.body
+      });
+    } catch (error) {
+      if (retryable && attempt < API_RETRY_DELAYS_MS.length) {
+        const delayMs = API_RETRY_DELAYS_MS[attempt];
+        console.warn("[Device Manager API] Network error, retrying", { path, attempt: attempt + 1, delayMs, error });
+        await wait(delayMs);
+        continue;
+      }
+      console.error("[Device Manager API] Network error", { path, error });
+      throw error;
+    }
 
-  return parseResponse(response, path);
+    if (retryable && RETRY_STATUS_CODES.has(response.status) && attempt < API_RETRY_DELAYS_MS.length) {
+      const delayMs = API_RETRY_DELAYS_MS[attempt];
+      console.warn("[Device Manager API] Transient response, retrying", {
+        path,
+        status: response.status,
+        statusText: response.statusText,
+        attempt: attempt + 1,
+        delayMs
+      });
+      await wait(delayMs);
+      continue;
+    }
+
+    return parseResponse(response, path);
+  }
 }
 
 export function downloadUrl(path) {

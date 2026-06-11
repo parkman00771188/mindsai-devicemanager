@@ -1,4 +1,4 @@
-import { Bell, BellRing, CheckCircle2, ClipboardList, PackageCheck, QrCode, Search, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
+import { Bell, BellRing, CheckCircle2, ClipboardList, PackageCheck, QrCode, RefreshCw, Search, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -98,6 +98,7 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [recent, setRecent] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [error, setError] = useState("");
   const [noticeTab, setNoticeTab] = useState("requests");
   const [keyword, setKeyword] = useState("");
   const [transactionDetail, setTransactionDetail] = useState(null);
@@ -106,6 +107,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   async function loadDashboard() {
+    setError("");
     const [summaryData, recentData, notificationData] = await Promise.all([api("/dashboard/summary"), api("/dashboard/recent-transactions?limit=10"), api("/notifications?scope=dashboard")]);
     setSummary(summaryData);
     setRecent(recentData);
@@ -113,7 +115,7 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    loadDashboard();
+    loadDashboard().catch((err) => setError(err.message));
   }, []);
 
   function submitSearch(event) {
@@ -160,7 +162,23 @@ export default function Dashboard() {
     }
   }
 
-  if (!summary) return <Loading />;
+  if (!summary) {
+    if (error) {
+      return (
+        <div className="app-page">
+          <section className="panel p-6">
+            <h1 className="section-title">대시보드를 불러오지 못했습니다</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-600">{error}</p>
+            <button className="btn-primary mt-4" type="button" onClick={() => loadDashboard().catch((err) => setError(err.message))}>
+              <RefreshCw size={18} />
+              다시 불러오기
+            </button>
+          </section>
+        </div>
+      );
+    }
+    return <Loading />;
+  }
 
   const requestNotifications = notifications.filter((notification) => notification.type === "RETURN_REQUEST" || (notification.type === "RETURN_COMPLETE" && !notification.is_read));
   const generalNotifications = notifications
