@@ -328,6 +328,7 @@ async function route(context, state, path, body) {
   if (parts[0] === "transactions") return handleTransactions(state, parts, url.searchParams, body, method);
   if (parts[0] === "maintenance") return handleMaintenance(state, parts, url.searchParams, body, method, userId);
   if (parts[0] === "users") return handleUsers(context, state, parts, url.searchParams, body, method);
+  if (parts[0] === "institutions") return handleInstitutions(state, parts, url.searchParams, body, method);
   if (parts[0] === "notifications") return handleNotifications(state, parts, url.searchParams, body, method, userId);
   if (parts[0] === "search" && method === "GET") return { data: searchDevices(state, url.searchParams.get("keyword") || "") };
 
@@ -628,6 +629,40 @@ async function handleUsers(context, state, parts, params, body, method) {
   throw Object.assign(new Error("User endpoint not found"), { statusCode: 404 });
 }
 
+function handleInstitutions(state, parts, params, body, method) {
+  if (parts.length === 1) {
+    if (method === "GET") return { data: listInstitutions(state, params) };
+    if (method === "POST") {
+      const row = createInstitution(state, body);
+      return { data: institutionSummary(state, row), status: 201, save: true };
+    }
+  }
+
+  const institution = findInstitution(state, parts[1], true);
+  if (!institution || isDeleted(institution)) {
+    throw Object.assign(new Error("Institution not found"), { statusCode: 404 });
+  }
+
+  if (method === "GET") return { data: institutionSummary(state, institution) };
+  if (method === "PUT") {
+    updateInstitution(state, institution, body);
+    return { data: institutionSummary(state, institution), save: true };
+  }
+  if (method === "DELETE") {
+    const summary = institutionSummary(state, institution);
+    if (summary.assigned_count > 0) {
+      throw Object.assign(new Error("Assigned devices must be returned or recovered before deleting this institution."), {
+        statusCode: 400
+      });
+    }
+    institution.is_deleted = true;
+    institution.updated_at = now();
+    return { data: { success: true }, save: true };
+  }
+
+  throw Object.assign(new Error("Institution endpoint not found"), { statusCode: 404 });
+}
+
 function handleNotifications(state, parts, params, body, method, userId) {
   if (parts.length === 1 && method === "GET") return { data: listNotifications(state, params, userId) };
 
@@ -856,6 +891,117 @@ function dashboardSummary(state) {
   return { total: rows.length, ...summary };
 }
 
+function listInstitutions(state, params = new URLSearchParams()) {
+  const keyword = lower(params.get("keyword"));
+  return active(state.Institutions)
+    .filter((institution) => !keyword || searchable(institution).includes(keyword))
+    .map((institution) => institutionSummary(state, institution))
+    .sort((a, b) => text(a.institution_name).localeCompare(text(b.institution_name), "ko", { numeric: true }));
+}
+
+function institutionSummary(state, institution) {
+  const institutionId = text(institution.institution_id);
+  const institutionName = text(institution.institution_name);
+  const assignedDevices = active(state.Devices).filter((device) => {
+    if (!["RENTED", "DELIVERED"].includes(device.status)) return false;
+    if (institutionId && text(device.current_institution_id) === institutionId) return true;
+    return isInstitutionAssignment(device) && text(device.current_institution_name || device.current_borrower) === institutionName;
+  });
+  const transactions = active(state.Transactions)
+    .filter((row) => {
+      if (institutionId && text(row.institution_id) === institutionId) return true;
+      return isInstitutionAssignment(row) && text(row.institution_name || row.user_name) === institutionName;
+    })
+    .sort(descCreated);
+
+  return {
+    ...institution,
+    assigned_count: assignedDevices.length,
+    transaction_count: transactions.length,
+    assigned_devices: assignedDevices.map((device) => ({
+      ...attachDevice(state, device, false),
+      rent_location: device.current_rent_location || ""
+    })),
+    transactions: transactions.map((row) => attachTransaction(state, row)).slice(0, 30)
+  };
+}
+
+function createInstitution(state, input = {}) {
+  const institutionName = text(input.institution_name);
+  if (!institutionName) throw Object.assign(new Error("Institution name is required"), { statusCode: 400 });
+  if (active(state.Institutions).some((row) => text(row.institution_name) === institutionName)) {
+    throw Object.assign(new Error("Institution already exists"), { statusCode: 409 });
+  }
+  const created = now();
+  const row = {
+    ...input,
+    institution_id: input.institution_id || nextId(state.Institutions, "institution_id", "ORG"),
+    institution_name: institutionName,
+    created_at: created,
+    updated_at: created,
+    is_deleted: false
+  };
+  state.Institutions.push(row);
+  return row;
+}
+
+function updateInstitution(state, institution, input = {}) {
+  const beforeName = text(institution.institution_name);
+  const nextName = input.institution_name !== undefined ? text(input.institution_name) : beforeName;
+  if (!nextName) throw Object.assign(new Error("Institution name is required"), { statusCode: 400 });
+  if (
+    active(state.Institutions).some(
+      (row) => row.institution_id !== institution.institution_id && text(row.institution_name) === nextName
+    )
+  ) {
+    throw Object.assign(new Error("Institution already exists"), { statusCode: 409 });
+  }
+
+  const protectedFields = new Set(["institution_id", "created_at", "is_deleted"]);
+  Object.entries(input).forEach(([key, value]) => {
+    if (!protectedFields.has(key)) institution[key] = value;
+  });
+  institution.institution_name = nextName;
+  institution.updated_at = now();
+
+  active(state.Devices).forEach((device) => {
+    if (!["RENTED", "DELIVERED"].includes(device.status)) return;
+    const matchesId = text(device.current_institution_id) === institution.institution_id;
+    const matchesName = isInstitutionAssignment(device) && text(device.current_institution_name || device.current_borrower) === beforeName;
+    if (!matchesId && !matchesName) return;
+    device.current_borrower_type = "INSTITUTION";
+    device.current_borrower = institution.institution_name;
+    device.current_institution_id = institution.institution_id;
+    device.current_institution_name = institution.institution_name;
+    device.current_user_organization = "기관";
+    device.borrower_department = "기관";
+    device.current_user_position = device.current_user_position || institution.contact_person || "";
+    device.current_user_contact = institution.contact || device.current_user_contact || "";
+    device.updated_at = institution.updated_at;
+  });
+
+  state.Transactions.forEach((row) => {
+    const matchesId = text(row.institution_id) === institution.institution_id;
+    const matchesName = isInstitutionAssignment(row) && text(row.institution_name || row.user_name) === beforeName;
+    if (!matchesId && !matchesName) return;
+    row.borrower_type = "INSTITUTION";
+    row.institution_id = institution.institution_id;
+    row.institution_name = institution.institution_name;
+    row.user_name = institution.institution_name;
+    row.user_organization = "기관";
+    row.user_department = "기관";
+    row.user_position = row.user_position || institution.contact_person || "";
+    row.user_contact = institution.contact || row.user_contact || "";
+  });
+}
+
+function isInstitutionAssignment(row = {}) {
+  return (
+    text(row.borrower_type || row.current_borrower_type).toUpperCase() === "INSTITUTION" ||
+    text(row.user_department || row.borrower_department || row.current_user_organization) === "기관"
+  );
+}
+
 function listUsers(state, params = new URLSearchParams()) {
   const keyword = lower(params.get("keyword"));
   return active(state.Users)
@@ -1004,6 +1150,10 @@ function findDevice(state, deviceId, includeDeleted = false) {
 
 function findUser(state, userId, includeDeleted = false) {
   return state.Users.find((row) => row.user_id === userId && (includeDeleted || !isDeleted(row)));
+}
+
+function findInstitution(state, institutionId, includeDeleted = false) {
+  return state.Institutions.find((row) => row.institution_id === institutionId && (includeDeleted || !isDeleted(row)));
 }
 
 function active(rows = []) {
