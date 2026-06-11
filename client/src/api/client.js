@@ -17,6 +17,10 @@ function clearStoredUser() {
   try {
     localStorage.removeItem("deviceManagerUser");
     window.dispatchEvent(new Event("deviceManagerUserChanged"));
+    if (window.location.pathname !== "/login") {
+      const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+    }
   } catch {
     // Ignore storage errors in non-browser contexts.
   }
