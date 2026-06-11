@@ -67,7 +67,7 @@ function commonHeaders() {
   return {
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "content-type,x-user-id"
+    "access-control-allow-headers": "content-type,x-user-id,x-session-token"
   };
 }
 
@@ -130,7 +130,11 @@ async function readBody(request) {
     const form = await request.formData();
     const body = {};
     for (const [key, value] of form.entries()) {
-      if (isFileLike(value)) continue;
+      if (isFileLike(value)) {
+        body[`${key}_data_url`] = await fileToDataUrl(value);
+        body[`${key}_name`] = value.name || "";
+        continue;
+      }
       if (body[key] === undefined) body[key] = String(value);
       else body[key] = `${body[key]};${String(value)}`;
     }
@@ -141,6 +145,16 @@ async function readBody(request) {
 
 function isFileLike(value) {
   return value && typeof value === "object" && typeof value.arrayBuffer === "function" && "name" in value;
+}
+
+async function fileToDataUrl(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return `data:${file.type || "application/octet-stream"};base64,${btoa(binary)}`;
 }
 
 async function route(context, state, path, body) {
@@ -201,8 +215,9 @@ function isPublicApi(path) {
 }
 
 function requireSession(state, request) {
-  const userId = request.headers.get("x-user-id") || "";
-  const token = request.headers.get("x-session-token") || "";
+  const url = new URL(request.url);
+  const userId = request.headers.get("x-user-id") || url.searchParams.get("user_id") || "";
+  const token = request.headers.get("x-session-token") || url.searchParams.get("session_token") || "";
   const user = findUser(state, userId, true);
   if (!user || isDeleted(user) || !token || user.session_token !== token) {
     throw Object.assign(new Error("Login required"), { statusCode: 401 });
@@ -251,7 +266,14 @@ async function handleDevices(context, state, parts, params, body) {
     }
   }
 
-  if (parts[2] === "detail" && method === "GET") return { data: attachDevice(state, device, true) };
+  if (parts[2] === "detail" && method === "GET") {
+    return {
+      data: {
+        device: attachDevice(state, device, true),
+        transactions: transactionsForDevice(state, deviceId)
+      }
+    };
+  }
   if (parts[2] === "transactions" && method === "GET") return { data: transactionsForDevice(state, deviceId) };
 
   if (["rent", "delivery", "return", "recover", "rental-info", "status"].includes(parts[2])) {
@@ -423,6 +445,12 @@ async function handleUsers(context, state, parts, params, body, method) {
   }
 
   if (parts[2] === "profile-photo" && method === "POST") {
+    if (!body.photo_data_url) throw Object.assign(new Error("Profile photo is required"), { statusCode: 400 });
+    if (body.photo_data_url.length > 512 * 1024) {
+      throw Object.assign(new Error("Profile photo is too large after compression"), { statusCode: 400 });
+    }
+    user.profile_photo_path = body.photo_data_url;
+    user.updated_at = now();
     return { data: getUserDetail(state, user), save: true };
   }
 

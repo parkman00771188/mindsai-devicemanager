@@ -1,16 +1,20 @@
 const API_BASE = "/api";
 
-function authHeaders() {
+function storedUser() {
   try {
-    const user = JSON.parse(localStorage.getItem("deviceManagerUser") || "null");
-    if (!user?.user_id) return {};
-    return {
-      "x-user-id": user.user_id,
-      ...(user.session_token ? { "x-session-token": user.session_token } : {})
-    };
+    return JSON.parse(localStorage.getItem("deviceManagerUser") || "null");
   } catch {
-    return {};
+    return null;
   }
+}
+
+function authHeaders() {
+  const user = storedUser();
+  if (!user?.user_id) return {};
+  return {
+    "x-user-id": user.user_id,
+    ...(user.session_token ? { "x-session-token": user.session_token } : {})
+  };
 }
 
 function clearStoredUser() {
@@ -28,16 +32,27 @@ function clearStoredUser() {
 
 async function parseResponse(response, path) {
   if (!response.ok) {
+    let body = null;
     let message = "요청 처리 중 오류가 발생했습니다.";
     try {
-      const body = await response.json();
+      body = await response.json();
       message = body.message || message;
     } catch {
       message = response.statusText || message;
     }
+
+    console.error("[Device Manager API]", {
+      path,
+      status: response.status,
+      statusText: response.statusText,
+      message,
+      body
+    });
+
     if (response.status === 401 && path !== "/login") clearStoredUser();
     throw new Error(message);
   }
+
   const contentType = response.headers.get("content-type") || "";
   if (contentType.includes("application/json")) return response.json();
   return response;
@@ -58,17 +73,32 @@ export async function api(path, options = {}) {
     ...authHeaders(),
     ...(options.headers || {})
   };
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    body:
-      options.body && !(options.body instanceof FormData) && typeof options.body !== "string"
-        ? JSON.stringify(options.body)
-        : options.body
-  });
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      body:
+        options.body && !(options.body instanceof FormData) && typeof options.body !== "string"
+          ? JSON.stringify(options.body)
+          : options.body
+    });
+  } catch (error) {
+    console.error("[Device Manager API] Network error", { path, error });
+    throw error;
+  }
+
   return parseResponse(response, path);
 }
 
 export function downloadUrl(path) {
-  return `${API_BASE}${path}`;
+  const user = storedUser();
+  if (!user?.user_id || !user?.session_token) return `${API_BASE}${path}`;
+
+  const [pathname, query = ""] = path.split("?");
+  const search = new URLSearchParams(query);
+  search.set("user_id", user.user_id);
+  search.set("session_token", user.session_token);
+  return `${API_BASE}${pathname}?${search.toString()}`;
 }
