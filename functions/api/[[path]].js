@@ -26,6 +26,8 @@ const RESOURCE_CONFIG = {
 
 const STATUS_KEYS = ["AVAILABLE", "RENTED", "DELIVERED", "MAINTENANCE", "BROKEN", "LOST", "DISPOSED"];
 const ENCRYPTION_PREFIX = "enc:v1:";
+const SESSION_TOKEN_PREFIX = "dm1";
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const ENCRYPTED_FIELDS = {
   Devices: [
     "serial_number",
@@ -86,6 +88,8 @@ const ENCRYPTED_FIELDS = {
 
 let cachedEncryptionSecret = "";
 let cachedEncryptionKey = null;
+let cachedSessionSecret = "";
+let cachedSessionKey = null;
 
 export async function onRequest(context) {
   const requestId = crypto.randomUUID();
@@ -108,7 +112,7 @@ export async function onRequest(context) {
     }
 
     const state = await loadState(context);
-    if (!isPublicApi(path)) requireSession(state, context.request);
+    if (!isPublicApi(path)) await requireSession(context.env, state, context.request);
     const body = await readBody(context.request);
     const result = await route(context, state, path, body);
 
@@ -328,6 +332,70 @@ function base64UrlToBytes(value) {
   return bytes;
 }
 
+function jsonToBase64Url(value) {
+  return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(value)));
+}
+
+function base64UrlToJson(value) {
+  return JSON.parse(new TextDecoder().decode(base64UrlToBytes(value)));
+}
+
+function sessionSecret(env) {
+  const secret = text(env.SESSION_SECRET || env.APP_ENCRYPTION_KEY || env.ADMIN_PASSWORD);
+  if (!secret) {
+    throw Object.assign(new Error("SESSION_SECRET or APP_ENCRYPTION_KEY is required for session signing."), {
+      statusCode: 500
+    });
+  }
+  return secret;
+}
+
+async function sessionSigningKey(env) {
+  const secret = sessionSecret(env);
+  if (cachedSessionKey && cachedSessionSecret === secret) return cachedSessionKey;
+  cachedSessionSecret = secret;
+  cachedSessionKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  return cachedSessionKey;
+}
+
+async function signSessionPayload(env, payload) {
+  const signature = new Uint8Array(
+    await crypto.subtle.sign("HMAC", await sessionSigningKey(env), new TextEncoder().encode(payload))
+  );
+  return bytesToBase64Url(signature);
+}
+
+async function createSessionToken(env, user) {
+  const payload = jsonToBase64Url({
+    sub: user.user_id,
+    iat: Date.now(),
+    nonce: randomToken()
+  });
+  return `${SESSION_TOKEN_PREFIX}.${payload}.${await signSessionPayload(env, payload)}`;
+}
+
+async function verifySessionToken(env, userId, token) {
+  try {
+    const [prefix, payload, signature] = String(token || "").split(".");
+    if (prefix !== SESSION_TOKEN_PREFIX || !payload || !signature) return false;
+    const expected = await signSessionPayload(env, payload);
+    if (!constantTimeEqual(expected, signature)) return false;
+    const decoded = base64UrlToJson(payload);
+    const issuedAt = Number(decoded.iat || 0);
+    if (decoded.sub !== userId || !Number.isFinite(issuedAt)) return false;
+    if (issuedAt > Date.now() + 1000 * 60 * 5) return false;
+    return Date.now() - issuedAt <= SESSION_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
 function normalizeState(input = {}) {
   const state = {};
   SHEETS.forEach((sheet) => {
@@ -383,7 +451,7 @@ async function route(context, state, path, body) {
   const parts = segments(path);
   const userId = currentUser(context.request);
 
-  if (path === "/login" && method === "POST") return { data: await authenticate(context, state, body), save: true };
+  if (path === "/login" && method === "POST") return { data: await authenticate(context, state, body) };
   if (path === "/logout" && method === "POST") return { data: { ok: true } };
   if (path === "/me" && method === "GET") return { data: { user: sanitizeUser(findUser(state, userId) || findUser(state, "admin") || {}) } };
 
@@ -455,15 +523,18 @@ function isPublicApi(path) {
   return path === "/login" || path === "/logout";
 }
 
-function requireSession(state, request) {
+async function requireSession(env, state, request) {
   const url = new URL(request.url);
   const userId = request.headers.get("x-user-id") || url.searchParams.get("user_id") || "";
   const token = request.headers.get("x-session-token") || url.searchParams.get("session_token") || "";
   const user = findUser(state, userId, true);
-  if (!user || isDeleted(user) || !token || user.session_token !== token) {
+  if (!user || isDeleted(user) || !token) {
     throw Object.assign(new Error("Login required"), { statusCode: 401 });
   }
-  return user;
+  const validStoredToken = user.session_token && user.session_token === token;
+  const validSignedToken = await verifySessionToken(env, user.user_id, token);
+  if (validStoredToken || validSignedToken) return user;
+  throw Object.assign(new Error("Login required"), { statusCode: 401 });
 }
 
 async function handleDevices(context, state, parts, params, body) {
@@ -1158,9 +1229,7 @@ async function authenticate(context, state, input) {
     (await verifyPassword(password, user.password));
 
   if (!valid) throw Object.assign(new Error("Invalid user ID or password"), { statusCode: 401 });
-  user.session_token = randomToken();
-  user.session_token_created_at = now();
-  return { user: sanitizeUser(user, true) };
+  return { user: { ...sanitizeUser(user), session_token: await createSessionToken(context.env, user) } };
 }
 
 function sanitizeUser(user = {}, includeToken = false) {
