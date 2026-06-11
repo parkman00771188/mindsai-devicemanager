@@ -132,28 +132,23 @@ export default function Scan() {
     setMessageTone(tone);
   }
 
-  async function goToDevice(rawValue) {
-    const deviceId = parseDeviceId(rawValue);
-    if (!deviceId) return;
-    return goToDeviceFast(rawValue);
-    showMessage(`${deviceId} 장비를 검색하는 중입니다.`, "info");
-    try {
-      const device = await api(`/devices/${encodeURIComponent(deviceId)}`);
-      remember(device.device_id || deviceId);
-      showMessage(`${device.device_id || deviceId} 장비를 찾았습니다. 상세페이지로 이동합니다.`, "success");
-      navigate(`/devices/${encodeURIComponent(device.device_id || deviceId)}`);
-    } catch {
-      showMessage(`${deviceId} 장비를 찾지 못했습니다. QR 코드가 최신 장비번호로 생성됐는지 확인해주세요.`, "error");
-    }
-  }
-
-  function goToDeviceFast(rawValue) {
+  async function goToDeviceFast(rawValue) {
     const deviceId = parseDeviceId(rawValue);
     if (!deviceId || navigatingRef.current) return;
     navigatingRef.current = true;
     remember(deviceId);
     showMessage(`${deviceId} 장비 상세로 이동합니다.`, "success");
-    navigate(`/devices/${encodeURIComponent(deviceId)}`);
+    await resetScanner();
+
+    const targetPath = `/devices/${encodeURIComponent(deviceId)}`;
+    navigate(targetPath);
+
+    window.setTimeout(() => {
+      const scanScreenStillMounted = Boolean(document.getElementById(readerId));
+      if (window.location.pathname !== targetPath || scanScreenStillMounted) {
+        window.location.assign(targetPath);
+      }
+    }, 350);
   }
 
   function ensureScanner() {
@@ -173,14 +168,15 @@ export default function Scan() {
   }
 
   async function resetScanner() {
-    if (!scannerRef.current) return;
+    const scanner = scannerRef.current;
+    if (!scanner) return;
     try {
-      if (running) await scannerRef.current.stop();
+      await scanner.stop();
     } catch {
       // The browser may have already released the camera.
     }
     try {
-      await scannerRef.current.clear();
+      await scanner.clear();
     } catch {
       // The scanner may not have rendered yet.
     }
@@ -208,9 +204,7 @@ export default function Scan() {
       target,
       cameraConfig(),
       (decodedText) => {
-        scanner.stop().catch(() => {});
-        setRunning(false);
-        goToDeviceFast(decodedText);
+        goToDeviceFast(decodedText).catch(() => {});
       },
       () => {}
     );
@@ -286,7 +280,7 @@ export default function Scan() {
       const scanner = ensureScanner();
       const decodedText = await scanner.scanFile(file, true);
       showMessage("QR 코드를 읽었습니다. 장비를 검색합니다.", "success");
-      goToDeviceFast(decodedText);
+      await goToDeviceFast(decodedText);
     } catch (err) {
       showMessage(readableScanError(err), "error");
     } finally {
@@ -401,7 +395,7 @@ export default function Scan() {
             ) : null}
           </section>
 
-          <form className="panel p-4" onSubmit={(event) => { event.preventDefault(); goToDeviceFast(manualId); }}>
+          <form className="panel p-4" onSubmit={(event) => { event.preventDefault(); goToDeviceFast(manualId).catch(() => {}); }}>
             <h2 className="section-title">직접 입력</h2>
             <div className="mt-3 flex gap-2">
               <input
