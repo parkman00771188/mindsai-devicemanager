@@ -23,6 +23,67 @@ const RESOURCE_CONFIG = {
 };
 
 const STATUS_KEYS = ["AVAILABLE", "RENTED", "DELIVERED", "MAINTENANCE", "BROKEN", "LOST", "DISPOSED"];
+const ENCRYPTION_PREFIX = "enc:v1:";
+const ENCRYPTED_FIELDS = {
+  Devices: [
+    "serial_number",
+    "purchase_price",
+    "department",
+    "manager",
+    "location",
+    "current_borrower",
+    "current_institution_id",
+    "current_institution_name",
+    "current_user_organization",
+    "current_user_position",
+    "current_user_contact",
+    "current_purpose",
+    "current_rent_location",
+    "current_condition_status",
+    "current_process_memo",
+    "borrower_department",
+    "memo"
+  ],
+  Transactions: [
+    "institution_id",
+    "institution_name",
+    "user_name",
+    "user_organization",
+    "user_department",
+    "user_position",
+    "user_contact",
+    "purpose",
+    "condition_status",
+    "issue_description",
+    "handled_by",
+    "memo"
+  ],
+  Maintenance: ["checked_by", "result", "action_taken", "memo"],
+  Users: [
+    "user_id",
+    "password",
+    "name",
+    "organization",
+    "department",
+    "position",
+    "contact",
+    "email",
+    "profile_photo_path",
+    "memo",
+    "session_token",
+    "session_token_created_at"
+  ],
+  Institutions: ["institution_id", "institution_name", "contact_person", "contact", "email", "address", "memo"],
+  UserOptions: ["memo"],
+  Notifications: ["recipient_user_id", "sender_user_id", "title", "message", "read_at"],
+  AuditLogs: ["user_id", "target_id", "before_value", "after_value", "ip_address"],
+  Categories: ["memo"],
+  DeviceTypes: ["memo"],
+  Reasons: ["memo"]
+};
+
+let cachedEncryptionSecret = "";
+let cachedEncryptionKey = null;
 
 export async function onRequest(context) {
   try {
@@ -34,6 +95,9 @@ export async function onRequest(context) {
     if (path === "/admin/seed" && context.request.method === "POST") {
       return seedState(context);
     }
+    if (path === "/admin/reencrypt" && context.request.method === "POST") {
+      return reencryptState(context);
+    }
     if (context.request.method === "GET" && /^\/devices\/[^/]+\/qrcode$/.test(path)) {
       return serveQrCode(context, path);
     }
@@ -43,7 +107,7 @@ export async function onRequest(context) {
     const body = await readBody(context.request);
     const result = await route(context, state, path, body);
 
-    if (result.save) await saveState(context.env.DB, state);
+    if (result.save) await saveState(context.env, state);
     if (result.response) return result.response;
     return json(result.data, result.status || 200);
   } catch (error) {
@@ -93,19 +157,106 @@ async function ensureDb(db) {
 async function loadState(context) {
   await ensureDb(context.env.DB);
   const row = await context.env.DB.prepare("SELECT value FROM app_state WHERE key = ?").bind(STATE_KEY).first();
-  if (row?.value) return normalizeState(JSON.parse(row.value));
+  if (row?.value) return decryptStateForRuntime(context.env, normalizeState(JSON.parse(row.value)));
   return normalizeState();
 }
 
-async function saveState(db, state) {
-  await ensureDb(db);
-  await db
+async function saveState(env, state) {
+  await ensureDb(env.DB);
+  const storageState = await encryptStateForStorage(env, state);
+  const jsonState = JSON.stringify(storageState);
+  await env.DB
     .prepare(
       "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) " +
         "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
     )
-    .bind(STATE_KEY, JSON.stringify(normalizeState(state)), now())
+    .bind(STATE_KEY, jsonState, now())
     .run();
+}
+
+async function encryptStateForStorage(env, state) {
+  const clone = JSON.parse(JSON.stringify(normalizeState(state)));
+  return transformProtectedFields(env, clone, encryptText);
+}
+
+async function decryptStateForRuntime(env, state) {
+  return transformProtectedFields(env, state, decryptText);
+}
+
+async function transformProtectedFields(env, state, transform) {
+  for (const [sheet, fields] of Object.entries(ENCRYPTED_FIELDS)) {
+    for (const row of state[sheet] || []) {
+      for (const field of fields) {
+        if (Object.prototype.hasOwnProperty.call(row, field)) {
+          row[field] = await transform(env, row[field]);
+        }
+      }
+    }
+  }
+  return state;
+}
+
+async function encryptionKey(env) {
+  const secret = text(env.APP_ENCRYPTION_KEY);
+  if (!secret) {
+    throw Object.assign(new Error("APP_ENCRYPTION_KEY secret is required for encrypted Cloudflare storage."), {
+      statusCode: 500
+    });
+  }
+  if (cachedEncryptionKey && cachedEncryptionSecret === secret) return cachedEncryptionKey;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+  cachedEncryptionSecret = secret;
+  cachedEncryptionKey = await crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
+  return cachedEncryptionKey;
+}
+
+async function encryptText(env, value) {
+  if (value === undefined || value === null || value === "") return value ?? "";
+  const plain = String(value);
+  if (plain.startsWith(ENCRYPTION_PREFIX)) return plain;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await encryptionKey(env), new TextEncoder().encode(plain))
+  );
+  return `${ENCRYPTION_PREFIX}${bytesToBase64Url(iv)}:${bytesToBase64Url(cipher)}`;
+}
+
+async function decryptText(env, value) {
+  if (typeof value !== "string" || !value.startsWith(ENCRYPTION_PREFIX)) return value;
+  const [, ivText, cipherText] = value.match(/^enc:v1:([^:]+):(.+)$/) || [];
+  if (!ivText || !cipherText) {
+    throw Object.assign(new Error("Encrypted data is malformed."), { statusCode: 500 });
+  }
+  try {
+    const plain = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: base64UrlToBytes(ivText) },
+      await encryptionKey(env),
+      base64UrlToBytes(cipherText)
+    );
+    return new TextDecoder().decode(plain);
+  } catch (error) {
+    console.error("Failed to decrypt D1 app_state field", error);
+    throw Object.assign(new Error("Encrypted data could not be decrypted. Check APP_ENCRYPTION_KEY."), {
+      statusCode: 500
+    });
+  }
+}
+
+function bytesToBase64Url(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToBytes(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }
 
 function normalizeState(input = {}) {
@@ -199,15 +350,35 @@ async function route(context, state, path, body) {
 }
 
 async function seedState(context) {
+  requireSeedToken(context);
+  const body = await readBody(context.request);
+  const state = normalizeState(body);
+  await saveState(context.env, state);
+  return json({ ok: true, devices: state.Devices.length, users: state.Users.length, seeded_at: now() });
+}
+
+async function reencryptState(context) {
+  requireSeedToken(context);
+  const state = await loadState(context);
+  await saveState(context.env, state);
+  return json({
+    ok: true,
+    devices: state.Devices.length,
+    users: state.Users.length,
+    encrypted_fields: Object.values(ENCRYPTED_FIELDS).reduce((count, fields) => count + fields.length, 0),
+    reencrypted_at: now()
+  });
+}
+
+function requireSeedToken(context) {
   const expected = context.env.SEED_TOKEN || "";
-  const received = context.request.headers.get("x-seed-token") || context.request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
+  const received =
+    context.request.headers.get("x-seed-token") ||
+    context.request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
+    "";
   if (!expected || received !== expected) {
     throw Object.assign(new Error("Invalid seed token"), { statusCode: 401 });
   }
-  const body = await readBody(context.request);
-  const state = normalizeState(body);
-  await saveState(context.env.DB, state);
-  return json({ ok: true, devices: state.Devices.length, users: state.Users.length, seeded_at: now() });
 }
 
 function isPublicApi(path) {
