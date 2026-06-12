@@ -83,6 +83,15 @@ function RentalMetric({ label, value, strong }) {
   );
 }
 
+function CompactInfoTile({ label, value, className = "" }) {
+  return (
+    <div className={`min-w-0 rounded-lg border border-line bg-white px-3 py-2.5 shadow-soft ${className}`}>
+      <p className="text-xs font-extrabold text-slate-500">{label}</p>
+      <p className="mt-1 min-h-5 break-words text-sm font-extrabold leading-5 text-ink">{value || "-"}</p>
+    </div>
+  );
+}
+
 function currentCheckoutFromDevice(device = {}) {
   if (!["RENTED", "DELIVERED"].includes(device.status)) return null;
   const hasSnapshot = [
@@ -134,7 +143,7 @@ function DetailLine({ label, value }) {
 function PhotoStrip({ paths, label, onOpen }) {
   if (!paths.length) return null;
   return (
-    <div className="scrollbar-none mt-3 flex snap-x gap-2 overflow-x-auto pb-1">
+    <div className="scrollbar-none mt-2 flex snap-x gap-2 overflow-x-auto pb-1 sm:mt-3">
       {paths.map((path, index) => (
         <button
           key={`${path}-${index}`}
@@ -143,7 +152,7 @@ function PhotoStrip({ paths, label, onOpen }) {
             event.stopPropagation();
             onOpen(index);
           }}
-          className="block h-20 w-20 shrink-0 snap-start overflow-hidden rounded-lg border border-line bg-slate-100 transition hover:border-cyan-300"
+          className="block h-16 w-16 shrink-0 snap-start overflow-hidden rounded-lg border border-line bg-slate-100 transition hover:border-cyan-300 sm:h-20 sm:w-20"
           title="사진 크게 보기"
         >
           <img src={path} alt={`${label} 사진 ${index + 1}`} className="h-full w-full object-cover" />
@@ -165,7 +174,7 @@ function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = f
   }
 
   return (
-    <article className={`max-w-full overflow-hidden rounded-lg border border-line bg-white p-4 shadow-soft ${className}`}>
+    <article className={`max-w-full overflow-hidden rounded-lg border border-line bg-white p-3 shadow-soft sm:p-4 ${className}`}>
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <ActionBadge action={row.action_type} />
@@ -177,13 +186,13 @@ function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = f
           </button>
         ) : null}
       </div>
-      <div className="mt-3 grid gap-1.5 rounded-lg bg-slate-50 px-3 py-3">
+      <div className="mt-2 grid gap-1 rounded-lg bg-slate-50 px-3 py-2 sm:mt-3 sm:gap-1.5 sm:py-3">
         <DetailLine label="목적/사유" value={row.purpose} />
         <DetailLine label="처리 장소" value={transactionPlace(row)} />
         <DetailLine label={dateLabel} value={formatDate(dateValue) !== "-" ? formatDate(dateValue) : ""} />
         <DetailLine label="상태" value={row.condition_status} />
       </div>
-      <p className="mt-3 whitespace-pre-wrap break-words text-sm font-semibold leading-6 text-slate-600">{memo || "등록된 메모가 없습니다."}</p>
+      <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-words text-sm font-semibold leading-6 text-slate-600 sm:mt-3 sm:line-clamp-none">{memo || "등록된 메모가 없습니다."}</p>
       <PhotoStrip paths={photoPaths} label={actionLabel(row.action_type)} onOpen={(index) => onOpenPhoto(photoPaths, index, row)} />
     </article>
   );
@@ -618,6 +627,18 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     [currentRental?.user_organization, currentRental?.user_department].filter(Boolean).join(" / ") ||
     currentRental?.user_department ||
     device.borrower_department;
+  const mobileInfoItems = [
+    ["분류", device.category],
+    ["모델명", device.model_name],
+    ["위치", device.location],
+    ["기존 번호", device.legacy_device_id],
+    ...(isLaptop
+      ? [
+          ["RAM", device.ram_capacity],
+          ["저장장치", device.storage_capacity]
+        ]
+      : [["용량", deviceCapacity(device)]])
+  ];
   const recentPageSize = 4;
   const recentPageCount = Math.max(1, Math.ceil(transactions.length / recentPageSize));
   const safeRecentPage = Math.min(recentPage, recentPageCount - 1);
@@ -674,18 +695,18 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     : "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8f6ff] transition hover:ring-4 hover:ring-[#e5e1ff]";
   const actionGridClass = inModal
     ? "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end"
-    : "grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end";
+    : "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
   const mainGridClass = inModal
     ? "grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]"
     : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]";
   const statusTopClass = inModal
     ? "flex flex-col justify-between gap-3 lg:flex-row lg:items-start"
     : "flex flex-col justify-between gap-4 lg:flex-row lg:items-start";
-  const statusQuickClass = inModal ? "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end" : "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
-  const statusSummaryClass = inModal ? "mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3" : "mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3";
+  const statusQuickClass = inModal ? "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end" : "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end";
+  const statusSummaryClass = inModal ? "mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3" : "mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3";
   const rentalMetricGridClass = inModal
     ? "mt-3 grid grid-cols-1 rounded-lg border border-white/70 bg-white/75 px-3 sm:grid-cols-2 2xl:grid-cols-3"
-    : "mt-3 grid grid-cols-2 gap-x-4 rounded-lg border border-white/70 bg-white/75 px-4 md:grid-cols-2 2xl:grid-cols-3";
+    : "mt-3 grid grid-cols-1 rounded-lg border border-white/70 bg-white/75 px-3 sm:grid-cols-2 2xl:grid-cols-3";
   const asideClass = inModal ? "grid gap-3 md:grid-cols-3 xl:block xl:space-y-4" : "grid gap-4 md:grid-cols-3 xl:block xl:space-y-4";
 
   return (
@@ -814,7 +835,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                     <StatusBadge status={device.status} />
                   </div>
                   <h2 className={inModal ? "mt-1 break-words text-xl font-extrabold leading-tight text-current sm:text-2xl" : "mt-1 text-2xl font-extrabold text-current"}>{currentStatus.title}</h2>
-                  <p className="mt-2 max-w-3xl text-sm font-bold leading-6 text-current opacity-80">{currentStatus.description}</p>
+                  <p className="mt-2 hidden max-w-3xl text-sm font-bold leading-6 text-current opacity-80 sm:block">{currentStatus.description}</p>
                 </div>
               </div>
               <div className={statusQuickClass}>
@@ -824,11 +845,11 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                     {currentRentalIsDelivery ? "납품 정보 수정" : "대여 정보 수정"}
                   </button>
                 ) : null}
-                <div className={inModal ? "rounded-lg border border-white/70 bg-white/75 px-3 py-2.5 text-center shadow-soft" : "rounded-lg border border-white/70 bg-white/75 px-4 py-3 text-center shadow-soft"}>
+                <div className={inModal ? "hidden rounded-lg border border-white/70 bg-white/75 px-3 py-2.5 text-center shadow-soft sm:block" : "hidden rounded-lg border border-white/70 bg-white/75 px-4 py-3 text-center shadow-soft sm:block"}>
                   <p className="text-xs font-extrabold text-slate-500">상태</p>
                   <p className={inModal ? "mt-0.5 text-base font-extrabold text-ink" : "mt-1 text-lg font-extrabold text-ink"}>{currentStatus.label}</p>
                 </div>
-                <div className={inModal ? "rounded-lg border border-white/70 bg-white/75 px-3 py-2.5 text-center shadow-soft" : "rounded-lg border border-white/70 bg-white/75 px-4 py-3 text-center shadow-soft"}>
+                <div className={inModal ? "hidden rounded-lg border border-white/70 bg-white/75 px-3 py-2.5 text-center shadow-soft sm:block" : "hidden rounded-lg border border-white/70 bg-white/75 px-4 py-3 text-center shadow-soft sm:block"}>
                   <p className="text-xs font-extrabold text-slate-500">최근 이력</p>
                   <p className={inModal ? "mt-0.5 text-base font-extrabold text-ink" : "mt-1 text-lg font-extrabold text-ink"}>{transactions.length}건</p>
                 </div>
@@ -862,6 +883,63 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </div>
           </div>
 
+          <div className="grid gap-3 border-t border-line bg-white px-3 py-3 xl:hidden">
+            <section className="rounded-lg border border-line bg-[#f7f7fd] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="page-kicker">Info</p>
+                  <h2 className="section-title">기본 정보</h2>
+                </div>
+                <button className="btn-secondary h-9 px-3 text-xs" type="button" onClick={() => setBasicOpen(true)}>
+                  <Info size={15} />
+                  상세
+                </button>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {mobileInfoItems.map(([label, value]) => (
+                  <CompactInfoTile key={label} label={label} value={value} className={label === "위치" ? "col-span-2" : ""} />
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-line bg-white p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="page-kicker">Photos</p>
+                  <h2 className="section-title">장비 사진</h2>
+                </div>
+                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-500">{devicePhotos.length}장</span>
+              </div>
+              {devicePhotos.length ? (
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {devicePhotos.slice(0, 4).map((path, index) => (
+                    <button
+                      key={`mobile-photo-${path}-${index}`}
+                      type="button"
+                      className="relative aspect-square overflow-hidden rounded-lg border border-line bg-slate-100"
+                      onClick={() =>
+                        setPhotoViewer({
+                          paths: devicePhotos,
+                          index,
+                          title: "장비 사진",
+                          description: `${displayName} · ${device.device_id}`
+                        })
+                      }
+                      aria-label={`장비 사진 ${index + 1} 보기`}
+                    >
+                      <img src={path} alt={`장비 사진 ${index + 1}`} className="h-full w-full object-cover" />
+                      {index === 3 && devicePhotos.length > 4 ? (
+                        <span className="absolute inset-0 flex items-center justify-center bg-ink/55 text-sm font-extrabold text-white">+{devicePhotos.length - 4}</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-4 text-sm font-semibold text-slate-500">등록된 장비 사진이 없습니다.</p>
+              )}
+            </section>
+          </div>
+
           <div className="border-t border-line bg-white text-ink">
             <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -893,8 +971,8 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </div>
             {transactions.length ? (
               <>
-                <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 xl:hidden">
-                  {transactions.slice(0, 6).map((row) => (
+                <div className="grid gap-2 px-3 pb-3 sm:grid-cols-2 sm:gap-3 sm:px-4 sm:pb-4 xl:hidden">
+                  {transactions.slice(0, recentPageSize).map((row) => (
                     <RecentTransactionCard
                       key={`${row.transaction_id}-mobile`}
                       row={row}
@@ -921,7 +999,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
         </section>
 
         <aside className={asideClass}>
-          <section className="panel p-4">
+          <section className="panel p-3 sm:p-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="section-title">QR 코드</h2>
               <button className="btn-secondary h-10 px-3" type="button" onClick={() => downloadQrImage(device.device_id, qrStyle)}>
@@ -946,7 +1024,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                 </button>
               ))}
             </div>
-            <div className="mt-4 flex h-56 items-center justify-center rounded-lg border border-line bg-slate-50 p-3">
+            <div className="mt-3 flex h-48 items-center justify-center rounded-lg border border-line bg-slate-50 p-3 sm:mt-4 sm:h-56">
               <img
                 src={qrImageUrl(device.device_id, qrStyle)}
                 alt={`${device.device_id} QR 코드`}
@@ -955,7 +1033,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </div>
           </section>
 
-          <section className="panel p-4">
+          <section className="panel hidden p-4 xl:block">
             <div className="flex items-center justify-between gap-3">
               <h2 className="section-title">기본 정보</h2>
               <button className="btn-secondary h-10 px-3" type="button" onClick={() => setBasicOpen(true)}>
@@ -980,7 +1058,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </dl>
           </section>
 
-          <section className="panel p-4">
+          <section className="panel hidden p-4 xl:block">
             <div className="flex items-center justify-between gap-3">
               <h2 className="section-title">장비 사진</h2>
               <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-500">{devicePhotos.length}장</span>
