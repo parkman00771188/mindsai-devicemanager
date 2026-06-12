@@ -1207,13 +1207,31 @@ function listTransactions(state, params = new URLSearchParams()) {
   const actions = splitCsv(params.get("actions"));
   const excluded = splitCsv(params.get("exclude_actions"));
   const keyword = lower(params.get("keyword"));
+  const deviceId = text(params.get("device_id"));
+  const deviceIds = splitCsv(params.get("device_ids"));
+  const actionType = text(params.get("action_type"));
+  const borrowerTypeFilter = text(params.get("borrower_type")).toUpperCase();
+  const institutionId = text(params.get("institution_id"));
+  const institutionName = lower(params.get("institution_name"));
+  const userName = lower(params.get("user_name"));
+  const from = text(params.get("from") || params.get("date_from"));
+  const to = text(params.get("to") || params.get("date_to"));
+
   return active(state.Transactions)
     .filter((row) => !actions.length || actions.includes(row.action_type))
     .filter((row) => !excluded.length || !excluded.includes(row.action_type))
-    .filter((row) => !params.get("device_id") || row.device_id === params.get("device_id"))
-    .filter((row) => !keyword || searchable(row).includes(keyword) || searchable(findDevice(state, row.device_id) || {}).includes(keyword))
+    .filter((row) => !actionType || row.action_type === actionType)
+    .filter((row) => !deviceId || row.device_id === deviceId)
+    .filter((row) => !deviceIds.length || deviceIds.includes(row.device_id))
+    .filter((row) => !borrowerTypeFilter || borrowerType(row) === borrowerTypeFilter)
+    .filter((row) => !institutionId || text(row.institution_id) === institutionId)
+    .filter((row) => !institutionName || lower(row.institution_name || row.user_name).includes(institutionName))
+    .filter((row) => !userName || lower(row.user_name).includes(userName))
+    .filter((row) => !from || text(row.created_at).slice(0, 10) >= from)
+    .filter((row) => !to || text(row.created_at).slice(0, 10) <= to)
     .sort(descCreated)
-    .map((row) => attachTransaction(state, row));
+    .map((row) => attachTransaction(state, row))
+    .filter((row) => !keyword || searchable(row).includes(keyword));
 }
 
 function transactionsForDevice(state, deviceId) {
@@ -1303,11 +1321,35 @@ function addMaintenance(state, device, input, userId) {
 
 function listMaintenance(state, params = new URLSearchParams()) {
   const keyword = lower(params.get("keyword"));
+  const deviceId = text(params.get("device_id"));
+  const maintenanceType = text(params.get("maintenance_type"));
   return active(state.Maintenance)
-    .filter((row) => !params.get("device_id") || row.device_id === params.get("device_id"))
-    .filter((row) => !keyword || searchable(row).includes(keyword))
+    .filter((row) => !deviceId || row.device_id === deviceId)
+    .filter((row) => !maintenanceType || row.maintenance_type === maintenanceType)
     .sort(descCreated)
-    .map((row) => ({ ...row, device: findDevice(state, row.device_id) || null }));
+    .map((row) => attachMaintenance(state, row))
+    .filter((row) => !keyword || searchable(row).includes(keyword));
+}
+
+function attachMaintenance(state, row) {
+  const device = findDevice(state, row.device_id, true) || {};
+  return {
+    ...row,
+    device,
+    device_name: device.device_name || "",
+    device_category: device.category || "",
+    device_model_name: device.model_name || "",
+    category: device.category || row.category || "",
+    model_name: device.model_name || row.model_name || "",
+    status: device.status || "",
+    current_borrower: device.current_borrower || ""
+  };
+}
+
+function borrowerType(row = {}) {
+  const explicit = text(row.borrower_type || row.current_borrower_type).toUpperCase();
+  if (explicit) return explicit;
+  return isInstitutionAssignment(row) ? "INSTITUTION" : "PERSON";
 }
 
 function dashboardSummary(state) {
@@ -1520,6 +1562,8 @@ function normalizeRole(role) {
 
 function listNotifications(state, params = new URLSearchParams(), userId = "admin") {
   const scope = params.get("scope") || "";
+  const unreadOnly = ["1", "true", "yes"].includes(String(params.get("unread_only") || "").toLowerCase());
+  const keyword = lower(params.get("keyword"));
   const actor = findUser(state, userId, true);
   const isAdmin = normalizeRole(actor?.role || (userId === "admin" ? "ADMIN" : "USER")) === "ADMIN";
   return active(state.Notifications)
@@ -1527,8 +1571,10 @@ function listNotifications(state, params = new URLSearchParams(), userId = "admi
       if (scope === "dashboard" && isAdmin) return true;
       return !userId || row.recipient_user_id === userId;
     })
+    .filter((row) => !unreadOnly || !bool(row.is_read))
     .sort(descCreated)
-    .map((row) => attachNotification(state, row));
+    .map((row) => attachNotification(state, row))
+    .filter((row) => !keyword || searchable(row).includes(keyword));
 }
 
 function attachNotification(state, row) {
