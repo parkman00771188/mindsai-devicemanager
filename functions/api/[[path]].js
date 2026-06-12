@@ -1169,7 +1169,13 @@ function listDevices(state, params = new URLSearchParams()) {
   const keyword = lower(params.get("keyword"));
   const status = params.get("status") || "";
   const category = params.get("category") || "";
+  const assignedToUserId = params.get("assigned_to_user_id") || "";
+  const assignedUser = assignedToUserId ? findUser(state, assignedToUserId) : null;
+  const assignedDeviceIds = assignedToUserId
+    ? new Set(assignedDevicesForUser(state, assignedUser).map((device) => device.device_id))
+    : null;
   return active(state.Devices)
+    .filter((device) => !assignedDeviceIds || assignedDeviceIds.has(device.device_id))
     .filter((device) => !status || device.status === status)
     .filter((device) => !category || device.category === category)
     .filter((device) => !keyword || searchable(device).includes(keyword))
@@ -1421,6 +1427,18 @@ function isInstitutionAssignment(row = {}) {
   );
 }
 
+function assignedDevicesForUser(state, user) {
+  if (!user) return [];
+  const userName = text(user.name);
+  const department = text(user.department);
+  if (!userName) return [];
+  return active(state.Devices).filter((device) => {
+    if (!["RENTED", "DELIVERED"].includes(device.status)) return false;
+    if (text(device.current_borrower) !== userName) return false;
+    return !department || !text(device.borrower_department) || text(device.borrower_department) === department;
+  });
+}
+
 function listUsers(state, params = new URLSearchParams()) {
   const keyword = lower(params.get("keyword"));
   return active(state.Users)
@@ -1433,13 +1451,13 @@ function getUserDetail(state, user) {
   const summary = attachUserSummary(state, user);
   return {
     ...summary,
-    assigned_devices: active(state.Devices).filter((device) => device.current_borrower === user.name).map((device) => attachDevice(state, device, false)),
+    assigned_devices: assignedDevicesForUser(state, user).map((device) => attachDevice(state, device, false)),
     transactions: listTransactions(state, new URLSearchParams()).filter((row) => row.user_name === user.name || row.handled_by === user.user_id).slice(0, 30)
   };
 }
 
 function attachUserSummary(state, user) {
-  const assigned = active(state.Devices).filter((device) => device.current_borrower === user.name);
+  const assigned = assignedDevicesForUser(state, user);
   return { ...sanitizeUser(user), assigned_count: assigned.length };
 }
 

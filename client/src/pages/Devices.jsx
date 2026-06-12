@@ -243,7 +243,7 @@ function StatusFilters({ value, mine, onChange, onMine }) {
           </button>
         ) : null}
         <button
-          className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${!value ? "chip-active" : ""}`}
+          className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${!value && !mine ? "chip-active" : ""}`}
           type="button"
           onClick={() => onChange("")}
         >
@@ -682,8 +682,8 @@ export default function Devices() {
         <StatusFilters
           value={filters.status}
           mine={filters.mine}
-          onMine={() => applyFilters({ ...filters, mine: filters.mine ? "" : "1", category: "" })}
-          onChange={(status) => applyFilters({ ...filters, status })}
+          onMine={() => applyFilters({ ...filters, status: "", mine: filters.mine ? "" : "1", category: "" })}
+          onChange={(status) => applyFilters({ ...filters, status, mine: "" })}
         />
         <KeywordChip keyword={appliedKeyword} onClear={() => applyFilters({ ...filters, keyword: "" })} />
       </form>
