@@ -21,7 +21,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, downloadUrl } from "../api/client.js";
-import { getCurrentUser, isAdminUser, roleLabel } from "../auth.js";
+import { getCurrentUser, isAdminUser, roleLabel, setCurrentUser } from "../auth.js";
 import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import ProfilePhotoUploader from "../components/ProfilePhotoUploader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
@@ -883,9 +883,7 @@ export default function Settings() {
       position: user.position || "",
       profile_photo_path: user.profile_photo_path || ""
     };
-    localStorage.setItem("deviceManagerUser", JSON.stringify(nextUser));
     setCurrentUser(nextUser);
-    window.dispatchEvent(new Event("deviceManagerUserChanged"));
   }
 
   function handleProfilePhotoUploaded(saved) {

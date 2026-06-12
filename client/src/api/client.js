@@ -1,3 +1,5 @@
+import { clearCurrentUser, getCurrentUser } from "../auth.js";
+
 const API_BASE = "/api";
 const API_RETRY_DELAYS_MS = [250, 800];
 const RETRY_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -15,27 +17,23 @@ function canRetryRequest(path, options = {}) {
   return method === "GET" || (method === "POST" && path === "/login");
 }
 
-function storedUser() {
-  try {
-    return JSON.parse(localStorage.getItem("deviceManagerUser") || "null");
-  } catch {
-    return null;
-  }
-}
-
 function authHeaders() {
-  const user = storedUser();
+  const user = getCurrentUser();
   if (!user?.user_id) return {};
   return {
     "x-user-id": user.user_id,
-    ...(user.session_token ? { "x-session-token": user.session_token } : {})
+    ...(user.session_token
+      ? {
+          "x-session-token": user.session_token,
+          Authorization: `Bearer ${user.session_token}`
+        }
+      : {})
   };
 }
 
 function clearStoredUser() {
   try {
-    localStorage.removeItem("deviceManagerUser");
-    window.dispatchEvent(new Event("deviceManagerUserChanged"));
+    clearCurrentUser();
     if (window.location.pathname !== "/login") {
       const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       window.location.assign(`/login?next=${encodeURIComponent(next)}`);
@@ -130,7 +128,7 @@ export async function api(path, options = {}) {
 }
 
 export function downloadUrl(path) {
-  const user = storedUser();
+  const user = getCurrentUser();
   if (!user?.user_id || !user?.session_token) return `${API_BASE}${path}`;
 
   const [pathname, query = ""] = path.split("?");

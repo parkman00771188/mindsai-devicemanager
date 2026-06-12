@@ -18,7 +18,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
-import { getCurrentUser, isAdminUser, roleLabel } from "../auth.js";
+import { clearCurrentUser, getCurrentUser, isAdminUser, roleLabel, setCurrentUser } from "../auth.js";
 import { deviceTitle, formatDateTime } from "../constants.js";
 import MobileQuickScanner from "./MobileQuickScanner.jsx";
 import UserAvatar from "./UserAvatar.jsx";
@@ -136,7 +136,7 @@ export default function Layout() {
   const currentTitle = pageTitle(location.pathname);
 
   function logout() {
-    localStorage.removeItem("deviceManagerUser");
+    clearCurrentUser();
     navigate("/login", { replace: true });
   }
 
@@ -262,7 +262,7 @@ export default function Layout() {
           position: fresh.position || "",
           profile_photo_path: fresh.profile_photo_path || ""
         };
-        localStorage.setItem("deviceManagerUser", JSON.stringify(nextUser));
+        setCurrentUser(nextUser);
         setUser(nextUser);
       })
       .catch(() => {});

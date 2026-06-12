@@ -1,6 +1,7 @@
 import { AlertTriangle, Building2, Camera, MapPin, PackageCheck, RotateCcw, Truck, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client.js";
+import { getCurrentUser } from "../auth.js";
 import { formatPhoneNumber, STATUS_OPTIONS, transactionMemo, transactionPlace } from "../constants.js";
 import { compressImageFiles } from "../utils/imageCompress.js";
 
@@ -11,11 +12,7 @@ function today() {
 }
 
 function loginUser() {
-  try {
-    return JSON.parse(localStorage.getItem("deviceManagerUser") || "null") || {};
-  } catch {
-    return {};
-  }
+  return getCurrentUser() || {};
 }
 
 const returnConditions = ["정상", "오염", "파손", "구성품 누락", "작동 불량", "분실", "기타"];

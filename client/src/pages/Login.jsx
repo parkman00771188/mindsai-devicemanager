@@ -1,7 +1,8 @@
 import { LockKeyhole, TabletSmartphone } from "lucide-react";
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
+import { setCurrentUser } from "../auth.js";
 
 export default function Login() {
   const [form, setForm] = useState({ user_id: "", password: "" });
@@ -15,18 +16,16 @@ export default function Login() {
     setError("");
     try {
       const result = await api("/login", { method: "POST", body: form });
-      localStorage.setItem("deviceManagerUser", JSON.stringify(result.user));
-      window.dispatchEvent(new Event("deviceManagerUserChanged"));
+      const persisted = setCurrentUser(result.user);
+      if (!persisted) {
+        console.warn("[Device Manager Auth] Browser storage is blocked. Session will remain available only in this tab.");
+      }
       navigate("/", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
     }
-  }
-
-  if (localStorage.getItem("deviceManagerUser")) {
-    return <Navigate to="/" replace />;
   }
 
   return (

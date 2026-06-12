@@ -1,6 +1,7 @@
 import QRCode from "qrcode/lib/browser.js";
 
 const STATE_KEY = "workbook-v1";
+const AUTH_STATE_KEY = "auth-users-v1";
 
 const SHEETS = [
   "Devices",
@@ -116,6 +117,13 @@ export async function onRequest(context) {
     if (method === "GET" && /^\/devices\/[^/]+\/qrcode$/.test(path)) {
       return serveQrCode(context, path);
     }
+    if (path === "/login" && method === "POST") {
+      const body = await readBody(context.request);
+      return json(await authenticateLogin(context, body));
+    }
+    if (path === "/logout" && method === "POST") {
+      return json({ ok: true });
+    }
 
     const state = await loadState(context);
     if (!isPublicApi(path)) await requireSession(context.env, state, context.request);
@@ -206,7 +214,7 @@ function commonHeaders() {
   return {
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "content-type,x-user-id,x-session-token"
+    "access-control-allow-headers": "authorization,content-type,x-user-id,x-session-token"
   };
 }
 
@@ -258,8 +266,53 @@ async function saveState(env, state) {
       .bind(STATE_KEY, jsonState, updatedAt)
       .run()
   );
+  await saveAuthSnapshot(env, state, updatedAt);
   clearStateDirty(state);
   rememberState(state);
+}
+
+async function saveAuthSnapshot(env, state, updatedAt = now()) {
+  await ensureDb(env.DB);
+  const authState = normalizeState({ Users: (state.Users || []).map((user) => ({ ...user })) });
+  const storageState = await transformProtectedFields(env, authState, encryptText);
+  const jsonState = JSON.stringify({ Users: storageState.Users || [] });
+  await withD1Retry("saveAuthSnapshot", () =>
+    env.DB
+      .prepare(
+        "INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, ?) " +
+          "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
+      )
+      .bind(AUTH_STATE_KEY, jsonState, updatedAt)
+      .run()
+  );
+}
+
+async function loadAuthUsers(context) {
+  await ensureDb(context.env.DB);
+  const rows = await withD1Retry("loadAuthSnapshot", () =>
+    context.env.DB
+      .prepare("SELECT key, value, updated_at FROM app_state WHERE key IN (?, ?)")
+      .bind(STATE_KEY, AUTH_STATE_KEY)
+      .all()
+  );
+  const byKey = Object.fromEntries((rows?.results || []).map((row) => [row.key, row]));
+  const appUpdatedAt = byKey[STATE_KEY]?.updated_at || "";
+  const authRow = byKey[AUTH_STATE_KEY];
+
+  if (authRow?.value && (!appUpdatedAt || authRow.updated_at >= appUpdatedAt)) {
+    const parsed = JSON.parse(authRow.value);
+    const authState = normalizeState({ Users: Array.isArray(parsed.Users) ? parsed.Users : [] });
+    return (await transformProtectedFields(context.env, authState, decryptText)).Users || [];
+  }
+
+  const state = await loadState(context);
+  await saveAuthSnapshot(context.env, state, appUpdatedAt || now()).catch((error) => {
+    console.error("[Device Manager API] failed to refresh auth snapshot", {
+      message: errorMessage(error),
+      stack: error?.stack
+    });
+  });
+  return state.Users || [];
 }
 
 async function getCachedState(context) {
@@ -479,6 +532,16 @@ async function verifySessionToken(env, userId, token) {
   }
 }
 
+function sessionUserIdFromToken(token) {
+  try {
+    const [prefix, payload] = String(token || "").split(".");
+    if (prefix !== SESSION_TOKEN_PREFIX || !payload) return "";
+    return text(base64UrlToJson(payload).sub);
+  } catch {
+    return "";
+  }
+}
+
 function normalizeState(input = {}) {
   const state = {};
   SHEETS.forEach((sheet) => {
@@ -608,8 +671,13 @@ function isPublicApi(path) {
 
 async function requireSession(env, state, request) {
   const url = new URL(request.url);
-  const userId = request.headers.get("x-user-id") || url.searchParams.get("user_id") || "";
-  const token = request.headers.get("x-session-token") || url.searchParams.get("session_token") || "";
+  const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
+  const token = request.headers.get("x-session-token") || url.searchParams.get("session_token") || bearerToken || "";
+  const userId =
+    request.headers.get("x-user-id") ||
+    url.searchParams.get("user_id") ||
+    sessionUserIdFromToken(token) ||
+    "";
   const user = findUser(state, userId, true);
   if (!user || isDeleted(user) || !token) {
     throw Object.assign(new Error("Login required"), { statusCode: 401 });
@@ -1533,7 +1601,15 @@ async function updateUser(user, input) {
 }
 
 async function authenticate(context, state, input) {
-  const user = findUser(state, input.user_id || "", true);
+  return authenticateUser(context, state.Users || [], input);
+}
+
+async function authenticateLogin(context, input) {
+  return authenticateUser(context, await loadAuthUsers(context), input);
+}
+
+async function authenticateUser(context, users, input) {
+  const user = findUser({ Users: users }, input.user_id || "", true);
   if (!user || isDeleted(user)) throw Object.assign(new Error("Invalid user ID or password"), { statusCode: 401 });
 
   const adminPassword = context.env.ADMIN_PASSWORD || "";

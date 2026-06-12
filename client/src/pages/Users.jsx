@@ -7,7 +7,7 @@ import Loading from "../components/Loading.jsx";
 import ProfilePhotoUploader from "../components/ProfilePhotoUploader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
-import { getCurrentUser, isAdminUser } from "../auth.js";
+import { getCurrentUser, isAdminUser, setCurrentUser } from "../auth.js";
 import { deviceCapacity, deviceTitle, formatDate, formatDateTime, formatPhoneNumber } from "../constants.js";
 
 const emptyUser = {
@@ -69,20 +69,16 @@ function defaultReturnRequestMessage(user, device) {
 function syncStoredUserIfCurrent(user) {
   const current = getCurrentUser();
   if (!current?.user_id || current.user_id !== user?.user_id) return;
-  localStorage.setItem(
-    "deviceManagerUser",
-    JSON.stringify({
-      ...current,
-      user_id: current.user_id,
-      name: user.name || current.name,
-      role: user.role || current.role,
-      organization: user.organization || current.organization || "",
-      department: user.department || current.department || "",
-      position: user.position || current.position || "",
-      profile_photo_path: user.profile_photo_path || current.profile_photo_path || ""
-    })
-  );
-  window.dispatchEvent(new Event("deviceManagerUserChanged"));
+  setCurrentUser({
+    ...current,
+    user_id: current.user_id,
+    name: user.name || current.name,
+    role: user.role || current.role,
+    organization: user.organization || current.organization || "",
+    department: user.department || current.department || "",
+    position: user.position || current.position || "",
+    profile_photo_path: user.profile_photo_path || current.profile_photo_path || ""
+  });
 }
 
 function UserModal({ user, mode, busy, userOptions = [], onClose, onSubmit, onPhotoUploaded }) {

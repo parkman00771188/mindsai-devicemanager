@@ -15,7 +15,7 @@ import SearchPage from "./pages/SearchPage.jsx";
 import Settings from "./pages/Settings.jsx";
 import Transactions from "./pages/Transactions.jsx";
 import Users from "./pages/Users.jsx";
-import { isAdminUser } from "./auth.js";
+import { getCurrentUser, isAdminUser } from "./auth.js";
 
 function fullPath(location) {
   return `${location.pathname}${location.search}${location.hash}`;
@@ -27,7 +27,7 @@ function loginPath(location) {
 
 function ProtectedRoute() {
   const location = useLocation();
-  if (!localStorage.getItem("deviceManagerUser")) {
+  if (!getCurrentUser()) {
     return <Navigate to={loginPath(location)} replace state={{ from: location }} />;
   }
   return <Layout />;
