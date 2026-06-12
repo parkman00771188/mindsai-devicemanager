@@ -195,7 +195,7 @@ export default function Dashboard() {
             <p className="mt-1 text-sm text-slate-500">장비 현황과 최근 이력을 확인합니다.</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Link className="btn-primary min-h-[3.75rem] sm:min-h-12" to="/scan">
+            <Link className="btn-primary min-h-[3.75rem] sm:min-h-12" to="/scan?auto=1">
               <QrCode size={18} />
               QR 스캔
             </Link>

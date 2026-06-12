@@ -1,7 +1,7 @@
 import { AlertTriangle, Camera, Image as ImageIcon, Play, Search, ShieldCheck, Square, Upload, X } from "lucide-react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 const readerId = "qr-reader";
 
@@ -103,8 +103,10 @@ function readableScanError(error) {
 
 export default function Scan() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const scannerRef = useRef(null);
   const navigatingRef = useRef(false);
+  const autoStartRef = useRef(false);
   const albumInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [running, setRunning] = useState(false);
@@ -114,6 +116,7 @@ export default function Scan() {
   const [messageTone, setMessageTone] = useState("warn");
   const [permissionDialog, setPermissionDialog] = useState(null);
   const [recent, setRecent] = useState(() => JSON.parse(localStorage.getItem("recentScans") || "[]"));
+  const autoStart = searchParams.get("auto") === "1";
   const environment = useMemo(() => ({
     browser: browserName(),
     secure: canRequestCameraPermission(),
@@ -195,6 +198,14 @@ export default function Scan() {
       return;
     }
     const state = await detectPermissionState();
+    if (state === "unsupported") {
+      setPermissionDialog("unsupported");
+      return;
+    }
+    if (state === "granted") {
+      await start();
+      return;
+    }
     setPermissionDialog(state === "denied" ? "denied" : "prompt");
   }
 
@@ -304,6 +315,17 @@ export default function Scan() {
     setPermissionDialog(null);
     document.getElementById("manual-device-id")?.focus();
   }
+
+  useEffect(() => {
+    if (!autoStart || autoStartRef.current) return;
+    autoStartRef.current = true;
+    const timer = window.setTimeout(() => {
+      start().catch((error) => {
+        showMessage(String(error?.message || error || "카메라를 시작할 수 없습니다."), "error");
+      });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [autoStart]);
 
   useEffect(() => {
     return () => {

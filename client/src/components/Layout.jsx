@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   MoreHorizontal,
+  QrCode,
   Settings,
   TabletSmartphone,
   Trash2,
@@ -124,9 +125,12 @@ export default function Layout() {
     const primaryPaths = ["/", "/devices", "/transactions"];
     return primaryPaths.map((path) => visibleNavItems.find((item) => item.to === path)).filter(Boolean);
   }, [visibleNavItems]);
+  const leadingMobileItems = mobilePrimaryItems.slice(0, 2);
+  const trailingMobileItems = mobilePrimaryItems.slice(2);
   const secondaryNavItems = visibleNavItems.filter((item) => !mobilePrimaryItems.some((primary) => primary.to === item.to));
   const moreActive = secondaryNavItems.some((item) => isNavPathActive(location.pathname, item));
-  const bottomNavColumnCount = mobilePrimaryItems.length + (secondaryNavItems.length ? 1 : 0);
+  const scanActive = location.pathname === "/scan";
+  const bottomNavColumnCount = mobilePrimaryItems.length + 1 + (secondaryNavItems.length ? 1 : 0);
   const currentTitle = pageTitle(location.pathname);
 
   function logout() {
@@ -193,6 +197,25 @@ export default function Layout() {
     await api("/notifications/deletable", { method: "DELETE" });
     setNotifications((current) => current.filter((row) => !canDeleteNotification(row)));
     setToastNotification((current) => (current && canDeleteNotification(current) ? null : current));
+  }
+
+  function renderBottomNavItem(item) {
+    const Icon = item.icon;
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        end={item.to === "/"}
+        className={({ isActive }) =>
+          `flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
+            isActive ? "bg-[#f2f0ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
+          }`
+        }
+      >
+        <Icon className="shrink-0" size={18} />
+        <span className="max-w-full truncate">{item.label.replace("장비 ", "")}</span>
+      </NavLink>
+    );
   }
 
   useEffect(() => {
@@ -274,7 +297,7 @@ export default function Layout() {
   const deletableCount = notifications.filter(canDeleteNotification).length;
 
   return (
-    <div className="min-h-screen bg-[#f4f5fb]">
+    <div className="min-h-screen bg-[#eef1f8] lg:bg-[#f4f5fb]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 bg-gradient-to-b from-[#7f6df2] to-[#6554dc] px-5 py-5 lg:block">
         <div className="flex h-full flex-col">
           <div className="mb-6 rounded-lg bg-white/12 px-4 py-4 text-white shadow-lift">
@@ -458,27 +481,22 @@ export default function Layout() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-lift backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid border-t border-[#d9deec] bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-16px_42px_rgba(47,51,73,0.12)] backdrop-blur lg:hidden"
         style={{ gridTemplateColumns: `repeat(${bottomNavColumnCount}, minmax(0, 1fr))` }}
       >
-        {mobilePrimaryItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                `flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
-                  isActive ? "bg-[#f2f0ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
-                }`
-              }
-            >
-              <Icon className="shrink-0" size={18} />
-              <span className="max-w-full truncate">{item.label.replace("장비 ", "")}</span>
-            </NavLink>
-          );
-        })}
+        {leadingMobileItems.map(renderBottomNavItem)}
+        <button
+          className={`mx-0.5 flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight text-white shadow-lift transition sm:min-h-14 sm:text-[11px] ${
+            scanActive ? "bg-[#5f51e8]" : "bg-brand hover:bg-[#6658e8]"
+          }`}
+          type="button"
+          onClick={() => navigate("/scan?auto=1")}
+          aria-label="QR 스캔 바로 실행"
+        >
+          <QrCode className="shrink-0" size={19} />
+          <span className="max-w-full truncate">스캔</span>
+        </button>
+        {trailingMobileItems.map(renderBottomNavItem)}
         {secondaryNavItems.length ? (
           <button
             className={`flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
