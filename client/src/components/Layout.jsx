@@ -20,6 +20,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { getCurrentUser, isAdminUser, roleLabel } from "../auth.js";
 import { deviceTitle, formatDateTime } from "../constants.js";
+import MobileQuickScanner from "./MobileQuickScanner.jsx";
 import UserAvatar from "./UserAvatar.jsx";
 
 const navItems = [
@@ -114,6 +115,7 @@ export default function Layout() {
   const knownNotificationIds = useRef(new Set());
   const notificationRef = useRef(null);
   const notificationsLoadingRef = useRef(false);
+  const [quickScanOpen, setQuickScanOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = isAdminUser(user);
@@ -129,7 +131,7 @@ export default function Layout() {
   const trailingMobileItems = mobilePrimaryItems.slice(2);
   const secondaryNavItems = visibleNavItems.filter((item) => !mobilePrimaryItems.some((primary) => primary.to === item.to));
   const moreActive = secondaryNavItems.some((item) => isNavPathActive(location.pathname, item));
-  const scanActive = location.pathname === "/scan";
+  const scanActive = quickScanOpen || location.pathname === "/scan";
   const bottomNavColumnCount = mobilePrimaryItems.length + 1 + (secondaryNavItems.length ? 1 : 0);
   const currentTitle = pageTitle(location.pathname);
 
@@ -197,6 +199,22 @@ export default function Layout() {
     await api("/notifications/deletable", { method: "DELETE" });
     setNotifications((current) => current.filter((row) => !canDeleteNotification(row)));
     setToastNotification((current) => (current && canDeleteNotification(current) ? null : current));
+  }
+
+  function openQuickScan() {
+    setQuickScanOpen(true);
+  }
+
+  function openScannedDevice(deviceId) {
+    setQuickScanOpen(false);
+    const targetPath = `/devices/${encodeURIComponent(deviceId)}`;
+    navigate(targetPath);
+
+    window.setTimeout(() => {
+      if (window.location.pathname !== targetPath) {
+        window.location.assign(targetPath);
+      }
+    }, 350);
   }
 
   function renderBottomNavItem(item) {
@@ -490,7 +508,7 @@ export default function Layout() {
             scanActive ? "bg-[#5f51e8]" : "bg-brand hover:bg-[#6658e8]"
           }`}
           type="button"
-          onClick={() => navigate("/scan?auto=1")}
+          onClick={openQuickScan}
           aria-label="QR 스캔 바로 실행"
         >
           <QrCode className="shrink-0" size={19} />
@@ -510,6 +528,7 @@ export default function Layout() {
           </button>
         ) : null}
       </nav>
+      <MobileQuickScanner open={quickScanOpen} onClose={() => setQuickScanOpen(false)} onScan={openScannedDevice} />
       {toastNotification ? (
         <div
           className="fixed bottom-24 left-1/2 z-[80] w-[min(92vw,420px)] -translate-x-1/2 rounded-lg border border-[#d8d2ff] bg-white p-4 text-left shadow-lift transition hover:border-brand lg:bottom-6 lg:left-auto lg:right-6 lg:translate-x-0"

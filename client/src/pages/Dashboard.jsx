@@ -188,7 +188,7 @@ export default function Dashboard() {
 
   return (
     <div className="app-page dashboard-page">
-      <section className="hero-strip">
+      <section className="hero-strip hidden sm:block">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div className="hidden lg:block">
             <h1 className="page-title">대시보드</h1>
