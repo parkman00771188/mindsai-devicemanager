@@ -342,7 +342,7 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
         <div className="mt-3">{action}</div>
       ) : (
         <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-xs font-bold text-slate-500" title={memoValue === "-" ? "" : memoValue}>{deviceCapacity(device)} · 메모 {memoValue}</p>
+          <p className="min-w-0 truncate text-xs font-bold text-slate-500" title={memoValue === "-" ? "" : memoValue}>{memoValue}</p>
           <button
             className="btn-secondary h-9 shrink-0 px-3 text-xs"
             type="button"
