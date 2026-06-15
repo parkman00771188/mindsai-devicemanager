@@ -434,11 +434,11 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
           </div>
           <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
           {device.legacy_device_id ? <p className="mt-1 truncate text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <MobileInfoTile icon={UserRound} label={currentLabel} value={currentValue} />
-            <MobileInfoTile icon={ClipboardList} label="목적/사유" value={purposeValue} />
-          </div>
         </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <MobileInfoTile icon={UserRound} label={currentLabel} value={currentValue} />
+        <MobileInfoTile icon={ClipboardList} label="목적/사유" value={purposeValue} />
       </div>
       {action ? (
         <div className="mt-3">{action}</div>
