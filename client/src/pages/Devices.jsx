@@ -292,8 +292,11 @@ function DetailItem({ label, value }) {
 
 function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
   const photos = splitPhotoPaths(device.photo_paths || device.main_photo_path);
+  const context = currentStatusContext(device);
   const currentLabel = device.status === "DELIVERED" ? "납품처" : "현재 사용자";
   const currentValue = device.current_borrower || (device.status === "AVAILABLE" ? "대여 가능" : "-");
+  const purposeValue = context.purpose || "-";
+  const memoValue = context.memo || device.memo || "-";
 
   return (
     <article
@@ -331,15 +334,15 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
           <p className="mt-1 truncate text-sm font-extrabold text-ink">{currentValue}</p>
         </div>
         <div className="min-w-0 rounded-lg bg-[#f7f7fd] px-3 py-2">
-          <p className="text-[11px] font-extrabold text-slate-500">보관/위치</p>
-          <p className="mt-1 truncate text-sm font-extrabold text-ink">{device.location || "-"}</p>
+          <p className="text-[11px] font-extrabold text-slate-500">목적/사유</p>
+          <p className="mt-1 truncate text-sm font-extrabold text-ink" title={purposeValue === "-" ? "" : purposeValue}>{purposeValue}</p>
         </div>
       </div>
       {action ? (
         <div className="mt-3">{action}</div>
       ) : (
         <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-xs font-bold text-slate-500">{deviceCapacity(device)} · 구매일 {formatDate(device.purchase_date)}</p>
+          <p className="min-w-0 truncate text-xs font-bold text-slate-500" title={memoValue === "-" ? "" : memoValue}>{deviceCapacity(device)} · 메모 {memoValue}</p>
           <button
             className="btn-secondary h-9 shrink-0 px-3 text-xs"
             type="button"
