@@ -1,4 +1,4 @@
-import { Bell, BellRing, CheckCircle2, ClipboardList, PackageCheck, QrCode, RefreshCw, Search, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
+import { Bell, BellRing, CheckCircle2, ClipboardList, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -100,7 +100,6 @@ export default function Dashboard() {
   const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState("");
   const [noticeTab, setNoticeTab] = useState("requests");
-  const [keyword, setKeyword] = useState("");
   const [transactionDetail, setTransactionDetail] = useState(null);
   const [photoViewer, setPhotoViewer] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -117,11 +116,6 @@ export default function Dashboard() {
   useEffect(() => {
     loadDashboard().catch((err) => setError(err.message));
   }, []);
-
-  function submitSearch(event) {
-    event.preventDefault();
-    if (keyword.trim()) navigate(`/devices?keyword=${encodeURIComponent(keyword.trim())}`);
-  }
 
   function openPhotoViewer(paths, index, row) {
     setPhotoViewer({
@@ -343,16 +337,7 @@ export default function Dashboard() {
           )}
         </section>
 
-        <aside className="order-1 grid gap-4 sm:grid-cols-2 lg:order-2 lg:block lg:space-y-4">
-          <form className="panel p-4" onSubmit={submitSearch}>
-            <h2 className="section-title">빠른 검색</h2>
-            <div className="mt-3 flex gap-2">
-              <input className="input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="EQ-0001, Quest, SN..." />
-              <button className="btn-primary h-12 w-12 p-0" aria-label="검색">
-                <Search size={18} />
-              </button>
-            </div>
-          </form>
+        <aside className="order-1 lg:order-2">
           <div className="panel p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between 2xl:flex-col 2xl:items-start">
               <div>
