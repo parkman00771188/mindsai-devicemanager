@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Info, PackageCheck, Plus, Search, X } from "lucide-react";
+import { Building2, CheckCircle2, ClipboardList, Download, LayoutGrid, Menu, PackageCheck, Plus, QrCode, RotateCcw, Search, UserRound, Wrench, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
@@ -198,67 +198,121 @@ function applyDeviceExcelColumnWidths(sheet, rows = []) {
   });
 }
 
+const statusIconMap = {
+  AVAILABLE: CheckCircle2,
+  RENTED: RotateCcw,
+  DELIVERED: PackageCheck,
+  MAINTENANCE: Wrench,
+  BROKEN: Wrench,
+  LOST: Search,
+  DISPOSED: X
+};
+
+const mobileStatusClass = {
+  AVAILABLE: "bg-[#ecfbf7] text-[#159d8f] ring-[#c7f1e9]",
+  RENTED: "bg-brand text-white ring-brand",
+  DELIVERED: "bg-[#e8f6ff] text-[#1178c7] ring-[#b9def7]",
+  MAINTENANCE: "bg-[#fff4ee] text-[#d47a3d] ring-[#ffd9c1]",
+  BROKEN: "bg-[#fff0f4] text-[#d84f71] ring-[#ffc8d6]",
+  LOST: "bg-[#eef1f7] text-[#657186] ring-[#d8deea]",
+  DISPOSED: "bg-[#f0f1f5] text-[#3a4055] ring-[#d8dce7]"
+};
+
+function MobileStatusPill({ status }) {
+  return (
+    <span
+      className={`inline-flex min-h-9 min-w-[5.75rem] shrink-0 items-center justify-center rounded-full px-3 text-xs font-extrabold ring-1 ${
+        mobileStatusClass[status] || "bg-slate-100 text-slate-700 ring-slate-300"
+      }`}
+    >
+      {status === "DELIVERED" ? "납품" : statusLabel(status)}
+    </span>
+  );
+}
+
 function CategoryTabs({ categories, value, mine, onChange }) {
   return (
-    <div className="scrollbar-none overflow-x-auto border-b border-line bg-white">
-      <div className="flex min-w-max snap-x gap-4 px-3 pt-1 sm:gap-7 sm:px-5 sm:pt-2">
-        <button
-          type="button"
-          className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
-            !value && !mine ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
-          }`}
-          onClick={() => onChange("")}
-        >
-          전체
-        </button>
-        {categories.map((category) => (
+    <div className="flex items-center border-b border-line bg-white">
+      <div className="scrollbar-none min-w-0 flex-1 overflow-x-auto">
+        <div className="flex min-w-max snap-x gap-4 px-3 pt-1 sm:gap-7 sm:px-5 sm:pt-2">
           <button
-            key={category}
             type="button"
             className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
-              value === category ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
+              !value && !mine ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
             }`}
-            onClick={() => onChange(category)}
+            onClick={() => onChange("")}
           >
-            {category}
+            전체
           </button>
-        ))}
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
+                value === category ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
+              }`}
+              onClick={() => onChange(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
       </div>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center text-slate-500 sm:hidden" aria-hidden="true">
+        <Menu size={19} />
+      </span>
     </div>
   );
 }
 
 function StatusFilters({ value, mine, onChange, onMine }) {
+  const orderedStatuses = [
+    ...STATUS_OPTIONS.filter(([status]) => ["AVAILABLE", "RENTED", "DELIVERED"].includes(status)),
+    ...STATUS_OPTIONS.filter(([status]) => !["AVAILABLE", "RENTED", "DELIVERED"].includes(status))
+  ];
+
   return (
-    <div className="grid gap-3 border-t border-line pt-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start lg:pt-4">
+    <div className="grid gap-3 pt-1 sm:border-t sm:border-line sm:pt-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start lg:pt-4">
       <p className="text-sm font-extrabold text-ink lg:pt-2 lg:text-base">상태</p>
       <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
-        {onMine ? (
-          <button
-            className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${mine ? "chip-active" : ""}`}
-            type="button"
-            onClick={onMine}
-          >
-            내 장비
-          </button>
-        ) : null}
         <button
-          className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${!value && !mine ? "chip-active" : ""}`}
+          className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
+            !value && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+          }`}
           type="button"
           onClick={() => onChange("")}
         >
+          <LayoutGrid size={18} />
           전체
         </button>
-        {STATUS_OPTIONS.map(([status, label]) => (
+        {orderedStatuses.map(([status, label]) => {
+          const Icon = statusIconMap[status] || PackageCheck;
+          return (
+            <button
+              key={status}
+              className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
+                value === status && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+              }`}
+              type="button"
+              onClick={() => onChange(status)}
+            >
+              <Icon size={18} />
+              {label}
+            </button>
+          );
+        })}
+        {onMine ? (
           <button
-            key={status}
-              className={`chip min-h-10 shrink-0 snap-start px-3 text-sm lg:min-h-11 lg:px-4 lg:text-base ${value === status ? "chip-active" : ""}`}
+            className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
+              mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+            }`}
             type="button"
-            onClick={() => onChange(status)}
+            onClick={onMine}
           >
-            {label}
+            <UserRound size={18} />
+            내 장비
           </button>
-        ))}
+        ) : null}
       </div>
     </div>
   );
@@ -290,6 +344,60 @@ function DetailItem({ label, value }) {
   );
 }
 
+function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog }) {
+  const secondAction = isAdmin ? (
+    <Link className="group flex min-w-0 items-center gap-3 text-left" to="/devices/new">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+        <Plus size={22} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-extrabold text-ink">장비 등록</span>
+        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">새로운 장비를 쉽게 등록하세요.</span>
+      </span>
+    </Link>
+  ) : (
+    <button className="group flex min-w-0 items-center gap-3 text-left" type="button" onClick={onOpenCatalog}>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+        <PackageCheck size={21} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-extrabold text-ink">대여하기</span>
+        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">사용 가능한 장비를 선택하세요.</span>
+      </span>
+    </button>
+  );
+
+  return (
+    <section className="panel grid grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] items-center gap-3 p-4 sm:hidden">
+      <button className="group flex min-w-0 items-center gap-3 text-left disabled:opacity-50" type="button" onClick={onDownload} disabled={!canExport || exportBusy}>
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
+          <Download size={21} />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-extrabold text-ink">{exportBusy ? "생성 중" : "엑셀 다운로드"}</span>
+          <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">장비 목록을 엑셀로 다운로드하세요.</span>
+        </span>
+      </button>
+      <span className="h-12 w-px bg-line" aria-hidden="true" />
+      {secondAction}
+    </section>
+  );
+}
+
+function MobileInfoTile({ icon: Icon, label, value }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f8f6ff] px-3 py-2">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eeeaff] text-brand">
+        <Icon size={17} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] font-extrabold text-slate-500">{label}</span>
+        <span className="mt-0.5 block truncate text-sm font-extrabold text-ink">{value || "-"}</span>
+      </span>
+    </div>
+  );
+}
+
 function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
   const photos = splitPhotoPaths(device.photo_paths || device.main_photo_path);
   const context = currentStatusContext(device);
@@ -300,7 +408,7 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
 
   return (
     <article
-      className="mobile-card cursor-pointer p-3"
+      className="mobile-card cursor-pointer overflow-hidden p-3"
       role="button"
       tabIndex={0}
       onClick={onOpen}
@@ -309,7 +417,7 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
       }}
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8f6ff]">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8f6ff]">
           {photos[0] ? (
             <img src={photos[0]} alt={`${deviceTitle(device)} 사진`} className="h-full w-full object-cover" />
           ) : (
@@ -322,29 +430,26 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
               <p className="truncate text-base font-extrabold text-ink">{deviceTitle(device)}</p>
               <p className="mt-1 truncate text-xs font-extrabold text-brand">{device.device_id}</p>
             </div>
-            <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
+            <MobileStatusPill status={device.status} />
           </div>
           <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
           {device.legacy_device_id ? <p className="mt-1 truncate text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
-        </div>
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="min-w-0 rounded-lg bg-[#f7f7fd] px-3 py-2">
-          <p className="text-[11px] font-extrabold text-slate-500">{currentLabel}</p>
-          <p className="mt-1 truncate text-sm font-extrabold text-ink">{currentValue}</p>
-        </div>
-        <div className="min-w-0 rounded-lg bg-[#f7f7fd] px-3 py-2">
-          <p className="text-[11px] font-extrabold text-slate-500">목적/사유</p>
-          <p className="mt-1 truncate text-sm font-extrabold text-ink" title={purposeValue === "-" ? "" : purposeValue}>{purposeValue}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <MobileInfoTile icon={UserRound} label={currentLabel} value={currentValue} />
+            <MobileInfoTile icon={ClipboardList} label="목적/사유" value={purposeValue} />
+          </div>
         </div>
       </div>
       {action ? (
         <div className="mt-3">{action}</div>
       ) : (
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-xs font-bold text-slate-500" title={memoValue === "-" ? "" : memoValue}>{memoValue}</p>
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+          <p className="flex min-w-0 items-center gap-2 truncate text-xs font-bold text-slate-600" title={memoValue === "-" ? "" : memoValue}>
+            <Building2 size={15} className="shrink-0 text-slate-500" />
+            <span className="min-w-0 truncate">{memoValue}</span>
+          </p>
           <button
-            className="btn-secondary h-9 shrink-0 px-3 text-xs"
+            className="btn-secondary h-10 shrink-0 border-[#c9c4ff] px-3 text-xs text-brand"
             type="button"
             onClick={(event) => {
               event.preventDefault();
@@ -352,8 +457,8 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
               onQr?.();
             }}
           >
-            <Download size={16} />
-            QR
+            <QrCode size={16} />
+            QR 보기
           </button>
         </div>
       )}
@@ -635,7 +740,7 @@ export default function Devices() {
 
   return (
     <div className="app-page">
-      <section className="hero-strip">
+      <section className="hero-strip hidden sm:block">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="hidden lg:block">
             <h1 className="page-title">장비 목록</h1>
@@ -663,22 +768,32 @@ export default function Devices() {
         </div>
       </section>
 
+      <MobileActionPanel
+        isAdmin={isAdmin}
+        exportBusy={exportBusy}
+        canExport={devices.length > 0}
+        onDownload={downloadDeviceExcel}
+        onOpenCatalog={() => setCatalogOpen(true)}
+      />
+
       <form
-        className="panel space-y-3 p-3 sm:space-y-4 sm:p-4"
+        className="panel space-y-4 p-3 sm:space-y-4 sm:p-4"
         onSubmit={(event) => {
           event.preventDefault();
           applyFilters(filters);
         }}
       >
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-3">
-          <input
-            className="input"
-            value={filters.keyword}
-            onChange={(event) => setFilters((current) => ({ ...current, keyword: event.target.value }))}
-            placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
-          />
-          <button className="btn-primary w-auto px-3 sm:px-4">
-            <Search size={18} />
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5.5rem] gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
+          <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={21} />
+            <input
+              className="input pl-11"
+              value={filters.keyword}
+              onChange={(event) => setFilters((current) => ({ ...current, keyword: event.target.value }))}
+              placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
+            />
+          </div>
+          <button className="btn-primary w-full px-0 sm:w-auto sm:px-4">
             조회
           </button>
         </div>
