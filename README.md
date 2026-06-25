@@ -6,7 +6,6 @@ https://mindsai-devicemanager.pages.dev/login
 
 ## 주요 기능
 
-- 관리자 로그인: `admin / admin123!`
 - 대시보드: 전체, 대여 가능, 대여 중, 점검 중, 고장 현황
 - QR 스캔: `html5-qrcode` 기반 카메라 스캔과 장비번호 직접 입력
 - 장비 관리: 등록, 목록, 상세, 수정, 폐기 처리
