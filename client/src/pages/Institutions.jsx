@@ -1,5 +1,5 @@
 import { ArrowDownAZ, Building2, Check, History, Mail, MapPin, PackagePlus, Pencil, Phone, Plus, Save, Search, Trash2, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, queryString } from "../api/client.js";
 import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -416,16 +416,13 @@ export default function Institutions() {
   const [sortMode, setSortMode] = useState("name");
   const [modal, setModal] = useState(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [detailDeviceId, setDetailDeviceId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const detailPanelRef = useRef(null);
 
-  function revealDetailOnMobile() {
-    if (typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches) return;
-    window.setTimeout(() => {
-      detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+  function isMobileViewport() {
+    return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   }
 
   async function load(search = keyword, selectedId = selected?.institution_id) {
@@ -455,14 +452,29 @@ export default function Institutions() {
     return rows;
   }, [institutions, sortMode]);
 
-  async function selectInstitution(institutionId) {
+  async function selectInstitution(institutionId, openMobileDetail = false) {
     setError("");
     try {
       setSelected(await api(`/institutions/${encodeURIComponent(institutionId)}`));
-      revealDetailOnMobile();
+      if (openMobileDetail && isMobileViewport()) setMobileDetailOpen(true);
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  function openEditInstitution(institution) {
+    setMobileDetailOpen(false);
+    setModal({ mode: "edit", institution });
+  }
+
+  function openAssignModal() {
+    setMobileDetailOpen(false);
+    setAssignOpen(true);
+  }
+
+  function openAssignedDeviceDetail(deviceId) {
+    setMobileDetailOpen(false);
+    setDetailDeviceId(deviceId);
   }
 
   async function saveInstitution(form) {
@@ -539,12 +551,12 @@ export default function Institutions() {
   return (
     <div className="app-page">
       <section className="hero-strip">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <h1 className="page-title">기관 관리</h1>
             <p className="mt-1 text-sm text-slate-500">기관 정보와 대여 이력을 관리합니다.</p>
           </div>
-          <button className="btn-primary w-full md:w-auto" type="button" onClick={() => setModal({ mode: "create", institution: null })}>
+          <button className="btn-primary h-14 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", institution: null })}>
             <Plus size={18} />
             기관 등록
           </button>
@@ -561,8 +573,22 @@ export default function Institutions() {
         </button>
       </form>
 
+      {mobileDetailOpen ? (
+        <button
+          className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm md:hidden"
+          type="button"
+          aria-label="기관 상세 닫기"
+          onClick={() => setMobileDetailOpen(false)}
+        />
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
-        <aside ref={detailPanelRef} className="panel order-2 p-3 sm:p-4 md:order-1">
+        <aside className={`panel relative p-3 sm:p-4 md:order-1 ${mobileDetailOpen ? "fixed inset-x-3 bottom-5 top-5 z-50 overflow-auto md:static md:inset-auto md:z-auto md:block md:overflow-visible" : "hidden md:block"}`}>
+          {mobileDetailOpen ? (
+            <button className="btn-secondary absolute right-3 top-3 z-10 h-10 w-10 p-0 md:hidden" type="button" onClick={() => setMobileDetailOpen(false)} aria-label="닫기">
+              <X size={18} />
+            </button>
+          ) : null}
           {selected ? (
             <div>
               <div className="border-b border-line pb-5 text-center">
@@ -572,7 +598,7 @@ export default function Institutions() {
                 <h2 className="mt-4 truncate text-2xl font-extrabold text-ink">{selected.institution_name}</h2>
                 <p className="mt-1 truncate text-sm font-bold text-slate-500">{selected.contact_person || "담당자 미등록"}</p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button className="btn-secondary h-10 px-3" type="button" onClick={() => setModal({ mode: "edit", institution: selected })}>
+                  <button className="btn-secondary h-10 px-3" type="button" onClick={() => openEditInstitution(selected)}>
                     <Pencil size={16} />
                     수정
                   </button>
@@ -603,7 +629,7 @@ export default function Institutions() {
                   <h3 className="section-title">대여/납품 장비</h3>
                   <div className="flex items-center gap-2">
                     <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
-                    <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={() => setAssignOpen(true)} disabled={busy}>
+                    <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
                       <PackagePlus size={15} />
                       장비 할당
                     </button>
@@ -611,7 +637,7 @@ export default function Institutions() {
                 </div>
                 <div className="mt-3 grid gap-2">
                   {selected.assigned_devices?.length ? selected.assigned_devices.map((device) => (
-                    <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f7f7fd] p-3 text-left transition hover:border-[#c9c4ff] hover:bg-white" type="button" onClick={() => setDetailDeviceId(device.device_id)}>
+                    <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f7f7fd] p-3 text-left transition hover:border-[#c9c4ff] hover:bg-white" type="button" onClick={() => openAssignedDeviceDetail(device.device_id)}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate font-extrabold text-ink">{deviceTitle(device)}</p>
@@ -654,7 +680,7 @@ export default function Institutions() {
                       key={institution.institution_id}
                       className={`soft-row text-left ${isSelected ? "border-brand bg-[#f4f2ff] shadow-lift" : ""}`}
                       type="button"
-                      onClick={() => selectInstitution(institution.institution_id)}
+                      onClick={() => selectInstitution(institution.institution_id, true)}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -694,7 +720,7 @@ export default function Institutions() {
                           <td className="table-cell">
                             <button className="btn-secondary h-8 px-2 text-xs" type="button" onClick={(event) => {
                               event.stopPropagation();
-                              setModal({ mode: "edit", institution });
+                              openEditInstitution(institution);
                             }}>
                               수정
                             </button>

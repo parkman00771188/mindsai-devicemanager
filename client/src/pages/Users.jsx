@@ -1,5 +1,5 @@
 import { ArrowDownAZ, Building2, Check, Eye, EyeOff, Info, KeyRound, PackagePlus, Plus, Save, Search, Send, ShieldCheck, Trash2, Truck, UserCog, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
 import EmptyState from "../components/EmptyState.jsx";
@@ -718,18 +718,15 @@ export default function Users() {
   const [sortMode, setSortMode] = useState("name");
   const [modal, setModal] = useState(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [assignedDetail, setAssignedDetail] = useState(null);
   const [returnRequestTarget, setReturnRequestTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const detailPanelRef = useRef(null);
 
-  function revealDetailOnMobile() {
-    if (typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches) return;
-    window.setTimeout(() => {
-      detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+  function isMobileViewport() {
+    return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   }
 
   async function load(nextKeyword = keyword) {
@@ -764,9 +761,24 @@ export default function Users() {
     return [...primaryAdmins, ...normalUsers];
   }, [users, sortMode]);
 
-  async function selectUser(userId) {
+  async function selectUser(userId, openMobileDetail = false) {
     setSelected(await api(`/users/${encodeURIComponent(userId)}`));
-    revealDetailOnMobile();
+    if (openMobileDetail && isMobileViewport()) setMobileDetailOpen(true);
+  }
+
+  function openEditUser(user) {
+    setMobileDetailOpen(false);
+    setModal({ mode: "edit", user });
+  }
+
+  function openAssignModal() {
+    setMobileDetailOpen(false);
+    setAssignOpen(true);
+  }
+
+  function requestDeleteUser(user) {
+    setMobileDetailOpen(false);
+    setDeleteTarget(user);
   }
 
   async function handleProfilePhotoUploaded(user) {
@@ -911,12 +923,12 @@ export default function Users() {
   return (
     <div className="app-page">
       <section className="hero-strip">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <h1 className="page-title">사용자 관리</h1>
             <p className="mt-1 text-sm text-slate-500">사용자 정보와 할당 장비를 관리합니다.</p>
           </div>
-          <button className="btn-primary w-full md:w-auto" type="button" onClick={() => setModal({ mode: "create", user: null })}>
+          <button className="btn-primary h-14 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", user: null })}>
             <Plus size={18} />
             사용자 등록
           </button>
@@ -927,14 +939,28 @@ export default function Users() {
 
       <form className="panel flex flex-col gap-3 p-3 sm:p-4 md:flex-row" onSubmit={submitSearch}>
         <input className="input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="이름, ID, 소속, 부서, 연락처 검색" />
-          <button className="btn-primary w-full md:w-32">
+        <button className="btn-primary w-full md:w-32">
           <Search size={18} />
           조회
         </button>
       </form>
 
+      {mobileDetailOpen ? (
+        <button
+          className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm md:hidden"
+          type="button"
+          aria-label="사용자 상세 닫기"
+          onClick={() => setMobileDetailOpen(false)}
+        />
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
-        <aside ref={detailPanelRef} className="panel order-2 p-3 sm:p-4 md:order-1">
+        <aside className={`panel relative p-3 sm:p-4 md:order-1 ${mobileDetailOpen ? "fixed inset-x-3 bottom-5 top-5 z-50 overflow-auto md:static md:inset-auto md:z-auto md:block md:overflow-visible" : "hidden md:block"}`}>
+          {mobileDetailOpen ? (
+            <button className="btn-secondary absolute right-3 top-3 z-10 h-10 w-10 p-0 md:hidden" type="button" onClick={() => setMobileDetailOpen(false)} aria-label="닫기">
+              <X size={18} />
+            </button>
+          ) : null}
           {selected ? (
             <div>
               <div className="border-b border-line pb-5 text-center">
@@ -950,14 +976,14 @@ export default function Users() {
                   <RoleBadge role={selected.role} />
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button className="btn-secondary h-10 px-3" type="button" onClick={() => setModal({ mode: "edit", user: selected })}>
+                  <button className="btn-secondary h-10 px-3" type="button" onClick={() => openEditUser(selected)}>
                     <UserCog size={16} />
                     수정
                   </button>
                   <button
                     className="btn-dispose h-10 px-3"
                     type="button"
-                    onClick={() => setDeleteTarget(selected)}
+                    onClick={() => requestDeleteUser(selected)}
                     disabled={busy || selected.user_id === "admin" || isSelfSelected}
                     title={isSelfSelected ? "현재 로그인한 본인 계정은 삭제할 수 없습니다." : ""}
                   >
@@ -992,7 +1018,7 @@ export default function Users() {
                   <h3 className="section-title">할당 장비</h3>
                   <div className="flex items-center gap-2">
                     <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
-                    <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={() => setAssignOpen(true)} disabled={busy}>
+                    <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
                       <PackagePlus size={15} />
                       장비 할당
                     </button>
@@ -1085,7 +1111,7 @@ export default function Users() {
                       key={user.user_id}
                       className={`soft-row text-left ${isPrimaryAdminUser(user) ? "admin-user-row" : ""} ${isSelected ? "border-brand bg-[#f4f2ff] shadow-lift" : ""}`}
                       type="button"
-                      onClick={() => selectUser(user.user_id)}
+                      onClick={() => selectUser(user.user_id, true)}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -1146,7 +1172,7 @@ export default function Users() {
                           <td className="table-cell">
                             <button className="btn-secondary h-8 px-2 text-xs" type="button" onClick={(event) => {
                               event.stopPropagation();
-                              setModal({ mode: "edit", user });
+                              openEditUser(user);
                             }}>
                               수정
                             </button>
