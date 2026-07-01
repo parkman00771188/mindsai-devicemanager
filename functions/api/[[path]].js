@@ -31,6 +31,7 @@ const SESSION_TOKEN_PREFIX = "dm1";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const STATE_CACHE_TTL_MS = 1000 * 15;
 const STATE_DIRTY_FLAG = "__deviceManagerDirty";
+const MAX_PHOTO_DATA_URL_LENGTH = 950 * 1024;
 const ENCRYPTED_FIELDS = {
   Devices: [
     "serial_number",
@@ -117,8 +118,11 @@ export async function onRequest(context) {
     if (method === "GET" && /^\/devices\/[^/]+\/qrcode$/.test(path)) {
       return serveQrCode(context, path);
     }
+    if ((method === "GET" || method === "HEAD") && /^\/photos\/[^/]+$/.test(path)) {
+      return servePhotoBlob(context, path);
+    }
     if (path === "/login" && method === "POST") {
-      const body = await readBody(context.request);
+      const body = await readBody(context.request, context.env);
       return json(await authenticateLogin(context, body));
     }
     if (path === "/logout" && method === "POST") {
@@ -127,7 +131,7 @@ export async function onRequest(context) {
 
     const state = await loadState(context);
     if (!isPublicApi(path)) await requireSession(context.env, state, context.request);
-    const body = await readBody(context.request);
+    const body = await readBody(context.request, context.env);
     const result = await route(context, state, path, body);
 
     if (result.save || isStateDirty(state)) await saveState(context.env, state);
@@ -213,7 +217,7 @@ function json(data, status = 200) {
 function commonHeaders() {
   return {
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "access-control-allow-methods": "GET,HEAD,POST,PUT,DELETE,OPTIONS",
     "access-control-allow-headers": "authorization,content-type,x-user-id,x-session-token"
   };
 }
@@ -233,9 +237,12 @@ function segments(path) {
 async function ensureDb(db) {
   if (!db) throw Object.assign(new Error("Cloudflare D1 binding DB is not configured."), { statusCode: 500 });
   if (!pendingEnsureDb) {
-    pendingEnsureDb = withD1Retry("ensureDb", () =>
-      db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)")
-    ).catch((error) => {
+    pendingEnsureDb = withD1Retry("ensureDb", async () => {
+      await db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)");
+      await db.exec(
+        "CREATE TABLE IF NOT EXISTS app_blobs (key TEXT PRIMARY KEY, value TEXT NOT NULL, content_type TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+      );
+    }).catch((error) => {
       pendingEnsureDb = null;
       throw error;
     });
@@ -254,6 +261,7 @@ async function loadState(context) {
 
 async function saveState(env, state) {
   await ensureDb(env.DB);
+  await offloadEmbeddedPhotos(env, state);
   const storageState = await encryptStateForStorage(env, state);
   const jsonState = JSON.stringify(storageState);
   const updatedAt = now();
@@ -550,7 +558,7 @@ function normalizeState(input = {}) {
   return state;
 }
 
-async function readBody(request) {
+async function readBody(request, env) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return {};
   const contentType = request.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
@@ -565,12 +573,12 @@ async function readBody(request) {
     const body = {};
     for (const [key, value] of form.entries()) {
       if (isFileLike(value)) {
-        const dataUrl = await fileToDataUrl(value);
         if (key === "photos") {
-          body.photo_paths = serializePaths([...splitPaths(body.photo_paths), dataUrl]);
+          const photoPath = env ? await storeUploadedPhoto(env, value) : await fileToDataUrl(value);
+          body.photo_paths = serializePaths([...splitPaths(body.photo_paths), photoPath]);
           appendFormValue(body, "photo_names", value.name || "");
         } else {
-          body[`${key}_data_url`] = dataUrl;
+          body[`${key}_data_url`] = await fileToDataUrl(value);
           body[`${key}_name`] = value.name || "";
         }
         continue;
@@ -580,6 +588,59 @@ async function readBody(request) {
     return body;
   }
   return {};
+}
+
+async function storeUploadedPhoto(env, file) {
+  return savePhotoBlob(env, await fileToDataUrl(file));
+}
+
+async function savePhotoBlob(env, dataUrl) {
+  const source = text(dataUrl);
+  if (!source.startsWith("data:")) return source;
+  if (source.length > MAX_PHOTO_DATA_URL_LENGTH) {
+    throw Object.assign(new Error("Photo is too large after compression. Please choose a smaller image."), { statusCode: 413 });
+  }
+  await ensureDb(env.DB);
+  const key = `photo-${crypto.randomUUID()}`;
+  const contentType = dataUrlContentType(source);
+  const createdAt = now();
+  await withD1Retry("savePhotoBlob", () =>
+    env.DB
+      .prepare(
+        "INSERT INTO app_blobs (key, value, content_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?) " +
+          "ON CONFLICT(key) DO UPDATE SET value = excluded.value, content_type = excluded.content_type, updated_at = excluded.updated_at"
+      )
+      .bind(key, source, contentType, createdAt, createdAt)
+      .run()
+  );
+  return `/api/photos/${key}`;
+}
+
+async function offloadEmbeddedPhotos(env, state) {
+  const offload = (paths) => offloadPhotoPaths(env, paths);
+  for (const row of state.Devices || []) {
+    const currentPhotos = [...new Set([...splitPaths(row.photo_paths), ...splitPaths(row.main_photo_path)])];
+    const nextPhotos = await offload(currentPhotos);
+    if (nextPhotos.join("\n") !== currentPhotos.join("\n")) {
+      row.main_photo_path = nextPhotos[0] || "";
+      row.photo_paths = serializePaths(nextPhotos);
+    }
+  }
+  for (const sheet of ["Transactions", "Maintenance"]) {
+    for (const row of state[sheet] || []) {
+      const currentPhotos = splitPaths(row.photo_paths);
+      const nextPhotos = await offload(currentPhotos);
+      if (nextPhotos.join("\n") !== currentPhotos.join("\n")) row.photo_paths = serializePaths(nextPhotos);
+    }
+  }
+}
+
+async function offloadPhotoPaths(env, paths = []) {
+  const next = [];
+  for (const path of paths) {
+    next.push(text(path).startsWith("data:") ? await savePhotoBlob(env, path) : path);
+  }
+  return [...new Set(next.filter(Boolean))];
 }
 
 function appendFormValue(body, key, value) {
@@ -599,6 +660,10 @@ async function fileToDataUrl(file) {
     binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
   }
   return `data:${file.type || "application/octet-stream"};base64,${btoa(binary)}`;
+}
+
+function dataUrlContentType(dataUrl) {
+  return text(dataUrl).match(/^data:([^;,]+)/)?.[1] || "application/octet-stream";
 }
 
 async function route(context, state, path, body) {
@@ -645,7 +710,7 @@ async function route(context, state, path, body) {
 
 async function seedState(context) {
   requireSeedToken(context);
-  const body = await readBody(context.request);
+  const body = await readBody(context.request, context.env);
   const state = normalizeState(body);
   await saveState(context.env, state);
   return json({ ok: true, devices: state.Devices.length, users: state.Users.length, seeded_at: now() });
@@ -2029,6 +2094,26 @@ function stateDownload(state) {
   });
 }
 
+async function servePhotoBlob(context, path) {
+  const [, key] = path.match(/^\/photos\/([^/]+)$/) || [];
+  const photoKey = safeSegment(decodeURIComponent(key || ""));
+  if (!photoKey) return json({ message: "Photo not found" }, 404);
+  await ensureDb(context.env.DB);
+  const row = await withD1Retry("loadPhotoBlob", () =>
+    context.env.DB.prepare("SELECT value, content_type FROM app_blobs WHERE key = ?").bind(photoKey).first()
+  );
+  if (!row?.value) return json({ message: "Photo not found" }, 404);
+
+  const bytes = dataUrlToBytes(row.value);
+  const headers = new Headers({
+    ...commonHeaders(),
+    "content-type": row.content_type || dataUrlContentType(row.value),
+    "content-length": String(bytes.byteLength),
+    "cache-control": "public, max-age=31536000, immutable"
+  });
+  return new Response(context.request.method === "HEAD" ? null : bytes, { status: 200, headers });
+}
+
 async function serveQrCode(context, path) {
   const [, deviceId] = path.match(/^\/devices\/([^/]+)\/qrcode$/) || [];
   if (!deviceId) return json({ message: "QR path not found" }, 404);
@@ -2071,6 +2156,14 @@ async function qrLabelSvg(deviceId) {
   <text x="360" y="842" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800">${idText}</text>
 </svg>
 `;
+}
+
+function dataUrlToBytes(dataUrl) {
+  const base64 = text(dataUrl).match(/^data:[^,]*;base64,(.*)$/)?.[1] || "";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }
 
 function bytesToBase64(bytes) {

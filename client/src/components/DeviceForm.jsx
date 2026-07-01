@@ -337,7 +337,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
     if (isCreate) data.set("status", "AVAILABLE");
     if (!isCreate) data.set("keep_photo_paths", serializePhotoPaths(existingPhotos));
     data.set("device_name", previewName);
-    const compressedPhotos = await compressImageFiles(selectedPhotos, { maxSize: 1600, quality: 0.78 });
+    const compressedPhotos = await compressImageFiles(selectedPhotos, { maxSize: 1280, quality: 0.72, maxBytes: 450 * 1024 });
     compressedPhotos.forEach((photo) => data.append("photos", photo));
     try {
       await onSubmit(data);
