@@ -275,6 +275,18 @@ function StatusFilters({ value, mine, onChange, onMine }) {
     <div className="grid gap-3 pt-1 sm:border-t sm:border-line sm:pt-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start lg:pt-4">
       <p className="text-sm font-extrabold text-ink lg:pt-2 lg:text-base">상태</p>
       <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+        {onMine ? (
+          <button
+            className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
+              mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+            }`}
+            type="button"
+            onClick={onMine}
+          >
+            <UserRound size={18} />
+            내 장비
+          </button>
+        ) : null}
         <button
           className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
             !value && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
@@ -301,18 +313,6 @@ function StatusFilters({ value, mine, onChange, onMine }) {
             </button>
           );
         })}
-        {onMine ? (
-          <button
-            className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-              mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
-            }`}
-            type="button"
-            onClick={onMine}
-          >
-            <UserRound size={18} />
-            내 장비
-          </button>
-        ) : null}
       </div>
     </div>
   );
