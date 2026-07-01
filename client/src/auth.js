@@ -42,9 +42,18 @@ export function getCurrentUser() {
 }
 
 export function setCurrentUser(user) {
-  memoryUser = user || null;
-  if (user) {
-    const saved = writeStorage(browserStorage("localStorage"), user) || writeStorage(browserStorage("sessionStorage"), user);
+  const previous = getCurrentUser();
+  const nextUser =
+    user && previous?.user_id === user.user_id
+      ? {
+          ...user,
+          session_token: user.session_token || previous.session_token,
+          session_token_created_at: user.session_token_created_at || previous.session_token_created_at
+        }
+      : user || null;
+  memoryUser = nextUser;
+  if (nextUser) {
+    const saved = writeStorage(browserStorage("localStorage"), nextUser) || writeStorage(browserStorage("sessionStorage"), nextUser);
     window.dispatchEvent(new Event("deviceManagerUserChanged"));
     return saved;
   }

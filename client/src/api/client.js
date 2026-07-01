@@ -3,6 +3,7 @@ import { clearCurrentUser, getCurrentUser } from "../auth.js";
 const API_BASE = "/api";
 const API_RETRY_DELAYS_MS = [250, 800];
 const RETRY_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+let redirectingToLogin = false;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,16 +32,24 @@ function authHeaders() {
   };
 }
 
+function loginRedirectPath() {
+  const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  return `/login?next=${encodeURIComponent(next)}`;
+}
+
 function clearStoredUser() {
   try {
     clearCurrentUser();
-    if (window.location.pathname !== "/login") {
-      const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      window.location.assign(`/login?next=${encodeURIComponent(next)}`);
-    }
   } catch {
     // Ignore storage errors in non-browser contexts.
   }
+  if (typeof window === "undefined" || window.location.pathname === "/login" || redirectingToLogin) return;
+  redirectingToLogin = true;
+  const target = loginRedirectPath();
+  window.location.replace(target);
+  window.setTimeout(() => {
+    if (window.location.pathname !== "/login") window.location.href = target;
+  }, 100);
 }
 
 async function parseResponse(response, path) {
