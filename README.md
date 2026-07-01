@@ -2,8 +2,6 @@
 
 로컬 PC에서 실행하는 장비 대여·반납 관리 웹사이트입니다. 별도 DB 없이 `server/data/devices.xlsx` 파일을 데이터 저장소처럼 사용하고, 사진과 QR 이미지는 `server/uploads/` 아래에 저장합니다.
 
-https://mindsai-devicemanager.pages.dev/login
-
 ## 주요 기능
 
 - 대시보드: 전체, 대여 가능, 대여 중, 점검 중, 고장 현황
