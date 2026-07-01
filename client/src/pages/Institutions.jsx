@@ -159,11 +159,11 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
 
   useEffect(() => {
     let ignore = false;
-    api("/reasons?reason_type=DELIVERY")
+    api("/reasons?reason_type=RENT")
       .then((rows) => {
         if (ignore) return;
         setReasons(rows);
-        setPurpose((current) => current || rows[0]?.reason_text || "기관 장비 할당");
+        setPurpose((current) => current || rows[0]?.reason_text || "기관 장비 대여");
       })
       .catch(() => {
         if (!ignore) setReasons([]);
@@ -216,7 +216,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
       return;
     }
     if (!purpose) {
-      setError("납품 사유를 선택해주세요.");
+      setError("대여 사유를 선택해주세요.");
       return;
     }
     try {
@@ -234,7 +234,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
           <div>
             <p className="page-kicker">Device Assignment</p>
             <h2 className="mt-1 text-xl font-extrabold text-ink">{institution.institution_name} 장비 할당</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">대여 가능한 장비를 선택하면 해당 기관에 납품 처리됩니다.</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">대여 가능한 장비를 선택하면 해당 기관에 대여 처리됩니다.</p>
           </div>
           <button className="btn-secondary h-10 w-10 shrink-0 p-0" type="button" onClick={onClose} aria-label="닫기">
             <X size={18} />
@@ -358,7 +358,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
         {confirmOpen ? (
           <ConfirmDialog
             title="선택한 장비를 할당할까요?"
-            description={`${institution.institution_name} 기관에 선택한 장비 ${selectedDevices.length}대를 납품 처리합니다.`}
+            description={`${institution.institution_name} 기관에 선택한 장비 ${selectedDevices.length}대를 대여 처리합니다.`}
             busy={busy}
             confirmText="할당하기"
             confirmDisabled={!purpose}
@@ -372,7 +372,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
                   <div className="flex justify-between gap-3"><dt>기관명</dt><dd className="text-ink">{institution.institution_name || "-"}</dd></div>
                   <div className="flex justify-between gap-3"><dt>담당자</dt><dd className="text-ink">{institution.contact_person || "-"}</dd></div>
                   <div className="flex justify-between gap-3"><dt>연락처</dt><dd className="text-ink">{institution.contact || "-"}</dd></div>
-                  <div className="flex justify-between gap-3"><dt>납품일</dt><dd className="text-ink">{todayInputValue()}</dd></div>
+                  <div className="flex justify-between gap-3"><dt>대여일</dt><dd className="text-ink">{todayInputValue()}</dd></div>
                   <label className="grid gap-1 sm:col-span-2">
                     <span className="text-sm font-bold text-slate-600">목적/사유</span>
                     <select className="select h-11 text-sm" value={purpose} onChange={(event) => setPurpose(event.target.value)} required>
@@ -380,11 +380,11 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
                       {reasons.map((reason) => (
                         <option key={reason.reason_id} value={reason.reason_text}>{reason.reason_text}</option>
                       ))}
-                      {!reasons.length ? <option value="기관 장비 할당">기관 장비 할당</option> : null}
+                      {!reasons.length ? <option value="기관 장비 대여">기관 장비 대여</option> : null}
                     </select>
-                    {!purpose ? <span className="text-xs font-semibold text-[#d84f71]">납품 사유를 선택해야 할당할 수 있습니다.</span> : null}
+                    {!purpose ? <span className="text-xs font-semibold text-[#d84f71]">대여 사유를 선택해야 할당할 수 있습니다.</span> : null}
                   </label>
-                  <div className="flex justify-between gap-3 sm:col-span-2"><dt>납품 위치</dt><dd className="text-ink">{institution.address || institution.institution_name || "기관 할당"}</dd></div>
+                  <div className="flex justify-between gap-3 sm:col-span-2"><dt>대여 위치</dt><dd className="text-ink">{institution.address || institution.institution_name || "기관 대여"}</dd></div>
                 </dl>
               </div>
               <div className="rounded-lg border border-line bg-white p-4">
@@ -503,12 +503,12 @@ export default function Institutions() {
         formData.append("user_department", "기관");
         formData.append("user_position", selected.contact_person || "");
         formData.append("user_contact", selected.contact || "");
-        formData.append("purpose", options.purpose || "기관 장비 할당");
-        formData.append("rent_location", selected.address || selected.institution_name || "기관 할당");
+        formData.append("purpose", options.purpose || "기관 장비 대여");
+        formData.append("rent_location", selected.address || selected.institution_name || "기관 대여");
         formData.append("condition_status", "정상");
         formData.append("rented_at", todayInputValue());
-        formData.append("memo", "관리자가 기관에 장비를 할당함");
-        await api(`/devices/${encodeURIComponent(device.device_id)}/delivery`, { method: "POST", body: formData });
+        formData.append("memo", "관리자가 기관에 장비를 대여 처리함");
+        await api(`/devices/${encodeURIComponent(device.device_id)}/rent`, { method: "POST", body: formData });
       }
       setAssignOpen(false);
       await load(keyword, selected.institution_id);
