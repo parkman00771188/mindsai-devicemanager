@@ -583,6 +583,7 @@ async function readBody(request, env) {
         }
         continue;
       }
+      if (key === "photo_paths" || key === "main_photo_path") continue;
       appendFormValue(body, key, String(value));
     }
     return body;
@@ -1398,8 +1399,10 @@ function transactionsForDevice(state, deviceId) {
 function attachTransaction(state, row) {
   const device = findDevice(state, row.device_id, true) || {};
   const handler = findUser(state, row.handled_by, true) || {};
+  const photoPaths = transactionPhotoPathsForDisplay(state, row);
   return {
     ...row,
+    photo_paths: photoPaths,
     device_name: device.device_name || "",
     device_category: device.category || "",
     device_model_name: device.model_name || "",
@@ -1410,6 +1413,35 @@ function attachTransaction(state, row) {
     handled_by_name: handler.name || "",
     handled_by_display: handler.name ? `${handler.name} (${handler.user_id})` : row.handled_by || ""
   };
+}
+
+function transactionPhotoPathsForDisplay(state, row = {}) {
+  const photos = splitPaths(row.photo_paths);
+  if (!photos.length || row.action_type !== "UPDATE") return row.photo_paths || "";
+
+  const currentPhotoSet = normalizedPhotoSet(photos);
+  const hasEarlierSamePhotoUpdate = active(state.Transactions).some((candidate) => {
+    if (candidate === row || candidate.device_id !== row.device_id) return false;
+    if (!isEarlierTransaction(candidate, row)) return false;
+    return normalizedPhotoSet(splitPaths(candidate.photo_paths)) === currentPhotoSet;
+  });
+  return hasEarlierSamePhotoUpdate ? "" : serializePaths(photos);
+}
+
+function normalizedPhotoSet(paths = []) {
+  return [...new Set(paths.map((path) => text(path)).filter(Boolean))].sort().join("\n");
+}
+
+function isEarlierTransaction(candidate = {}, row = {}) {
+  const candidateCreated = text(candidate.created_at);
+  const rowCreated = text(row.created_at);
+  if (candidateCreated && rowCreated && candidateCreated !== rowCreated) return candidateCreated < rowCreated;
+
+  const candidateNo = Number(text(candidate.transaction_no).replace(/\D/g, ""));
+  const rowNo = Number(text(row.transaction_no).replace(/\D/g, ""));
+  if (Number.isFinite(candidateNo) && Number.isFinite(rowNo) && candidateNo !== rowNo) return candidateNo < rowNo;
+
+  return text(candidate.transaction_id) < text(row.transaction_id);
 }
 
 function addTransaction(state, device, actionType, input, userId, beforeStatus, afterStatus) {

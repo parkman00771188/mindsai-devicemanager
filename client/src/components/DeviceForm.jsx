@@ -29,6 +29,8 @@ const emptyDevice = {
   memo: ""
 };
 
+const deviceFormFieldNames = new Set(Object.keys(emptyDevice));
+
 const primaryFields = DEVICE_FIELDS.filter(([name]) => ["location"].includes(name));
 const detailFields = DEVICE_FIELDS.filter(([name]) => ["legacy_device_id", "manufacturer", "serial_number", "components", "memo"].includes(name));
 const purchaseFields = DEVICE_FIELDS.filter(([name]) => ["purchase_date", "purchase_price", "department", "manager"].includes(name));
@@ -327,6 +329,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
     setCompressing(true);
     const data = new FormData(event.currentTarget);
     Object.entries(form).forEach(([key, value]) => {
+      if (!deviceFormFieldNames.has(key)) return;
       if (!data.has(key)) data.append(key, value ?? "");
     });
     if (isLaptopDevice(form)) {
