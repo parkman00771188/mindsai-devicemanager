@@ -1,7 +1,7 @@
-import { Download, Search, Truck, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { api, downloadUrl, queryString } from "../api/client.js";
+import { useSearchParams } from "react-router-dom";
+import { api, queryString } from "../api/client.js";
 import { getCurrentUser, isAdminUser } from "../auth.js";
 import ActionBadge from "../components/ActionBadge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -113,21 +113,9 @@ export default function Deliveries() {
   return (
     <div className="app-page">
       <section className="hero-strip">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="page-title">납품 관리</h1>
-            <p className="mt-1 text-sm text-slate-500">개인과 기관으로 납품·회수 처리된 장비 이력을 확인합니다.</p>
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:flex">
-            <Link className="btn-primary" to="/devices?status=AVAILABLE">
-              <Truck size={18} />
-              납품할 장비 찾기
-            </Link>
-            <a className="btn-secondary" href={downloadUrl("/excel/download")} download>
-              <Download size={18} />
-              Excel 다운로드
-            </a>
-          </div>
+        <div>
+          <h1 className="page-title">납품 관리</h1>
+          <p className="mt-1 text-sm text-slate-500">개인과 기관으로 납품·회수 처리된 장비 이력을 확인합니다.</p>
         </div>
       </section>
 
