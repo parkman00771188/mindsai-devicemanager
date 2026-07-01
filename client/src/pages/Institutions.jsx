@@ -1,5 +1,6 @@
 import { ArrowDownAZ, Building2, Check, History, Mail, MapPin, PackagePlus, Pencil, Phone, Plus, Save, Search, Trash2, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api, queryString } from "../api/client.js";
 import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -548,6 +549,73 @@ export default function Institutions() {
 
   if (!institutions) return <Loading />;
 
+  function renderInstitutionDetailPanel() {
+    if (!selected) return <EmptyState title="기관을 선택해주세요." />;
+    return (
+      <div>
+        <div className="border-b border-line pb-5 text-center">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-lg bg-[#f2f0ff] text-brand sm:h-28 sm:w-28">
+            <Building2 size={44} />
+          </div>
+          <h2 className="mt-4 truncate text-2xl font-extrabold text-ink">{selected.institution_name}</h2>
+          <p className="mt-1 truncate text-sm font-bold text-slate-500">{selected.contact_person || "담당자 미등록"}</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button className="btn-secondary h-10 px-3" type="button" onClick={() => openEditInstitution(selected)}>
+              <Pencil size={16} />
+              수정
+            </button>
+            <button className="btn-dispose h-10 px-3" type="button" onClick={() => deleteInstitution(selected)} disabled={busy}>
+              <Trash2 size={16} />
+              삭제
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-2 text-center">
+          <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+            <p className="text-lg font-extrabold text-ink">{selected.assigned_count || 0}</p>
+            <p className="mt-1 text-xs font-bold text-slate-500">대여/납품</p>
+          </div>
+        </div>
+
+        <dl className="mt-4">
+          <DetailLine icon={UserRound} label="담당자" value={selected.contact_person} />
+          <DetailLine icon={Phone} label="연락처" value={selected.contact} />
+          <DetailLine icon={Mail} label="이메일" value={selected.email} />
+          <DetailLine icon={MapPin} label="주소" value={selected.address} />
+          <DetailLine icon={History} label="비고" value={selected.memo} />
+        </dl>
+
+        <div className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="section-title">대여/납품 장비</h3>
+            <div className="flex items-center gap-2">
+              <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
+              <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
+                <PackagePlus size={15} />
+                장비 할당
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {selected.assigned_devices?.length ? selected.assigned_devices.map((device) => (
+              <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f7f7fd] p-3 text-left transition hover:border-[#c9c4ff] hover:bg-white" type="button" onClick={() => openAssignedDeviceDetail(device.device_id)}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-extrabold text-ink">{deviceTitle(device)}</p>
+                    <p className="mt-1 text-xs font-bold text-brand">{device.device_id}</p>
+                    <p className="mt-1 truncate text-xs font-semibold text-slate-500">{device.rent_location || device.location || "-"} · {formatDate(device.borrowed_at)}</p>
+                  </div>
+                  <StatusBadge status={device.status} />
+                </div>
+              </button>
+            )) : <EmptyState title="대여/납품 장비가 없습니다." />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-page">
       <section className="hero-strip">
@@ -573,22 +641,8 @@ export default function Institutions() {
         </button>
       </form>
 
-      {mobileDetailOpen ? (
-        <button
-          className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm md:hidden"
-          type="button"
-          aria-label="기관 상세 닫기"
-          onClick={() => setMobileDetailOpen(false)}
-        />
-      ) : null}
-
       <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
-        <aside className={`panel relative p-3 sm:p-4 md:order-1 ${mobileDetailOpen ? "fixed inset-x-3 bottom-5 top-5 z-50 overflow-auto md:static md:inset-auto md:z-auto md:block md:overflow-visible" : "hidden md:block"}`}>
-          {mobileDetailOpen ? (
-            <button className="btn-secondary absolute right-3 top-3 z-10 h-10 w-10 p-0 md:hidden" type="button" onClick={() => setMobileDetailOpen(false)} aria-label="닫기">
-              <X size={18} />
-            </button>
-          ) : null}
+        <aside className="panel hidden p-3 sm:p-4 md:order-1 md:block">
           {selected ? (
             <div>
               <div className="border-b border-line pb-5 text-center">
@@ -739,6 +793,20 @@ export default function Institutions() {
           )}
         </section>
       </div>
+
+      {mobileDetailOpen && selected && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm md:hidden" onClick={() => setMobileDetailOpen(false)}>
+              <section className="relative max-h-[calc(100dvh-3rem)] w-full max-w-md overflow-auto rounded-lg bg-white p-5 shadow-lift" onClick={(event) => event.stopPropagation()}>
+                <button className="btn-secondary absolute right-4 top-4 z-10 h-10 w-10 p-0" type="button" onClick={() => setMobileDetailOpen(false)} aria-label="닫기">
+                  <X size={18} />
+                </button>
+                {renderInstitutionDetailPanel()}
+              </section>
+            </div>,
+            document.body
+          )
+        : null}
 
       {modal ? (
         <InstitutionModal
