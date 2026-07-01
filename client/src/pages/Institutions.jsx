@@ -1,5 +1,5 @@
 import { ArrowDownAZ, Building2, Check, History, Mail, MapPin, PackagePlus, Pencil, Phone, Plus, Save, Search, Trash2, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, queryString } from "../api/client.js";
 import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -419,6 +419,14 @@ export default function Institutions() {
   const [detailDeviceId, setDetailDeviceId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const detailPanelRef = useRef(null);
+
+  function revealDetailOnMobile() {
+    if (typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches) return;
+    window.setTimeout(() => {
+      detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
 
   async function load(search = keyword, selectedId = selected?.institution_id) {
     const rows = await api(`/institutions${queryString({ keyword: search })}`);
@@ -451,6 +459,7 @@ export default function Institutions() {
     setError("");
     try {
       setSelected(await api(`/institutions/${encodeURIComponent(institutionId)}`));
+      revealDetailOnMobile();
     } catch (err) {
       setError(err.message);
     }
@@ -553,7 +562,7 @@ export default function Institutions() {
       </form>
 
       <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
-        <aside className="panel p-3 sm:p-4">
+        <aside ref={detailPanelRef} className="panel order-2 p-3 sm:p-4 md:order-1">
           {selected ? (
             <div>
               <div className="border-b border-line pb-5 text-center">
@@ -621,7 +630,7 @@ export default function Institutions() {
           )}
         </aside>
 
-        <section className="panel overflow-hidden">
+        <section className="panel order-1 overflow-hidden md:order-2">
           {institutions.length ? (
             <>
               <div className="flex flex-col gap-3 border-b border-line bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -638,17 +647,26 @@ export default function Institutions() {
                 </div>
               </div>
               <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
-                {sortedInstitutions.map((institution) => (
-                  <button key={institution.institution_id} className="soft-row text-left" type="button" onClick={() => selectInstitution(institution.institution_id)}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-extrabold text-ink">{institution.institution_name}</p>
-                        <p className="mt-1 truncate text-xs font-bold text-slate-500">{institution.contact_person || "담당자 미등록"} · {institution.contact || "연락처 없음"}</p>
+                {sortedInstitutions.map((institution) => {
+                  const isSelected = selected?.institution_id === institution.institution_id;
+                  return (
+                    <button
+                      key={institution.institution_id}
+                      className={`soft-row text-left ${isSelected ? "border-brand bg-[#f4f2ff] shadow-lift" : ""}`}
+                      type="button"
+                      onClick={() => selectInstitution(institution.institution_id)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-extrabold text-ink">{institution.institution_name}</p>
+                          <p className="mt-1 truncate text-xs font-bold text-slate-500">{institution.contact_person || "담당자 미등록"} · {institution.contact || "연락처 없음"}</p>
+                        </div>
+                        <span className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{institution.assigned_count || 0}대</span>
                       </div>
-                      <span className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{institution.assigned_count || 0}대</span>
-                    </div>
-                  </button>
-                ))}
+                      <p className="mt-2 text-sm font-bold text-slate-600">대여/납품 장비 {institution.assigned_count || 0}대</p>
+                    </button>
+                  );
+                })}
               </div>
               <div className="hidden p-2 xl:block">
                 <div className="overflow-hidden rounded-lg border border-line/70">

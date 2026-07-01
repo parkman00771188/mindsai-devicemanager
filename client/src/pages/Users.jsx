@@ -1,5 +1,5 @@
 import { ArrowDownAZ, Building2, Check, Eye, EyeOff, Info, KeyRound, PackagePlus, Plus, Save, Search, Send, ShieldCheck, Trash2, Truck, UserCog, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
 import EmptyState from "../components/EmptyState.jsx";
@@ -723,6 +723,14 @@ export default function Users() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const detailPanelRef = useRef(null);
+
+  function revealDetailOnMobile() {
+    if (typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches) return;
+    window.setTimeout(() => {
+      detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
 
   async function load(nextKeyword = keyword) {
     const rows = await api(`/users${queryString({ keyword: nextKeyword })}`);
@@ -758,6 +766,7 @@ export default function Users() {
 
   async function selectUser(userId) {
     setSelected(await api(`/users/${encodeURIComponent(userId)}`));
+    revealDetailOnMobile();
   }
 
   async function handleProfilePhotoUploaded(user) {
@@ -925,7 +934,7 @@ export default function Users() {
       </form>
 
       <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
-        <aside className="panel p-3 sm:p-4">
+        <aside ref={detailPanelRef} className="panel order-2 p-3 sm:p-4 md:order-1">
           {selected ? (
             <div>
               <div className="border-b border-line pb-5 text-center">
@@ -1044,7 +1053,7 @@ export default function Users() {
           )}
         </aside>
 
-        <section className="panel overflow-hidden">
+        <section className="panel order-1 overflow-hidden md:order-2">
           {users.length ? (
             <>
               <div className="flex flex-col gap-3 border-b border-line bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1069,27 +1078,30 @@ export default function Users() {
                 </div>
               </div>
               <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
-                {sortedUsers.map((user, index) => (
-                  <button
-                    key={user.user_id}
-                    className={`soft-row text-left ${isPrimaryAdminUser(user) ? "admin-user-row" : ""}`}
-                    type="button"
-                    onClick={() => selectUser(user.user_id)}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <UserAvatar user={user} size="sm" />
-                          <RoleBadge role={user.role} />
-                          <p className="font-extrabold text-ink">{user.name}</p>
+                {sortedUsers.map((user, index) => {
+                  const isSelected = selected?.user_id === user.user_id;
+                  return (
+                    <button
+                      key={user.user_id}
+                      className={`soft-row text-left ${isPrimaryAdminUser(user) ? "admin-user-row" : ""} ${isSelected ? "border-brand bg-[#f4f2ff] shadow-lift" : ""}`}
+                      type="button"
+                      onClick={() => selectUser(user.user_id)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <UserAvatar user={user} size="sm" />
+                            <RoleBadge role={user.role} />
+                            <p className="truncate font-extrabold text-ink">{user.name}</p>
+                          </div>
+                          <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {user.user_id} · {user.organization || "소속 없음"} · {user.department || "부서 없음"}</p>
                         </div>
-                        <p className="mt-1 text-xs font-bold text-slate-500">No {index + 1} · {user.user_id} · {user.organization || "소속 없음"} · {user.department || "부서 없음"}</p>
+                        <span className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{user.assigned_count || 0}대</span>
                       </div>
-                      <span className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{user.assigned_count || 0}대</span>
-                    </div>
-                    <p className="mt-2 text-sm font-bold text-slate-600">할당 장비 {user.assigned_count || 0}대</p>
-                  </button>
-                ))}
+                      <p className="mt-2 text-sm font-bold text-slate-600">할당 장비 {user.assigned_count || 0}대</p>
+                    </button>
+                  );
+                })}
               </div>
               <div className="hidden p-2 xl:block">
                 <div className="overflow-hidden rounded-lg border border-line/70">
