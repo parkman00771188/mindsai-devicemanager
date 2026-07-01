@@ -565,16 +565,26 @@ async function readBody(request) {
     const body = {};
     for (const [key, value] of form.entries()) {
       if (isFileLike(value)) {
-        body[`${key}_data_url`] = await fileToDataUrl(value);
-        body[`${key}_name`] = value.name || "";
+        const dataUrl = await fileToDataUrl(value);
+        if (key === "photos") {
+          body.photo_paths = serializePaths([...splitPaths(body.photo_paths), dataUrl]);
+          appendFormValue(body, "photo_names", value.name || "");
+        } else {
+          body[`${key}_data_url`] = dataUrl;
+          body[`${key}_name`] = value.name || "";
+        }
         continue;
       }
-      if (body[key] === undefined) body[key] = String(value);
-      else body[key] = `${body[key]};${String(value)}`;
+      appendFormValue(body, key, String(value));
     }
     return body;
   }
   return {};
+}
+
+function appendFormValue(body, key, value) {
+  if (body[key] === undefined) body[key] = value;
+  else body[key] = `${body[key]};${value}`;
 }
 
 function isFileLike(value) {
@@ -754,17 +764,21 @@ async function handleDevices(context, state, parts, params, body) {
 function createDevice(state, input, userId) {
   const created = now();
   const deviceId = input.device_id || nextDeviceId(state, input.category || "", input.model_name || "", input.capacity_gb || "");
+  const photoPaths = splitPaths(input.photo_paths || input.main_photo_path);
   const row = {
     ...input,
     device_id: deviceId,
     device_name: input.device_name || deviceDisplayName(input.category, input.model_name) || [input.category, input.model_name].filter(Boolean).join(" "),
     status: input.status || "AVAILABLE",
     qr_code_path: input.qr_code_path || qrPathForDeviceId(deviceId),
-    main_photo_path: input.main_photo_path || firstPath(input.photo_paths),
+    main_photo_path: input.main_photo_path || photoPaths[0] || "",
+    photo_paths: serializePaths(photoPaths),
     created_at: created,
     updated_at: created,
     is_deleted: false
   };
+  delete row.photo_names;
+  delete row.keep_photo_paths;
   state.Devices.push(row);
   addTransaction(state, row, "REGISTER", { memo: "Device registered", photo_paths: row.photo_paths || "" }, userId, "", row.status);
   return row;
@@ -772,10 +786,18 @@ function createDevice(state, input, userId) {
 
 function updateDevice(state, device, input) {
   const previousDeviceId = device.device_id;
-  const protectedFields = new Set(["device_id", "created_at", "is_deleted"]);
+  const protectedFields = new Set(["device_id", "created_at", "is_deleted", "main_photo_path", "photo_paths", "keep_photo_paths", "photo_names"]);
   Object.entries(input || {}).forEach(([key, value]) => {
     if (!protectedFields.has(key)) device[key] = value;
   });
+  if (input.keep_photo_paths !== undefined || input.photo_paths !== undefined || input.main_photo_path !== undefined) {
+    const currentPhotos = splitPaths(device.photo_paths || device.main_photo_path);
+    const keptPhotos = input.keep_photo_paths !== undefined ? splitPaths(input.keep_photo_paths) : currentPhotos;
+    const newPhotos = splitPaths(input.photo_paths || input.main_photo_path);
+    const nextPhotos = [...new Set([...keptPhotos, ...newPhotos].filter(Boolean))].slice(0, 10);
+    device.main_photo_path = nextPhotos[0] || "";
+    device.photo_paths = serializePaths(nextPhotos);
+  }
   reassignDeviceId(state, device, previousDeviceId);
   if (!device.main_photo_path) device.main_photo_path = firstPath(device.photo_paths);
   device.updated_at = now();
@@ -1811,8 +1833,29 @@ function capacityMatches(actualValue, expectedValue) {
   return Number.isFinite(actualNumber) && Number.isFinite(expectedNumber) && actualNumber * 1024 === expectedNumber;
 }
 
+function splitPaths(value) {
+  const source = text(value).trim();
+  if (!source) return [];
+  if (source.startsWith("[") && source.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(source);
+      if (Array.isArray(parsed)) return parsed.map((item) => text(item).trim()).filter(Boolean);
+    } catch {
+      // Fall back to the legacy separator below.
+    }
+  }
+  if (source.startsWith("data:")) return [source];
+  return source.split(";").map((item) => item.trim()).filter(Boolean);
+}
+
+function serializePaths(paths = []) {
+  const list = [...new Set(paths.map((item) => text(item).trim()).filter(Boolean))];
+  if (list.some((item) => item.startsWith("data:"))) return JSON.stringify(list);
+  return list.join(";");
+}
+
 function firstPath(value) {
-  return text(value).split(";").map((item) => item.trim()).filter(Boolean)[0] || "";
+  return splitPaths(value)[0] || "";
 }
 
 function descCreated(a, b) {

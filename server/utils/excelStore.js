@@ -328,10 +328,18 @@ function normalizeDateInput(value) {
 }
 
 function splitPaths(value) {
-  return text(value)
-    .split(";")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const source = text(value).trim();
+  if (!source) return [];
+  if (source.startsWith("[") && source.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(source);
+      if (Array.isArray(parsed)) return parsed.map((item) => text(item).trim()).filter(Boolean);
+    } catch {
+      // Fall through to the legacy separator.
+    }
+  }
+  if (source.startsWith("data:")) return [source];
+  return source.split(";").map((item) => item.trim()).filter(Boolean);
 }
 
 function rowFor(sheet, source = {}) {

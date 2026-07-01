@@ -150,7 +150,14 @@ function uniqueDevicePhotos(device = {}) {
   return [...new Set([...splitPhotoPaths(device.photo_paths), ...splitPhotoPaths(device.main_photo_path)])];
 }
 
+function serializePhotoPaths(paths = []) {
+  const list = [...new Set(paths.map((path) => String(path || "").trim()).filter(Boolean))];
+  if (list.some((path) => path.startsWith("data:"))) return JSON.stringify(list);
+  return list.join(";");
+}
+
 function photoNameFromPath(path) {
+  if (String(path || "").startsWith("data:")) return "등록된 사진";
   const name = String(path || "").split(/[\\/]/).filter(Boolean).pop() || "등록된 사진";
   try {
     return decodeURIComponent(name);
@@ -328,7 +335,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
       ["ram_capacity", "storage_capacity", "cpu", "gpu", "windows_spec"].forEach((key) => data.set(key, ""));
     }
     if (isCreate) data.set("status", "AVAILABLE");
-    if (!isCreate) data.set("keep_photo_paths", existingPhotos.join(";"));
+    if (!isCreate) data.set("keep_photo_paths", serializePhotoPaths(existingPhotos));
     data.set("device_name", previewName);
     const compressedPhotos = await compressImageFiles(selectedPhotos, { maxSize: 1600, quality: 0.78 });
     compressedPhotos.forEach((photo) => data.append("photos", photo));

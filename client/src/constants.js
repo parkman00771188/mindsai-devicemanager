@@ -153,7 +153,18 @@ export function formatDateTime(value) {
 }
 
 export function splitPhotoPaths(value) {
-  return String(value || "")
+  const source = String(value || "").trim();
+  if (!source) return [];
+  if (source.startsWith("[") && source.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(source);
+      if (Array.isArray(parsed)) return parsed.map((path) => String(path || "").trim()).filter(Boolean);
+    } catch {
+      // Fall through to the legacy format.
+    }
+  }
+  if (source.startsWith("data:")) return [source];
+  return source
     .split(";")
     .map((path) => path.trim())
     .filter(Boolean);
