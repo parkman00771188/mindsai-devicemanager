@@ -1,4 +1,4 @@
-import { ArrowDownAZ, Building2, Check, Eye, EyeOff, Info, KeyRound, PackagePlus, Plus, Save, Search, Send, ShieldCheck, Trash2, Truck, UserCog, X } from "lucide-react";
+import { ArrowDownAZ, Building2, Check, ChevronDown, Eye, EyeOff, Info, KeyRound, PackagePlus, Plus, Save, Search, Send, ShieldCheck, Trash2, Truck, UserCog, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
@@ -50,6 +50,60 @@ function RoleBadge({ role }) {
       <Icon size={13} />
       {roleLabel(normalizedRole)}
     </span>
+  );
+}
+
+function RoleDropdown({ value, disabled, onChange }) {
+  const [open, setOpen] = useState(false);
+  const selectedRole = value === "ADMIN" ? "ADMIN" : "USER";
+
+  function selectRole(nextRole) {
+    onChange(nextRole);
+    setOpen(false);
+  }
+
+  return (
+    <div
+      className="relative"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
+      <button
+        className={`flex h-12 w-full items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 text-left outline-none transition focus:border-brand focus:ring-4 focus:ring-[#e5e1ff] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${disabled ? "bg-slate-100" : ""}`}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <RoleBadge role={selectedRole} />
+        <ChevronDown className={`shrink-0 text-slate-500 transition ${open ? "rotate-180" : ""}`} size={18} />
+      </button>
+      {open && !disabled ? (
+        <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-lg border border-line bg-white p-2 shadow-lift" role="listbox">
+          {roleOptions.map(([role]) => {
+            const selected = selectedRole === role;
+            return (
+              <button
+                key={role}
+                className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition ${
+                  selected ? "bg-[#f7f7fd]" : "hover:bg-[#f7f7fd]"
+                }`}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => selectRole(role)}
+              >
+                <RoleBadge role={role} />
+                {selected ? <Check className="text-brand" size={17} /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -180,14 +234,11 @@ function UserModal({ user, mode, busy, userOptions = [], onClose, onSubmit, onPh
                 <span className="field-label">권한</span>
                 {canManageRole ? (
                   <>
-                    <select
-                      className={`select ${isProtectedAdmin ? "bg-slate-100 text-slate-500" : ""}`}
+                    <RoleDropdown
                       value={form.role}
-                      onChange={(event) => update("role", event.target.value)}
                       disabled={isProtectedAdmin}
-                    >
-                      {roleOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                    </select>
+                      onChange={(role) => update("role", role)}
+                    />
                     <p className="mt-1 text-xs font-bold text-slate-500">
                       {isProtectedAdmin ? "기본 관리자(admin) 계정은 권한을 변경할 수 없습니다." : "권한 변경 시 해당 사용자에게 알림이 전송됩니다."}
                     </p>
