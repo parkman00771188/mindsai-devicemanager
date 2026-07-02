@@ -1,9 +1,10 @@
 import { Check, Printer, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { deviceCapacity, deviceTitle, statusLabel } from "../constants.js";
+import { deviceCapacity, deviceTitle } from "../constants.js";
+import StatusBadge from "./StatusBadge.jsx";
 import { qrImageUrl } from "../utils/qrDownload.js";
 
-const scaleOptions = [80, 90, 100, 110, 120];
+const scaleOptions = Array.from({ length: 13 }, (_, index) => 30 + index * 10);
 const printBaseScale = 0.8;
 
 function escapeHtml(value) {
@@ -174,9 +175,7 @@ function DevicePickRow({ device, selected, onToggle }) {
         </span>
         <span className="mt-1 block truncate text-sm font-bold text-slate-500">{meta || "장비 정보 미입력"}</span>
       </span>
-      <span className="shrink-0 rounded-lg border border-[#bfeee7] bg-[#ecfbf7] px-3 py-1 text-sm font-extrabold text-[#159d8f]">
-        {device.status === "DELIVERED" ? "납품" : statusLabel(device.status)}
-      </span>
+      <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
     </button>
   );
 }
@@ -285,7 +284,7 @@ export default function QrPrintModal({ devices = [], categories = [], onClose })
                 </select>
                 <div className="flex gap-2">
                   <button className="btn-secondary h-10 px-3 text-sm" type="button" onClick={selectFiltered} disabled={!filteredDevices.length}>
-                    현재 목록 선택
+                    전체 목록 선택
                   </button>
                   <button className="btn-secondary h-10 px-3 text-sm" type="button" onClick={clearFiltered} disabled={!filteredSelectedCount}>
                     선택 해제
