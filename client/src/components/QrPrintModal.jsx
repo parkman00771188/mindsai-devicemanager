@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { deviceCapacity, deviceTitle, statusLabel } from "../constants.js";
 import { qrImageUrl } from "../utils/qrDownload.js";
 
-const scaleOptions = [80, 90, 100, 110];
+const scaleOptions = [80, 90, 100, 110, 120];
+const printBaseScale = 0.8;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -34,10 +35,11 @@ function deviceSearchText(device = {}) {
 }
 
 function printQrLabels(devices, scale) {
-  const labelWidthCm = (8 * scale) / 100;
-  const labelHeightCm = (1.5 * scale) / 100;
-  const infoFontPt = (13 * scale) / 100;
-  const blockGapMm = scale > 100 ? 11 : 14;
+  const effectiveScale = scale * printBaseScale;
+  const labelWidthCm = (8 * effectiveScale) / 100;
+  const labelHeightCm = (1.5 * effectiveScale) / 100;
+  const infoFontPt = (13 * effectiveScale) / 100;
+  const blockGapMm = effectiveScale > 100 ? 11 : 14;
   const cards = devices
     .map((device) => {
       const title = deviceTitle(device);
@@ -342,23 +344,16 @@ export default function QrPrintModal({ devices = [], categories = [], onClose })
             <div className="border-t border-line bg-white p-4">
               <h3 className="text-base font-extrabold text-ink">인쇄 옵션</h3>
               <div className="mt-3">
-                <p className="text-sm font-extrabold text-ink">비율 설정</p>
-                <div className="mt-2 grid grid-cols-4 gap-2">
-                  {scaleOptions.map((option) => (
-                    <button
-                      key={option}
-                      className={`h-10 rounded-lg border text-sm font-extrabold transition ${
-                        scale === option ? "border-brand bg-brand text-white shadow-soft" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff]"
-                      }`}
-                      type="button"
-                      onClick={() => setScale(option)}
-                    >
-                      {option}%
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-3 text-sm font-bold text-slate-600">비율 : {scale}%</p>
-                <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">100% 기준 라벨 크기는 8cm x 1.5cm입니다.</p>
+                <label className="block">
+                  <span className="field-label">비율 설정</span>
+                  <select className="input mt-1 h-11 py-0" value={scale} onChange={(event) => setScale(Number(event.target.value))}>
+                    {scaleOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}%
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
             </div>
           </aside>

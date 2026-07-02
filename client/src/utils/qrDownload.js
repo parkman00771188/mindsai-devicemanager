@@ -1,6 +1,6 @@
 import { downloadUrl } from "../api/client.js";
 
-const LABEL_QR_VERSION = "horizontal-20260702";
+const LABEL_QR_VERSION = "horizontal-slim-20260702";
 
 export function qrImageUrl(deviceId, style = "plain", download = false) {
   const search = new URLSearchParams();

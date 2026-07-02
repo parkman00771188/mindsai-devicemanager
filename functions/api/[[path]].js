@@ -2191,12 +2191,12 @@ async function qrLabelSvg(deviceId) {
   const idText = escapeXml(deviceId);
   const idLength = Math.max(String(deviceId || "").length, 1);
   const availableWidth = labelWidth - textX - rightPadding;
-  const idFontSize = Math.max(34, Math.min(62, Math.floor(availableWidth / Math.max(idLength * 0.62, 1))));
+  const idFontSize = Math.max(30, Math.min(54, Math.floor(availableWidth / Math.max(idLength * 0.68, 1))));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="8cm" height="1.5cm" viewBox="0 0 ${labelWidth} ${labelHeight}" role="img" aria-label="${idText} QR code label">
   <rect width="${labelWidth}" height="${labelHeight}" fill="#000000"/>
   <image href="data:image/svg+xml;base64,${encodedQr}" x="${qrInset}" y="${qrInset}" width="${qrSize}" height="${qrSize}"/>
-  <text x="${textX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800" dominant-baseline="middle" letter-spacing="0">${idText}</text>
+  <text x="${textX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="700" dominant-baseline="middle" letter-spacing="0">${idText}</text>
 </svg>
 `;
 }

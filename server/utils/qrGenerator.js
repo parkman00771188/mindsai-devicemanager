@@ -30,7 +30,7 @@ function qrPayload(deviceId) {
 function labelFontSize(deviceId) {
   const idLength = Math.max(String(deviceId || "").length, 1);
   const availableWidth = labelWidth - labelTextX - labelRightPadding;
-  return Math.max(34, Math.min(62, Math.floor(availableWidth / Math.max(idLength * 0.62, 1))));
+  return Math.max(30, Math.min(54, Math.floor(availableWidth / Math.max(idLength * 0.68, 1))));
 }
 
 function publicQrPath(deviceId) {
@@ -121,7 +121,7 @@ async function generateQrLabelForDevice(deviceId, origin = "http://localhost:300
 <svg xmlns="http://www.w3.org/2000/svg" width="8cm" height="1.5cm" viewBox="0 0 ${labelWidth} ${labelHeight}" role="img" aria-label="${idText} QR code label">
   <rect width="${labelWidth}" height="${labelHeight}" fill="#000000"/>
   <image href="data:image/svg+xml;base64,${encodedQr}" x="${labelQrInset}" y="${labelQrInset}" width="${labelQrSize}" height="${labelQrSize}"/>
-  <text x="${labelTextX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800" dominant-baseline="middle" letter-spacing="0">${idText}</text>
+  <text x="${labelTextX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="700" dominant-baseline="middle" letter-spacing="0">${idText}</text>
 </svg>
 `;
   fs.writeFileSync(absoluteQrLabelPath(deviceId), label, "utf8");
