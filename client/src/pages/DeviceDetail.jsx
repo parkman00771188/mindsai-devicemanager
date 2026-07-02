@@ -1028,7 +1028,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
               <img
                 src={qrImageUrl(device.device_id, qrStyle)}
                 alt={`${device.device_id} QR 코드`}
-                className={`${qrStyle === "label" ? "max-h-full max-w-[170px]" : "h-44 w-44"} rounded-lg bg-white object-contain`}
+                className={`${qrStyle === "label" ? "max-h-16 w-full max-w-[360px]" : "h-44 w-44"} rounded-lg bg-white object-contain`}
               />
             </div>
           </section>

@@ -4,6 +4,12 @@ const QRCode = require("qrcode");
 
 const uploadsRoot = path.join(__dirname, "..", "uploads");
 const qrcodeDir = path.join(uploadsRoot, "qrcodes");
+const labelWidth = 800;
+const labelHeight = 150;
+const labelQrSize = 140;
+const labelQrInset = 5;
+const labelTextX = 190;
+const labelRightPadding = 24;
 
 function safeSegment(value) {
   return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -19,6 +25,12 @@ function escapeXml(value) {
 
 function qrPayload(deviceId) {
   return String(deviceId || "").trim();
+}
+
+function labelFontSize(deviceId) {
+  const idLength = Math.max(String(deviceId || "").length, 1);
+  const availableWidth = labelWidth - labelTextX - labelRightPadding;
+  return Math.max(34, Math.min(62, Math.floor(availableWidth / Math.max(idLength * 0.62, 1))));
 }
 
 function publicQrPath(deviceId) {
@@ -98,20 +110,18 @@ async function generateQrLabelForDevice(deviceId, origin = "http://localhost:300
   fs.mkdirSync(qrcodeDir, { recursive: true });
   const qrSvg = await QRCode.toString(qrPayload(deviceId), {
     type: "svg",
-    width: 660,
+    width: labelQrSize,
     margin: 1,
     color: { dark: "#000000", light: "#ffffff" }
   });
   const encodedQr = Buffer.from(qrSvg).toString("base64");
   const idText = escapeXml(deviceId);
-  const idFontSize = Math.max(34, Math.min(58, Math.floor(720 / Math.max(String(deviceId).length * 0.62, 10))));
+  const idFontSize = labelFontSize(deviceId);
   const label = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="900" viewBox="0 0 720 900" role="img" aria-label="${idText} QR code">
-  <rect width="720" height="900" fill="#000000"/>
-  <rect x="24" y="24" width="672" height="672" fill="#ffffff"/>
-  <image href="data:image/svg+xml;base64,${encodedQr}" x="30" y="30" width="660" height="660"/>
-  <text x="360" y="770" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="400">Device No.</text>
-  <text x="360" y="842" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800">${idText}</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="8cm" height="1.5cm" viewBox="0 0 ${labelWidth} ${labelHeight}" role="img" aria-label="${idText} QR code label">
+  <rect width="${labelWidth}" height="${labelHeight}" fill="#000000"/>
+  <image href="data:image/svg+xml;base64,${encodedQr}" x="${labelQrInset}" y="${labelQrInset}" width="${labelQrSize}" height="${labelQrSize}"/>
+  <text x="${labelTextX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800" dominant-baseline="middle" letter-spacing="0">${idText}</text>
 </svg>
 `;
   fs.writeFileSync(absoluteQrLabelPath(deviceId), label, "utf8");

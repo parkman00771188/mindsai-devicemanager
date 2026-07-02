@@ -16,7 +16,7 @@ function QrOption({ deviceId, title, description, style }) {
         <img
           src={qrImageUrl(deviceId, style)}
           alt={`${deviceId} ${title}`}
-          className={`${isLabel ? "max-h-full max-w-[210px]" : "h-56 w-56"} rounded-lg object-contain`}
+          className={`${isLabel ? "max-h-24 w-full max-w-[520px]" : "h-56 w-56"} rounded-lg object-contain`}
         />
       </div>
       <button className="btn-primary mt-4 w-full justify-center" type="button" onClick={() => downloadQrImage(deviceId, style)}>

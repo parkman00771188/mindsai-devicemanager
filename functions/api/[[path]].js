@@ -2175,17 +2175,28 @@ async function qrSvg(deviceId, width = 720, margin = 2) {
 }
 
 async function qrLabelSvg(deviceId) {
-  const qr = await qrSvg(deviceId, 660, 1);
+  const labelWidth = 800;
+  const labelHeight = 150;
+  const qrSize = 140;
+  const qrInset = 5;
+  const textX = 190;
+  const rightPadding = 24;
+  const qr = await QRCode.toString(text(deviceId), {
+    type: "svg",
+    width: qrSize,
+    margin: 1,
+    color: { dark: "#000000", light: "#ffffff" }
+  });
   const encodedQr = bytesToBase64(new TextEncoder().encode(qr));
   const idText = escapeXml(deviceId);
-  const idFontSize = Math.max(34, Math.min(58, Math.floor(720 / Math.max(String(deviceId).length * 0.62, 10))));
+  const idLength = Math.max(String(deviceId || "").length, 1);
+  const availableWidth = labelWidth - textX - rightPadding;
+  const idFontSize = Math.max(34, Math.min(62, Math.floor(availableWidth / Math.max(idLength * 0.62, 1))));
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="900" viewBox="0 0 720 900" role="img" aria-label="${idText} QR code">
-  <rect width="720" height="900" fill="#000000"/>
-  <rect x="24" y="24" width="672" height="672" fill="#ffffff"/>
-  <image href="data:image/svg+xml;base64,${encodedQr}" x="30" y="30" width="660" height="660"/>
-  <text x="360" y="770" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="400">Device No.</text>
-  <text x="360" y="842" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800">${idText}</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="8cm" height="1.5cm" viewBox="0 0 ${labelWidth} ${labelHeight}" role="img" aria-label="${idText} QR code label">
+  <rect width="${labelWidth}" height="${labelHeight}" fill="#000000"/>
+  <image href="data:image/svg+xml;base64,${encodedQr}" x="${qrInset}" y="${qrInset}" width="${qrSize}" height="${qrSize}"/>
+  <text x="${textX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="800" dominant-baseline="middle" letter-spacing="0">${idText}</text>
 </svg>
 `;
 }

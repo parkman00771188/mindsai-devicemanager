@@ -31,33 +31,8 @@ function loadImage(src) {
   });
 }
 
-async function downloadLabelQrPng(deviceId) {
-  const image = await loadImage(qrImageUrl(deviceId, "plain"));
-  const canvas = document.createElement("canvas");
-  canvas.width = 720;
-  canvas.height = 900;
-  const context = canvas.getContext("2d");
-  const idText = String(deviceId || "");
-  const idFontSize = Math.max(34, Math.min(58, Math.floor(720 / Math.max(idText.length * 0.62, 10))));
-
-  context.fillStyle = "#000000";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#ffffff";
-  context.fillRect(24, 24, 672, 672);
-  context.drawImage(image, 30, 30, 660, 660);
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillStyle = "#ffffff";
-  context.font = "400 36px Arial, Helvetica, sans-serif";
-  context.fillText("Device No.", 360, 766);
-  context.font = `800 ${idFontSize}px Arial, Helvetica, sans-serif`;
-  context.fillText(idText, 360, 838);
-
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-  if (!blob) throw new Error("QR PNG를 생성하지 못했습니다.");
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, `${safeFileSegment(deviceId)}-qr-label.png`);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+async function downloadLabelQrSvg(deviceId) {
+  triggerDownload(qrImageUrl(deviceId, "label", true), `${safeFileSegment(deviceId)}-qr-label.svg`);
 }
 
 async function downloadPlainQrPng(deviceId) {
@@ -71,7 +46,7 @@ async function downloadPlainQrPng(deviceId) {
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-  if (!blob) throw new Error("QR PNG瑜??앹꽦?섏? 紐삵뻽?듬땲??");
+  if (!blob) throw new Error("Failed to create QR PNG.");
   const url = URL.createObjectURL(blob);
   triggerDownload(url, `${safeFileSegment(deviceId)}-qr.png`);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -79,7 +54,7 @@ async function downloadPlainQrPng(deviceId) {
 
 export async function downloadQrImage(deviceId, style = "plain") {
   if (style === "label") {
-    await downloadLabelQrPng(deviceId);
+    await downloadLabelQrSvg(deviceId);
     return;
   }
   await downloadPlainQrPng(deviceId);
