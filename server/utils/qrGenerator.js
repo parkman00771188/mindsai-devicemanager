@@ -8,8 +8,11 @@ const labelWidth = 800;
 const labelHeight = 150;
 const labelQrSize = 140;
 const labelQrInset = 5;
-const labelTextX = 190;
+const labelTextStart = 170;
 const labelRightPadding = 24;
+const labelTextWidth = labelWidth - labelTextStart - labelRightPadding;
+const labelTextCenter = labelTextStart + labelTextWidth / 2;
+const minimumLabelFontSize = 18;
 
 function safeSegment(value) {
   return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -29,8 +32,13 @@ function qrPayload(deviceId) {
 
 function labelFontSize(deviceId) {
   const idLength = Math.max(String(deviceId || "").length, 1);
-  const availableWidth = labelWidth - labelTextX - labelRightPadding;
-  return Math.max(30, Math.min(54, Math.floor(availableWidth / Math.max(idLength * 0.68, 1))));
+  return Math.max(minimumLabelFontSize, Math.min(48, Math.floor(labelTextWidth / Math.max(idLength * 0.66, 1))));
+}
+
+function labelTextFitAttributes(deviceId, fontSize) {
+  const estimatedWidth = String(deviceId || "").length * fontSize * 0.66;
+  if (estimatedWidth <= labelTextWidth) return "";
+  return ` textLength="${labelTextWidth}" lengthAdjust="spacingAndGlyphs"`;
 }
 
 function publicQrPath(deviceId) {
@@ -121,7 +129,7 @@ async function generateQrLabelForDevice(deviceId, origin = "http://localhost:300
 <svg xmlns="http://www.w3.org/2000/svg" width="8cm" height="1.5cm" viewBox="0 0 ${labelWidth} ${labelHeight}" role="img" aria-label="${idText} QR code label">
   <rect width="${labelWidth}" height="${labelHeight}" fill="#000000"/>
   <image href="data:image/svg+xml;base64,${encodedQr}" x="${labelQrInset}" y="${labelQrInset}" width="${labelQrSize}" height="${labelQrSize}"/>
-  <text x="${labelTextX}" y="78" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="700" dominant-baseline="middle" letter-spacing="0">${idText}</text>
+  <text x="${labelTextCenter}" y="78" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="${idFontSize}" font-weight="700" dominant-baseline="middle" letter-spacing="0"${labelTextFitAttributes(deviceId, idFontSize)}>${idText}</text>
 </svg>
 `;
   fs.writeFileSync(absoluteQrLabelPath(deviceId), label, "utf8");
