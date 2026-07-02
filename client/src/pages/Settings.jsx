@@ -10,7 +10,6 @@ import {
   Layers3,
   Pencil,
   Plus,
-  RotateCcw,
   Search,
   Tags,
   Trash2,
@@ -26,7 +25,19 @@ import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import ProfilePhotoUploader from "../components/ProfilePhotoUploader.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
-import { formatDate, formatPhoneNumber, statusLabel } from "../constants.js";
+import {
+  actionLabel,
+  deviceCapacity,
+  deviceTitle,
+  formatDate,
+  formatDateTime,
+  formatPhoneNumber,
+  splitPhotoPaths,
+  statusLabel,
+  transactionMemo,
+  transactionNumber,
+  transactionPlace
+} from "../constants.js";
 
 const emptyCategory = { category_name: "", prefix: "", memo: "" };
 const emptyType = { category_id: "", type_name: "", type_prefix: "", memo: "" };
@@ -59,6 +70,91 @@ const reasonTypes = [
 
 function textCompare(a, b) {
   return String(a || "").localeCompare(String(b || ""), "ko", { numeric: true });
+}
+
+function twoDigits(value) {
+  return String(value).padStart(2, "0");
+}
+
+function fileDateStamp() {
+  const now = new Date();
+  return `${now.getFullYear()}${twoDigits(now.getMonth() + 1)}${twoDigits(now.getDate())}-${twoDigits(now.getHours())}${twoDigits(now.getMinutes())}`;
+}
+
+function exportValue(value) {
+  if (value === undefined || value === null || value === "-") return "";
+  return value;
+}
+
+function exportDate(value) {
+  const formatted = formatDate(value);
+  return formatted === "-" ? "" : formatted;
+}
+
+function exportDateTime(value) {
+  const formatted = formatDateTime(value);
+  return formatted === "-" ? "" : formatted;
+}
+
+function deviceReportRows(devices = []) {
+  return devices.map((device, index) => ({
+    순번: index + 1,
+    상태: statusLabel(device.status),
+    장비번호: exportValue(device.device_id),
+    "기존 장비번호": exportValue(device.legacy_device_id),
+    장비명: exportValue(deviceTitle(device)),
+    분류: exportValue(device.category),
+    제조사: exportValue(device.manufacturer),
+    모델명: exportValue(device.model_name),
+    용량: exportValue(deviceCapacity(device)),
+    시리얼번호: exportValue(device.serial_number),
+    구매일: exportDate(device.purchase_date),
+    구매금액: exportValue(device.purchase_price),
+    관리부서: exportValue(device.department),
+    담당자: exportValue(device.manager),
+    보관위치: exportValue(device.location),
+    "현재 사용자/납품처": exportValue(device.current_borrower),
+    "현재 목적/사유": exportValue(device.current_status_purpose || device.current_purpose),
+    "예상 반납일": exportDate(device.expected_return_at),
+    "최근 반납일": exportDate(device.last_returned_at),
+    구성품: exportValue(device.components),
+    비고: exportValue(device.memo),
+    등록일: exportDateTime(device.created_at),
+    수정일: exportDateTime(device.updated_at)
+  }));
+}
+
+function transactionReportRows(rows = []) {
+  return rows.map((row, index) => ({
+    순번: index + 1,
+    출납번호: transactionNumber(row),
+    작업: actionLabel(row.action_type),
+    장비번호: exportValue(row.device_id),
+    장비명: exportValue(deviceTitle(row)),
+    대상: exportValue(row.user_name),
+    "소속/부서": exportValue(row.user_org_department || row.borrower_org_department || [row.user_organization, row.user_department].filter(Boolean).join(" / ") || row.user_department),
+    연락처: exportValue(row.user_contact),
+    "목적/사유": exportValue(row.purpose || row.issue_description),
+    "대여/납품일": exportDate(row.rented_at),
+    "반납/회수일": exportDate(row.returned_at),
+    장소: exportValue(transactionPlace(row)),
+    "처리 상태": exportValue(row.condition_status),
+    사진: splitPhotoPaths(row.photo_paths).length ? `${splitPhotoPaths(row.photo_paths).length}장` : "",
+    메모: exportValue(transactionMemo(row) || row.issue_description),
+    처리자: exportValue(row.handled_by_display || row.handled_by_name || row.handled_by),
+    처리일: exportDateTime(row.created_at)
+  }));
+}
+
+function applyReportColumnWidths(sheet, rows = []) {
+  const headers = rows[0] ? Object.keys(rows[0]) : [];
+  sheet["!cols"] = headers.map((header) => {
+    const measured = Math.max(
+      String(header).length + 2,
+      ...rows.slice(0, 200).map((row) => String(row[header] || "").split(/\r?\n/)[0].length + 2)
+    );
+    return { wch: Math.min(42, Math.max(10, measured)) };
+  });
 }
 
 function optionMetaFor(type) {
@@ -1256,21 +1352,47 @@ export default function Settings() {
     }
   }
 
-  async function initExcel() {
-    if (!window.confirm("샘플 데이터로 엑셀 파일을 다시 초기화할까요? 기존 데이터가 교체됩니다.")) return;
+  async function downloadReportWorkbook(kind) {
     setBusy(true);
     setMessage(null);
     try {
-      await api("/excel/init", { method: "POST", body: { force: true, sample: true } });
-      await load();
-      setMessage({ type: "success", text: "엑셀 파일을 초기화했습니다." });
+      const XLSX = await import("xlsx");
+      const config = {
+        devices: {
+          path: "/devices",
+          sheet: "장비목록",
+          filePrefix: "장비목록",
+          rows: deviceReportRows
+        },
+        transactions: {
+          path: "/transactions?exclude_actions=RETURN,RECOVERY",
+          sheet: "전체이력",
+          filePrefix: "전체이력",
+          rows: transactionReportRows
+        },
+        deliveries: {
+          path: "/transactions?actions=DELIVERY,RECOVERY",
+          sheet: "납품관리이력",
+          filePrefix: "납품관리이력",
+          rows: transactionReportRows
+        }
+      }[kind];
+      if (!config) return;
+
+      const data = await api(config.path);
+      const rows = config.rows(data || []);
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      applyReportColumnWidths(sheet, rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, config.sheet);
+      XLSX.writeFile(workbook, `${config.filePrefix}-${fileDateStamp()}.xlsx`);
+      setMessage({ type: "success", text: `${config.sheet} 엑셀을 다운로드했습니다.` });
     } catch (err) {
       setMessage({ type: "error", text: err.message });
     } finally {
       setBusy(false);
     }
   }
-
 
   function renderProfileTab() {
     const organizations = optionTexts(userOptions, "ORGANIZATION");
@@ -1833,13 +1955,40 @@ export default function Settings() {
 
   function renderExcelTab() {
     return (
-      <section className="panel p-4 sm:p-6">
-        <div className="grid gap-4 lg:grid-cols-3">
-          <a className="btn-primary justify-center" href={downloadUrl("/excel/download")} download><Download size={18} />엑셀 다운로드</a>
-          <button className="btn-secondary" type="button" onClick={backupExcel} disabled={busy}><DatabaseBackup size={18} />백업 생성</button>
-          <button className="btn-danger" type="button" onClick={initExcel} disabled={busy}><RotateCcw size={18} />샘플 데이터 초기화</button>
+      <section className="grid gap-4">
+        <div className="panel p-4 sm:p-6">
+          <div>
+            <p className="page-kicker">Excel Reports</p>
+            <h2 className="section-title">보고서 다운로드</h2>
+            <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">현재 시스템 데이터를 용도별 엑셀 파일로 내려받습니다.</p>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <button className="btn-primary justify-center" type="button" onClick={() => downloadReportWorkbook("devices")} disabled={busy}>
+              <Download size={18} />
+              장비목록 다운로드
+            </button>
+            <button className="btn-secondary justify-center" type="button" onClick={() => downloadReportWorkbook("transactions")} disabled={busy}>
+              <Download size={18} />
+              전체 이력 다운로드
+            </button>
+            <button className="btn-secondary justify-center" type="button" onClick={() => downloadReportWorkbook("deliveries")} disabled={busy}>
+              <Download size={18} />
+              납품관리 이력 다운로드
+            </button>
+          </div>
         </div>
-        <p className="mt-4 text-sm font-semibold leading-6 text-slate-500">엑셀 파일은 서버 데이터 저장소로 사용됩니다. 초기화는 기존 데이터를 교체하므로 필요할 때만 실행하세요.</p>
+
+        <div className="panel p-4 sm:p-6">
+          <div>
+            <p className="page-kicker">Workbook</p>
+            <h2 className="section-title">원본 엑셀 관리</h2>
+            <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">전체 원본 파일을 내려받거나 현재 파일의 백업을 생성합니다.</p>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <a className="btn-secondary justify-center" href={downloadUrl("/excel/download")} download><Download size={18} />원본 엑셀 다운로드</a>
+            <button className="btn-secondary justify-center" type="button" onClick={backupExcel} disabled={busy}><DatabaseBackup size={18} />백업 생성</button>
+          </div>
+        </div>
       </section>
     );
   }
