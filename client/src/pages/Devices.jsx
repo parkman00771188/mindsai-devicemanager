@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, ClipboardList, Download, LayoutGrid, Menu, PackageCheck, Plus, QrCode, RotateCcw, Search, UserRound, Wrench, X } from "lucide-react";
+import { Building2, CheckCircle2, ClipboardList, Download, LayoutGrid, Menu, PackageCheck, Plus, Printer, QrCode, RotateCcw, Search, UserRound, Wrench, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
@@ -9,6 +9,7 @@ import EmptyState from "../components/EmptyState.jsx";
 import Loading from "../components/Loading.jsx";
 import PhotoViewer from "../components/PhotoViewer.jsx";
 import QrDownloadModal from "../components/QrDownloadModal.jsx";
+import QrPrintModal from "../components/QrPrintModal.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { actionLabel, deviceCapacity, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 
@@ -344,42 +345,43 @@ function DetailItem({ label, value }) {
   );
 }
 
-function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog }) {
-  const secondAction = isAdmin ? (
-    <Link className="group flex min-w-0 items-center gap-3 text-left" to="/devices/new">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
-        <Plus size={22} />
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-extrabold text-ink">장비 등록</span>
-        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">새로운 장비를 쉽게 등록하세요.</span>
-      </span>
-    </Link>
-  ) : (
-    <button className="group flex min-w-0 items-center gap-3 text-left" type="button" onClick={onOpenCatalog}>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
-        <PackageCheck size={21} />
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-extrabold text-ink">대여하기</span>
-        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">사용 가능한 장비를 선택하세요.</span>
-      </span>
-    </button>
-  );
+function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog, onOpenQrPrint }) {
+  if (!isAdmin) {
+    return (
+      <section className="panel p-4 sm:hidden">
+        <button className="group flex w-full min-w-0 items-center gap-3 text-left" type="button" onClick={onOpenCatalog}>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+            <PackageCheck size={21} />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-extrabold text-ink">대여하기</span>
+            <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">사용 가능한 장비를 선택하세요.</span>
+          </span>
+        </button>
+      </section>
+    );
+  }
 
   return (
-    <section className="panel grid grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] items-center gap-3 p-4 sm:hidden">
-      <button className="group flex min-w-0 items-center gap-3 text-left disabled:opacity-50" type="button" onClick={onDownload} disabled={!canExport || exportBusy}>
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
-          <Download size={21} />
+    <section className="panel grid grid-cols-3 gap-2 p-3 sm:hidden">
+      <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center disabled:opacity-50" type="button" onClick={onDownload} disabled={!canExport || exportBusy}>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
+          <Download size={20} />
         </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-extrabold text-ink">{exportBusy ? "생성 중" : "엑셀 다운로드"}</span>
-          <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">장비 목록을 엑셀로 다운로드하세요.</span>
-        </span>
+        <span className="line-clamp-2 text-xs font-extrabold text-ink">{exportBusy ? "생성 중" : "엑셀 다운로드"}</span>
       </button>
-      <span className="h-12 w-px bg-line" aria-hidden="true" />
-      {secondAction}
+      <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center disabled:opacity-50" type="button" onClick={onOpenQrPrint} disabled={!canExport}>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
+          <Printer size={20} />
+        </span>
+        <span className="line-clamp-2 text-xs font-extrabold text-ink">QR 인쇄</span>
+      </button>
+      <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+          <Plus size={22} />
+        </span>
+        <span className="line-clamp-2 text-xs font-extrabold text-ink">장비 등록</span>
+      </Link>
     </section>
   );
 }
@@ -661,6 +663,7 @@ export default function Devices() {
   const [qrDevice, setQrDevice] = useState(null);
   const [detailDevice, setDetailDevice] = useState(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [qrPrintOpen, setQrPrintOpen] = useState(false);
   const [processDevice, setProcessDevice] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [filters, setFilters] = useState(() => ({
@@ -708,7 +711,7 @@ export default function Devices() {
   }, [categoryRows, devices]);
 
   async function downloadDeviceExcel() {
-    if (!devices?.length || exportBusy) return;
+    if (!isAdmin || !devices?.length || exportBusy) return;
     setExportBusy(true);
     try {
       const XLSX = await import("xlsx");
@@ -749,10 +752,18 @@ export default function Devices() {
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-            <button className="btn-secondary w-full md:w-auto" type="button" onClick={downloadDeviceExcel} disabled={!devices.length || exportBusy}>
-              <Download size={18} />
-              {exportBusy ? "생성 중" : "엑셀 다운로드"}
-            </button>
+            {isAdmin ? (
+              <>
+                <button className="btn-secondary w-full md:w-auto" type="button" onClick={downloadDeviceExcel} disabled={!devices.length || exportBusy}>
+                  <Download size={18} />
+                  {exportBusy ? "생성 중" : "엑셀 다운로드"}
+                </button>
+                <button className="btn-secondary w-full md:w-auto" type="button" onClick={() => setQrPrintOpen(true)} disabled={!devices.length}>
+                  <Printer size={18} />
+                  QR 코드 인쇄
+                </button>
+              </>
+            ) : null}
             {isAdmin ? (
               <Link className="btn-primary w-full md:w-auto" to="/devices/new">
                 <Plus size={18} />
@@ -774,6 +785,7 @@ export default function Devices() {
         canExport={devices.length > 0}
         onDownload={downloadDeviceExcel}
         onOpenCatalog={() => setCatalogOpen(true)}
+        onOpenQrPrint={() => setQrPrintOpen(true)}
       />
 
       <form
@@ -840,6 +852,7 @@ export default function Devices() {
           }}
         />
       ) : null}
+      {qrPrintOpen ? <QrPrintModal devices={devices} categories={categories} onClose={() => setQrPrintOpen(false)} /> : null}
       <DeviceProcessModal
         key={processDevice?.device_id || "rent-catalog"}
         device={processDevice}
