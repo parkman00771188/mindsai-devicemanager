@@ -2157,7 +2157,7 @@ async function serveQrCode(context, path) {
   const headers = new Headers({
     ...commonHeaders(),
     "content-type": "image/svg+xml; charset=utf-8",
-    "cache-control": "public, max-age=3600"
+    "cache-control": style === "label" ? "no-cache" : "public, max-age=3600"
   });
   if (["1", "true"].includes(url.searchParams.get("download") || "")) {
     headers.set("content-disposition", `attachment; filename="${fileName}"`);

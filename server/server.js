@@ -421,6 +421,7 @@ app.get(
     if (style === "label") await generateQrLabelForDevice(req.params.deviceId, clientOrigin(req));
     else await generateQrForDevice(req.params.deviceId, clientOrigin(req));
     const absolutePath = style === "label" ? absoluteQrLabelPath(req.params.deviceId) : absoluteQrPath(req.params.deviceId);
+    res.set("Cache-Control", style === "label" ? "no-cache" : "public, max-age=3600");
     if (req.query.download === "1" || req.query.download === "true") {
       res.download(absolutePath, `${safeSegment(req.params.deviceId)}-${style === "label" ? "qr-label.svg" : "qr.png"}`);
       return;
