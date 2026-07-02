@@ -83,15 +83,6 @@ function RentalMetric({ label, value, strong }) {
   );
 }
 
-function CompactInfoTile({ label, value, className = "" }) {
-  return (
-    <div className={`min-w-0 rounded-lg border border-line bg-white px-3 py-2.5 shadow-soft ${className}`}>
-      <p className="text-xs font-extrabold text-slate-500">{label}</p>
-      <p className="mt-1 min-h-5 break-words text-sm font-extrabold leading-5 text-ink">{value || "-"}</p>
-    </div>
-  );
-}
-
 function currentCheckoutFromDevice(device = {}) {
   if (!["RENTED", "DELIVERED"].includes(device.status)) return null;
   const hasSnapshot = [
@@ -258,7 +249,7 @@ function HistorySummaryModal({ rows, onClose }) {
   );
 }
 
-function BasicInfoModal({ device, photos, onClose, onOpenPhoto }) {
+function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onOpenPhoto }) {
   if (!device) return null;
   const title = deviceTitle(device);
   const isLaptop = isLaptopDevice(device);
@@ -320,6 +311,39 @@ function BasicInfoModal({ device, photos, onClose, onOpenPhoto }) {
             </div>
           </div>
         ) : null}
+        <div className="mt-5 border-t border-line pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-extrabold text-ink">QR 코드</h3>
+            <button className="btn-secondary h-10 px-3 text-sm" type="button" onClick={() => downloadQrImage(device.device_id, qrStyle)}>
+              <Download size={16} />
+              다운로드
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {[
+              ["plain", "1"],
+              ["label", "2"]
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`h-10 rounded-lg text-sm font-extrabold transition ${
+                  qrStyle === value ? "bg-brand text-white shadow-soft" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+                onClick={() => onQrStyleChange(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex h-52 items-center justify-center rounded-lg border border-line bg-slate-50 p-3 sm:h-56">
+            <img
+              src={qrImageUrl(device.device_id, qrStyle)}
+              alt={`${device.device_id} QR 코드`}
+              className={`${qrStyle === "label" ? "max-h-16 w-full max-w-[360px]" : "h-44 w-44"} rounded-lg bg-white object-contain`}
+            />
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -627,18 +651,6 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     [currentRental?.user_organization, currentRental?.user_department].filter(Boolean).join(" / ") ||
     currentRental?.user_department ||
     device.borrower_department;
-  const mobileInfoItems = [
-    ["분류", device.category],
-    ["모델명", device.model_name],
-    ["위치", device.location],
-    ["기존 번호", device.legacy_device_id],
-    ...(isLaptop
-      ? [
-          ["RAM", device.ram_capacity],
-          ["저장장치", device.storage_capacity]
-        ]
-      : [["용량", deviceCapacity(device)]])
-  ];
   const recentPageSize = 4;
   const recentPageCount = Math.max(1, Math.ceil(transactions.length / recentPageSize));
   const safeRecentPage = Math.min(recentPage, recentPageCount - 1);
@@ -740,6 +752,10 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
               <div className={inModal ? "flex min-w-0 flex-wrap items-center gap-2" : "flex flex-wrap items-center gap-3"}>
                 <h1 className={inModal ? "min-w-0 break-words text-xl font-extrabold leading-tight tracking-normal text-ink sm:text-2xl" : "text-2xl font-extrabold tracking-normal text-ink sm:text-3xl"}>{displayName}</h1>
                 <span className={`rounded-lg border px-3 py-1 text-sm font-extrabold ${currentStatus.className}`}>{currentStatus.label}</span>
+                <button className="btn-secondary h-9 px-3 text-xs xl:hidden" type="button" onClick={() => setBasicOpen(true)}>
+                  <Info size={15} />
+                  상세
+                </button>
               </div>
               <p className="mt-1 break-words text-sm font-extrabold text-brand">{device.device_id}</p>
               <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-500 sm:mt-2">{device.location || "위치 미입력"} · {device.category || "분류 미입력"}</p>
@@ -883,63 +899,6 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </div>
           </div>
 
-          <div className="grid gap-3 border-t border-line bg-white px-3 py-3 xl:hidden">
-            <section className="rounded-lg border border-line bg-[#f7f7fd] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="page-kicker">Info</p>
-                  <h2 className="section-title">기본 정보</h2>
-                </div>
-                <button className="btn-secondary h-9 px-3 text-xs" type="button" onClick={() => setBasicOpen(true)}>
-                  <Info size={15} />
-                  상세
-                </button>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {mobileInfoItems.map(([label, value]) => (
-                  <CompactInfoTile key={label} label={label} value={value} className={label === "위치" ? "col-span-2" : ""} />
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-lg border border-line bg-white p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="page-kicker">Photos</p>
-                  <h2 className="section-title">장비 사진</h2>
-                </div>
-                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-500">{devicePhotos.length}장</span>
-              </div>
-              {devicePhotos.length ? (
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  {devicePhotos.slice(0, 4).map((path, index) => (
-                    <button
-                      key={`mobile-photo-${path}-${index}`}
-                      type="button"
-                      className="relative aspect-square overflow-hidden rounded-lg border border-line bg-slate-100"
-                      onClick={() =>
-                        setPhotoViewer({
-                          paths: devicePhotos,
-                          index,
-                          title: "장비 사진",
-                          description: `${displayName} · ${device.device_id}`
-                        })
-                      }
-                      aria-label={`장비 사진 ${index + 1} 보기`}
-                    >
-                      <img src={path} alt={`장비 사진 ${index + 1}`} className="h-full w-full object-cover" />
-                      {index === 3 && devicePhotos.length > 4 ? (
-                        <span className="absolute inset-0 flex items-center justify-center bg-ink/55 text-sm font-extrabold text-white">+{devicePhotos.length - 4}</span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-4 text-sm font-semibold text-slate-500">등록된 장비 사진이 없습니다.</p>
-              )}
-            </section>
-          </div>
-
           <div className="border-t border-line bg-white text-ink">
             <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -999,7 +958,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
         </section>
 
         <aside className={asideClass}>
-          <section className="panel p-3 sm:p-4">
+          <section className="panel hidden p-3 sm:p-4 xl:block">
             <div className="flex items-center justify-between gap-3">
               <h2 className="section-title">QR 코드</h2>
               <button className="btn-secondary h-10 px-3" type="button" onClick={() => downloadQrImage(device.device_id, qrStyle)}>
@@ -1094,6 +1053,8 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
       <BasicInfoModal
         device={basicOpen ? device : null}
         photos={devicePhotos}
+        qrStyle={qrStyle}
+        onQrStyleChange={setQrStyle}
         onClose={() => setBasicOpen(false)}
         onOpenPhoto={(index) =>
           setPhotoViewer({
