@@ -345,7 +345,7 @@ function DetailItem({ label, value }) {
   );
 }
 
-function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog, onOpenQrPrint }) {
+function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog }) {
   if (!isAdmin) {
     return (
       <section className="panel p-4 sm:hidden">
@@ -363,18 +363,12 @@ function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenC
   }
 
   return (
-    <section className="panel grid grid-cols-3 gap-2 p-3 sm:hidden">
+    <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
       <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center disabled:opacity-50" type="button" onClick={onDownload} disabled={!canExport || exportBusy}>
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
           <Download size={20} />
         </span>
         <span className="line-clamp-2 text-xs font-extrabold text-ink">{exportBusy ? "생성 중" : "엑셀 다운로드"}</span>
-      </button>
-      <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center disabled:opacity-50" type="button" onClick={onOpenQrPrint} disabled={!canExport}>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
-          <Printer size={20} />
-        </span>
-        <span className="line-clamp-2 text-xs font-extrabold text-ink">QR 인쇄</span>
       </button>
       <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
@@ -785,7 +779,6 @@ export default function Devices() {
         canExport={devices.length > 0}
         onDownload={downloadDeviceExcel}
         onOpenCatalog={() => setCatalogOpen(true)}
-        onOpenQrPrint={() => setQrPrintOpen(true)}
       />
 
       <form
