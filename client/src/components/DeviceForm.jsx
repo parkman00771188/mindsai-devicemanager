@@ -188,6 +188,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
     (type) => type.category_id === selectedCategory?.category_id || type.category_name === form.category
   );
   const hasCurrentType = typesForCategory.some((type) => type.type_name === form.model_name);
+  const showModelField = Boolean(form.category && (typesForCategory.length || form.model_name));
   const isLaptop = isLaptopDevice(form);
   const selectedPhotos = photos;
   const existingPhotos = keptPhotoPaths;
@@ -369,7 +370,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
 
         <div className="mt-3 border-t-2 border-ink/70 pt-5">
           <div className="grid gap-4">
-            <FormRow label="장비번호" required hint="분류와 모델명 기준으로 자동 생성됩니다.">
+            <FormRow label="장비번호" required hint="분류를 기준으로 자동 생성되며, 등록된 모델이 있으면 모델명도 반영됩니다.">
               <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
                 <input name="device_id" className="input bg-slate-50 text-base text-slate-600" value={form.device_id || ""} readOnly required placeholder="분류 선택 후 자동 생성" />
                 {isCreate ? (
@@ -406,17 +407,19 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
               </div>
             </FormRow>
 
-            <FormRow label="모델명" required>
-              <select name="model_name" className="select text-base" value={form.model_name || ""} onChange={(event) => selectType(event.target.value)} required>
-                <option value="">{form.category ? "모델명 선택" : "분류를 먼저 선택"}</option>
-                {form.model_name && !hasCurrentType ? <option value={form.model_name}>{form.model_name}</option> : null}
-                {typesForCategory.map((type) => (
-                  <option key={type.type_id} value={type.type_name}>
-                    {type.type_prefix ? `${type.type_name} (${type.type_prefix})` : type.type_name}
-                  </option>
-                ))}
-              </select>
-            </FormRow>
+            {showModelField ? (
+              <FormRow label="모델명" required>
+                <select name="model_name" className="select text-base" value={form.model_name || ""} onChange={(event) => selectType(event.target.value)} required>
+                  <option value="">모델명 선택</option>
+                  {form.model_name && !hasCurrentType ? <option value={form.model_name}>{form.model_name}</option> : null}
+                  {typesForCategory.map((type) => (
+                    <option key={type.type_id} value={type.type_name}>
+                      {type.type_prefix ? `${type.type_name} (${type.type_prefix})` : type.type_name}
+                    </option>
+                  ))}
+                </select>
+              </FormRow>
+            ) : null}
 
             {primaryFields.map(([name, label, type = "text", required]) => (
               <Field key={name} name={name} label={label} type={type} required={required} value={form[name]} onChange={update} />

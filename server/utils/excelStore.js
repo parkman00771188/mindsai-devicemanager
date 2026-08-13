@@ -2280,8 +2280,8 @@ function getNextDeviceId(category, modelName = "", capacityGb = "") {
 
 function createDevice(input, options = {}) {
   return withWrite((data) => {
-    if (!text(input.category) || !text(input.location)) {
-      throw Object.assign(new Error("분류와 보관위치는 필수입니다."), { statusCode: 400 });
+    if (!text(input.category)) {
+      throw Object.assign(new Error("분류는 필수입니다."), { statusCode: 400 });
     }
     const created = now();
     const isLaptop = isLaptopCategory(input.category);
