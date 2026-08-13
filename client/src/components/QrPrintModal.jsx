@@ -2,10 +2,9 @@ import { Check, Printer, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { deviceCapacity, deviceTitle } from "../constants.js";
 import StatusBadge from "./StatusBadge.jsx";
-import { qrImageUrl } from "../utils/qrDownload.js";
+import { qrLabelPngDataUrl } from "../utils/qrDownload.js";
 
 const scaleOptions = Array.from({ length: 13 }, (_, index) => 30 + index * 10);
-const printBaseScale = 0.8;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -16,10 +15,6 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function absoluteUrl(path) {
-  return new URL(path, window.location.origin).href;
-}
-
 function deviceSearchText(device = {}) {
   return [
     device.device_id,
@@ -28,15 +23,37 @@ function deviceSearchText(device = {}) {
     device.category,
     device.model_name,
     device.manufacturer,
-    device.location
+    device.location,
+    device.owner_organization
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 }
 
-function printQrLabels(devices, scale) {
-  const effectiveScale = scale * printBaseScale;
+async function printQrLabels(devices, scale) {
+  const printWindow = window.open("", "_blank", "width=1200,height=900");
+  if (!printWindow) {
+    throw new Error("팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저 팝업 허용 후 다시 시도해주세요.");
+  }
+
+  printWindow.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8" /><title>QR 코드 준비 중</title></head><body style="font-family:Arial,sans-serif;padding:32px"><strong>QR 이미지를 준비하고 있습니다...</strong></body></html>`);
+  printWindow.document.close();
+
+  let qrImages;
+  try {
+    qrImages = new Map(await Promise.all(devices.map(async (device) => [device.device_id, await qrLabelPngDataUrl(device.device_id)])));
+  } catch (error) {
+    if (!printWindow.closed) {
+      printWindow.document.open();
+      printWindow.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8" /><title>QR 코드 오류</title></head><body style="font-family:Arial,sans-serif;padding:32px;color:#b91c1c"><strong>${escapeHtml(error.message || "QR 이미지를 준비하지 못했습니다.")}</strong></body></html>`);
+      printWindow.document.close();
+    }
+    throw error;
+  }
+  if (printWindow.closed) throw new Error("인쇄 창이 닫혔습니다.");
+
+  const effectiveScale = scale;
   const labelWidthCm = (8 * effectiveScale) / 100;
   const labelHeightCm = (1.5 * effectiveScale) / 100;
   const infoFontPt = (13 * effectiveScale) / 100;
@@ -45,7 +62,7 @@ function printQrLabels(devices, scale) {
     .map((device) => {
       const title = deviceTitle(device);
       const legacy = device.legacy_device_id || "-";
-      const labelUrl = absoluteUrl(qrImageUrl(device.device_id, "label"));
+      const labelUrl = qrImages.get(device.device_id);
       const labels = Array.from({ length: 3 })
         .map(() => `<img class="qr-label" src="${escapeHtml(labelUrl)}" alt="${escapeHtml(device.device_id)} QR label" />`)
         .join("");
@@ -62,12 +79,7 @@ function printQrLabels(devices, scale) {
     })
     .join("");
 
-  const printWindow = window.open("", "_blank", "width=1200,height=900");
-  if (!printWindow) {
-    window.alert("팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저 팝업 허용 후 다시 시도해주세요.");
-    return;
-  }
-
+  printWindow.document.open();
   printWindow.document.write(`<!doctype html>
 <html lang="ko">
 <head>
@@ -80,6 +92,8 @@ function printQrLabels(devices, scale) {
     }
     * {
       box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     body {
       margin: 0;
@@ -137,12 +151,23 @@ function printQrLabels(devices, scale) {
   <main class="sheet">${cards}</main>
   <script>
     const images = Array.from(document.images);
-    Promise.all(images.map((image) => image.complete ? Promise.resolve() : new Promise((resolve) => {
-      image.onload = resolve;
-      image.onerror = resolve;
-    }))).then(() => {
-      window.focus();
-      window.print();
+    Promise.all(images.map(async (image) => {
+      if (!image.complete) {
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error("QR image load failed"));
+        });
+      }
+      if (!image.naturalWidth) throw new Error("QR image is empty");
+      if (image.decode) await image.decode().catch(() => {});
+    })).then(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))).then(() => {
+      setTimeout(() => {
+        window.focus();
+        window.print();
+      }, 250);
+    }).catch((error) => {
+      document.body.insertAdjacentHTML("afterbegin", '<p style="color:#b91c1c;font-weight:700">QR 이미지를 표시하지 못했습니다. 창을 닫고 다시 시도해주세요.</p>');
+      console.error(error);
     });
   </script>
 </body>
@@ -186,6 +211,8 @@ export default function QrPrintModal({ devices = [], categories = [], onClose })
   const [category, setCategory] = useState("");
   const [scale, setScale] = useState(100);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [printBusy, setPrintBusy] = useState(false);
+  const [printError, setPrintError] = useState("");
 
   const filteredDevices = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
@@ -225,9 +252,17 @@ export default function QrPrintModal({ devices = [], categories = [], onClose })
     });
   }
 
-  function confirmPrint() {
-    if (!selectedDevices.length) return;
-    printQrLabels(selectedDevices, scale);
+  async function confirmPrint() {
+    if (!selectedDevices.length || printBusy) return;
+    setPrintBusy(true);
+    setPrintError("");
+    try {
+      await printQrLabels(selectedDevices, scale);
+    } catch (error) {
+      setPrintError(error.message || "QR 인쇄 창을 준비하지 못했습니다.");
+    } finally {
+      setPrintBusy(false);
+    }
   }
 
   return (
@@ -359,12 +394,13 @@ export default function QrPrintModal({ devices = [], categories = [], onClose })
         </div>
 
         <div className="flex justify-end gap-2 border-t border-line bg-white px-5 py-4 sm:px-6">
+          {printError ? <p className="mr-auto self-center text-sm font-extrabold text-red-600">{printError}</p> : null}
           <button className="btn-secondary" type="button" onClick={onClose}>
             취소
           </button>
-          <button className="btn-primary" type="button" onClick={confirmPrint} disabled={!selectedDevices.length}>
+          <button className="btn-primary" type="button" onClick={confirmPrint} disabled={!selectedDevices.length || printBusy}>
             <Printer size={18} />
-            확인
+            {printBusy ? "QR 준비 중" : "확인"}
           </button>
         </div>
       </section>

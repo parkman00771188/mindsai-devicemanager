@@ -10,9 +10,13 @@ import PhotoViewer from "../components/PhotoViewer.jsx";
 import TransactionDetailModal from "../components/TransactionDetailModal.jsx";
 import { actionLabel, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 
-const hiddenTableActions = new Set(["RETURN", "RECOVERY"]);
-const excludedTableActions = "RETURN,RECOVERY";
-const actions = ["RENT", "DELIVERY", "RENTAL_UPDATE", "BROKEN", "LOST", "LOST_FOUND", "MAINTENANCE_START", "MAINTENANCE_COMPLETE", "MAINTENANCE", "STATUS_CHANGE", "REGISTER", "UPDATE", "DISPOSE", "DELETE"];
+const hiddenTableActions = new Set(["UPDATE", "RENTAL_UPDATE"]);
+const excludedTableActions = "UPDATE,RENTAL_UPDATE";
+const actions = ["RENT", "DELIVERY", "RETURN", "RECOVERY", "BROKEN", "LOST", "LOST_FOUND", "MAINTENANCE_START", "MAINTENANCE_COMPLETE", "MAINTENANCE", "STATUS_CHANGE", "REGISTER", "DISPOSE", "DELETE"];
+
+function transactionEventDate(row = {}) {
+  return ["RETURN", "RECOVERY"].includes(row.action_type) ? row.returned_at : row.rented_at;
+}
 
 function parseDeviceIds(value) {
   return String(value || "")
@@ -34,6 +38,7 @@ function initialFilters(searchParams) {
     device_id: searchParams.get("device_ids") ? searchParams.get("device_id") || "" : "",
     device_ids: deviceIds,
     user_name: searchParams.get("user_name") || "",
+    owner_organization: searchParams.get("owner_organization") || "",
     action_type: hiddenTableActions.has(actionType) ? "" : actionType,
     actions: actionsValue,
     from: searchParams.get("from") || "",
@@ -52,6 +57,8 @@ export default function Transactions() {
   const [photoViewer, setPhotoViewer] = useState(null);
   const [transactionDetail, setTransactionDetail] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
+  const [organizations, setOrganizations] = useState([]);
   const isAdmin = isAdminUser(getCurrentUser());
   const isRentReturnView = filters.actions === "RENT";
   const searchKey = searchParams.toString();
@@ -68,6 +75,12 @@ export default function Transactions() {
     setFilters(nextFilters);
     load(nextFilters);
   }, [searchKey]);
+
+  useEffect(() => {
+    api("/user-options?option_type=ORGANIZATION")
+      .then((items) => setOrganizations(items.map((item) => item.option_text).filter(Boolean)))
+      .catch(() => setOrganizations([]));
+  }, []);
 
   function submit(event) {
     event.preventDefault();
@@ -140,6 +153,21 @@ export default function Transactions() {
     }
   }
 
+  async function updateTransaction(row, changes) {
+    if (!row?.transaction_id) return;
+    setUpdateBusy(true);
+    try {
+      const updated = await api(`/transactions/${encodeURIComponent(row.transaction_id)}`, { method: "PUT", body: changes });
+      setTransactionDetail(updated);
+      await load();
+      return updated;
+    } catch (err) {
+      throw err;
+    } finally {
+      setUpdateBusy(false);
+    }
+  }
+
   function movePhoto(offset) {
     setPhotoViewer((current) => {
       if (!current) return current;
@@ -167,10 +195,14 @@ export default function Transactions() {
       </div>
 
       <form className="panel space-y-4 p-3 sm:p-4" onSubmit={submit}>
-        <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-[minmax(220px,1fr)_minmax(130px,170px)_minmax(130px,170px)_minmax(140px,170px)_minmax(140px,170px)_auto]">
+        <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-[minmax(200px,1fr)_minmax(130px,160px)_minmax(130px,160px)_minmax(140px,180px)_minmax(130px,160px)_minmax(130px,160px)_auto]">
           <input className="input col-span-2 sm:col-span-1" placeholder="키워드" value={filters.keyword} onChange={(event) => update("keyword", event.target.value)} />
           <input className="input" placeholder="장비번호" value={filters.device_id} onChange={(event) => update("device_id", event.target.value)} />
           <input className="input" placeholder="사용자명" value={filters.user_name} onChange={(event) => update("user_name", event.target.value)} />
+          <select className="select" value={filters.owner_organization} onChange={(event) => update("owner_organization", event.target.value)} aria-label="장비 소유 소속">
+            <option value="">전체 소속</option>
+            {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
+          </select>
           <label className="min-w-0">
             <span className="field-label xl:hidden">시작일</span>
             <input className="input" type="date" value={filters.from} onChange={(event) => update("from", event.target.value)} />
@@ -265,6 +297,7 @@ export default function Transactions() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-extrabold text-ink">{deviceTitle(row)}</p>
                         <p className="mt-1 truncate text-xs font-bold text-slate-500">출납 {transactionNumber(row)} · {row.device_id} · {row.user_name || "사용자 없음"}</p>
+                        <p className="mt-1 truncate text-xs font-extrabold text-slate-600">소유 소속 · {row.device_owner_organization || "미지정"}</p>
                         <p className="mt-1 truncate text-sm font-bold text-slate-700">{row.purpose || "목적/사유 없음"}</p>
                         <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{summary}</p>
                       </div>
@@ -300,9 +333,10 @@ export default function Transactions() {
                       <th className={`${thClass} w-20`}>작업</th>
                       <th className={`${thClass} w-28`}>장비번호</th>
                       <th className={`${thClass} w-36`}>장비명</th>
+                      <th className={`${thClass} w-28`}>소유 소속</th>
                       <th className={`${thClass} w-20`}>사용자</th>
                       <th className={`${thClass} w-32`}>목적/사유</th>
-                      <th className={`${thClass} w-24`}>대여/납품일</th>
+                      <th className={`${thClass} w-28`}>처리 기준일</th>
                       <th className={`${thClass} w-20`}>사진</th>
                       <th className={`${thClass} w-28`}>메모</th>
                       <th className={`${thClass} w-28`}>처리자</th>
@@ -325,11 +359,12 @@ export default function Transactions() {
                           <td className={tdClass} title={deviceTitle(row)}>
                             <span className="block truncate font-extrabold text-ink">{deviceTitle(row)}</span>
                           </td>
+                          <td className={tdClass}><span className="block truncate">{row.device_owner_organization || "-"}</span></td>
                           <td className={tdClass}>{row.user_name || "-"}</td>
                           <td className={tdClass} title={row.purpose || ""}>
                             <span className="block truncate">{row.purpose || "-"}</span>
                           </td>
-                          <td className={tdClass}>{formatDate(row.rented_at)}</td>
+                          <td className={tdClass}>{formatDate(transactionEventDate(row))}</td>
                           <td className={tdClass}>
                             {photos.length ? (
                               <div className="flex items-center gap-1.5">
@@ -380,8 +415,11 @@ export default function Transactions() {
         onClose={() => setTransactionDetail(null)}
         onOpenPhoto={(paths, index, row) => openPhotoViewer(paths, index, row)}
         canDelete={isAdmin}
+        canEdit={isAdmin}
         deleteBusy={deleteBusy}
+        updateBusy={updateBusy}
         onDelete={deleteTransaction}
+        onUpdate={updateTransaction}
         onDeviceChanged={load}
       />
       <PhotoViewer viewer={photoViewer} onClose={() => setPhotoViewer(null)} onMove={movePhoto} />

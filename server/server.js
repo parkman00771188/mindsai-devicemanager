@@ -482,6 +482,13 @@ app.post(
 
 app.get("/api/transactions", asyncRoute(async (req, res) => res.json(await store.listTransactions(req.query))));
 app.get("/api/devices/:deviceId/transactions", asyncRoute(async (req, res) => res.json(await store.getDeviceTransactions(req.params.deviceId))));
+app.put(
+  "/api/transactions/:transactionId",
+  adminOnly,
+  asyncRoute(async (req, res) =>
+    res.json(await store.updateTransaction(req.params.transactionId, req.body, { userId: currentUser(req), ipAddress: req.ip }))
+  )
+);
 app.delete(
   "/api/transactions/:transactionId",
   asyncRoute(async (req, res) =>

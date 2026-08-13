@@ -100,6 +100,7 @@ function deviceReportRows(devices = []) {
   return devices.map((device, index) => ({
     순번: index + 1,
     상태: statusLabel(device.status),
+    "장비 소유 소속": exportValue(device.owner_organization),
     장비번호: exportValue(device.device_id),
     "기존 장비번호": exportValue(device.legacy_device_id),
     장비명: exportValue(deviceTitle(device)),
@@ -131,6 +132,7 @@ function transactionReportRows(rows = []) {
     작업: actionLabel(row.action_type),
     장비번호: exportValue(row.device_id),
     장비명: exportValue(deviceTitle(row)),
+    "장비 소유 소속": exportValue(row.device_owner_organization || row.owner_organization),
     대상: exportValue(row.user_name),
     "소속/부서": exportValue(row.user_org_department || row.borrower_org_department || [row.user_organization, row.user_department].filter(Boolean).join(" / ") || row.user_department),
     연락처: exportValue(row.user_contact),
@@ -1365,7 +1367,7 @@ export default function Settings() {
           rows: deviceReportRows
         },
         transactions: {
-          path: "/transactions?exclude_actions=RETURN,RECOVERY",
+          path: "/transactions?exclude_actions=UPDATE,RENTAL_UPDATE",
           sheet: "전체이력",
           filePrefix: "전체이력",
           rows: transactionReportRows

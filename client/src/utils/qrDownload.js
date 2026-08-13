@@ -1,6 +1,8 @@
 import { downloadUrl } from "../api/client.js";
 
 const LABEL_QR_VERSION = "horizontal-centered-20260702";
+const LABEL_WIDTH = 800;
+const LABEL_HEIGHT = 150;
 
 export function qrImageUrl(deviceId, style = "plain", download = false) {
   const search = new URLSearchParams();
@@ -36,15 +38,25 @@ function loadImage(src) {
   });
 }
 
-async function downloadLabelQrPng(deviceId) {
+async function createLabelQrCanvas(deviceId) {
   const image = await loadImage(qrImageUrl(deviceId, "label"));
   const canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 150;
+  canvas.width = LABEL_WIDTH;
+  canvas.height = LABEL_HEIGHT;
   const context = canvas.getContext("2d");
+  if (!context) throw new Error("Failed to create QR label canvas.");
   context.fillStyle = "#000000";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+export async function qrLabelPngDataUrl(deviceId) {
+  return (await createLabelQrCanvas(deviceId)).toDataURL("image/png");
+}
+
+async function downloadLabelQrPng(deviceId) {
+  const canvas = await createLabelQrCanvas(deviceId);
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) throw new Error("Failed to create QR label PNG.");

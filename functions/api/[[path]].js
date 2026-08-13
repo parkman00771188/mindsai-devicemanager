@@ -36,6 +36,7 @@ const ENCRYPTED_FIELDS = {
   Devices: [
     "serial_number",
     "purchase_price",
+    "owner_organization",
     "department",
     "manager",
     "location",
@@ -680,11 +681,13 @@ async function route(context, state, path, body) {
   if (path === "/dashboard/summary" && method === "GET") return { data: dashboardSummary(state) };
   if (path === "/dashboard/recent-transactions" && method === "GET") {
     const limit = Number(url.searchParams.get("limit") || 10);
-    return { data: listTransactions(state, url.searchParams).slice(0, limit) };
+    const recentParams = new URLSearchParams(url.searchParams);
+    recentParams.set("exclude_actions", "UPDATE,RENTAL_UPDATE");
+    return { data: listTransactions(state, recentParams).slice(0, limit) };
   }
 
   if (parts[0] === "devices") return handleDevices(context, state, parts, url.searchParams, body);
-  if (parts[0] === "transactions") return handleTransactions(state, parts, url.searchParams, body, method);
+  if (parts[0] === "transactions") return handleTransactions(state, parts, url.searchParams, body, method, userId);
   if (parts[0] === "maintenance") return handleMaintenance(state, parts, url.searchParams, body, method, userId);
   if (parts[0] === "users") return handleUsers(context, state, parts, url.searchParams, body, method);
   if (parts[0] === "institutions") return handleInstitutions(state, parts, url.searchParams, body, method);
@@ -1051,15 +1054,114 @@ function clearCheckoutSnapshot(device) {
   });
 }
 
-function handleTransactions(state, parts, params, body, method) {
+function handleTransactions(state, parts, params, body, method, userId) {
   if (parts.length === 1 && method === "GET") return { data: listTransactions(state, params) };
-  if (parts.length === 2 && method === "DELETE") {
+  if (parts.length === 2 && method === "PUT") {
+    requireAdminActor(state, userId, "이력 수정은 관리자만 가능합니다.");
     const row = state.Transactions.find((item) => item.transaction_id === parts[1]);
-    if (!row) throw Object.assign(new Error("Transaction not found"), { statusCode: 404 });
+    if (!row || isDeleted(row)) throw Object.assign(new Error("Transaction not found"), { statusCode: 404 });
+    updateTransaction(state, row, body);
+    return { data: attachTransaction(state, row), save: true };
+  }
+  if (parts.length === 2 && method === "DELETE") {
+    requireAdminActor(state, userId, "이력 삭제는 관리자만 가능합니다.");
+    const row = state.Transactions.find((item) => item.transaction_id === parts[1]);
+    if (!row || isDeleted(row)) throw Object.assign(new Error("Transaction not found"), { statusCode: 404 });
     row.is_deleted = true;
     return { data: { success: true }, save: true };
   }
   throw Object.assign(new Error("Transaction endpoint not found"), { statusCode: 404 });
+}
+
+function requireAdminActor(state, userId, message = "관리자만 처리할 수 있습니다.") {
+  const actor = findUser(state, userId, true);
+  if (!actor || isDeleted(actor) || normalizeRole(actor.role || (userId === "admin" ? "ADMIN" : "USER")) !== "ADMIN") {
+    throw Object.assign(new Error(message), { statusCode: 403 });
+  }
+  return actor;
+}
+
+function normalizeTransactionDateTime(value) {
+  const source = text(value);
+  if (!source) return "";
+  const normalized = source.replace(" ", "T");
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(normalized)) {
+    throw Object.assign(new Error("처리일시 형식이 올바르지 않습니다."), { statusCode: 400 });
+  }
+  return normalized.length === 16 ? `${normalized}:00` : normalized;
+}
+
+function normalizeTransactionDate(value) {
+  const source = text(value);
+  if (!source) return "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) {
+    throw Object.assign(new Error("날짜 형식이 올바르지 않습니다."), { statusCode: 400 });
+  }
+  return source;
+}
+
+function transactionPlaceFromMemo(memo) {
+  const match = text(memo).match(/(?:대여|반납|납품|회수) 장소:\s*([^/]+)/);
+  return match ? match[1].trim() : "";
+}
+
+function transactionMemoWithoutPlace(memo) {
+  return text(memo)
+    .replace(/(?:대여|반납|납품|회수) 장소:\s*[^/]+\/?\s*/g, "")
+    .replace(/\s*\/?\s*(?:대여|납품) 정보 수정(?::.*)?$/g, "")
+    .trim();
+}
+
+function updateTransaction(state, row, input = {}) {
+  const editableFields = [
+    "user_name",
+    "user_organization",
+    "user_department",
+    "user_position",
+    "user_contact",
+    "purpose",
+    "condition_status",
+    "issue_description",
+    "handled_by",
+    "memo"
+  ];
+  editableFields.forEach((field) => {
+    if (input[field] !== undefined) row[field] = text(input[field]);
+  });
+  if (input.created_at !== undefined) row.created_at = normalizeTransactionDateTime(input.created_at);
+  if (input.rented_at !== undefined) row.rented_at = normalizeTransactionDate(input.rented_at);
+  if (input.expected_return_at !== undefined) row.expected_return_at = normalizeTransactionDate(input.expected_return_at);
+  if (input.returned_at !== undefined) row.returned_at = normalizeTransactionDate(input.returned_at);
+
+  const device = findDevice(state, row.device_id);
+  if (!device) return;
+  const deviceTransactions = transactionsForDevice(state, device.device_id);
+  const latestCheckout = deviceTransactions.find((item) => ["RENT", "DELIVERY", "RENTAL_UPDATE"].includes(item.action_type));
+  const latestReturn = deviceTransactions.find((item) => ["RETURN", "RECOVERY"].includes(item.action_type));
+  if (latestCheckout?.transaction_id === row.transaction_id && ["RENTED", "DELIVERED"].includes(device.status)) {
+    const sourceActionType = device.status === "DELIVERED" || row.action_type === "DELIVERY" ? "DELIVERY" : "RENT";
+    applyCheckoutSnapshot(device, {
+      borrower_type: row.borrower_type,
+      institution_id: row.institution_id,
+      institution_name: row.institution_name,
+      user_name: row.user_name,
+      user_organization: row.user_organization,
+      user_department: row.user_department,
+      user_position: row.user_position,
+      user_contact: row.user_contact,
+      purpose: row.purpose,
+      rent_location: transactionPlaceFromMemo(row.memo),
+      condition_status: row.condition_status,
+      memo: transactionMemoWithoutPlace(row.memo),
+      rented_at: row.rented_at,
+      expected_return_at: row.expected_return_at
+    }, sourceActionType);
+    device.updated_at = now();
+  }
+  if (latestReturn?.transaction_id === row.transaction_id) {
+    device.last_returned_at = row.returned_at || "";
+    device.updated_at = now();
+  }
 }
 
 function handleMaintenance(state, parts, params, body, method, userId) {
@@ -1226,15 +1328,47 @@ function handleResource(state, parts, params, body, method, config) {
   if (method === "PUT") {
     if (config.sheet === "Categories") return updateCategoryResource(state, row, body);
     if (config.sheet === "DeviceTypes") return updateDeviceTypeResource(state, row, body);
+    if (config.sheet === "UserOptions") return updateUserOptionResource(state, row, body);
     Object.assign(row, body, { [config.id]: row[config.id], updated_at: now() });
     return { data: row, save: true };
   }
   if (method === "DELETE") {
+    if (config.sheet === "UserOptions") ensureUserOptionUnused(state, row);
     row.is_deleted = true;
     row.updated_at = now();
     return { data: { success: true }, save: true };
   }
   throw Object.assign(new Error("Method not allowed"), { statusCode: 405 });
+}
+
+function updateUserOptionResource(state, row, input = {}) {
+  const before = { ...row };
+  Object.assign(row, input, { option_id: row.option_id, updated_at: now() });
+  if (before.option_type === row.option_type && text(before.option_text) !== text(row.option_text)) {
+    const field = row.option_type === "POSITION" ? "position" : row.option_type === "ORGANIZATION" ? "organization" : "department";
+    active(state.Users).forEach((user) => {
+      if (text(user[field]) !== text(before.option_text)) return;
+      user[field] = row.option_text;
+      user.updated_at = row.updated_at;
+    });
+    if (row.option_type === "ORGANIZATION") {
+      active(state.Devices).forEach((device) => {
+        if (text(device.owner_organization) !== text(before.option_text)) return;
+        device.owner_organization = row.option_text;
+        device.updated_at = row.updated_at;
+      });
+    }
+  }
+  return { data: row, save: true };
+}
+
+function ensureUserOptionUnused(state, row) {
+  const field = row.option_type === "POSITION" ? "position" : row.option_type === "ORGANIZATION" ? "organization" : "department";
+  const usedByUser = active(state.Users).some((user) => text(user[field]) === text(row.option_text));
+  const usedByDevice = row.option_type === "ORGANIZATION" && active(state.Devices).some((device) => text(device.owner_organization) === text(row.option_text));
+  if (usedByUser || usedByDevice) {
+    throw Object.assign(new Error("사용 중인 항목은 삭제할 수 없습니다. 사용자 또는 장비 정보를 먼저 변경해주세요."), { statusCode: 400 });
+  }
 }
 
 function updateCategoryResource(state, row, input = {}) {
@@ -1325,6 +1459,7 @@ function listDevices(state, params = new URLSearchParams()) {
   const keyword = lower(params.get("keyword"));
   const status = params.get("status") || "";
   const category = params.get("category") || "";
+  const ownerOrganization = params.get("owner_organization") || "";
   const assignedToUserId = params.get("assigned_to_user_id") || "";
   const assignedUser = assignedToUserId ? findUser(state, assignedToUserId) : null;
   const assignedDeviceIds = assignedToUserId
@@ -1334,6 +1469,7 @@ function listDevices(state, params = new URLSearchParams()) {
     .filter((device) => !assignedDeviceIds || assignedDeviceIds.has(device.device_id))
     .filter((device) => !status || device.status === status)
     .filter((device) => !category || device.category === category)
+    .filter((device) => !ownerOrganization || text(device.owner_organization) === text(ownerOrganization))
     .filter((device) => !keyword || searchable(device).includes(keyword))
     .sort((a, b) => text(b.updated_at || b.created_at).localeCompare(text(a.updated_at || a.created_at)))
     .map((device) => attachDevice(state, device, false));
@@ -1369,6 +1505,7 @@ function listTransactions(state, params = new URLSearchParams()) {
   const borrowerTypeFilter = text(params.get("borrower_type")).toUpperCase();
   const institutionId = text(params.get("institution_id"));
   const institutionName = lower(params.get("institution_name"));
+  const ownerOrganization = text(params.get("owner_organization"));
   const userName = lower(params.get("user_name"));
   const from = text(params.get("from") || params.get("date_from"));
   const to = text(params.get("to") || params.get("date_to"));
@@ -1382,6 +1519,7 @@ function listTransactions(state, params = new URLSearchParams()) {
     .filter((row) => !borrowerTypeFilter || borrowerType(row) === borrowerTypeFilter)
     .filter((row) => !institutionId || text(row.institution_id) === institutionId)
     .filter((row) => !institutionName || lower(row.institution_name || row.user_name).includes(institutionName))
+    .filter((row) => !ownerOrganization || text(findDevice(state, row.device_id, true)?.owner_organization) === ownerOrganization)
     .filter((row) => !userName || lower(row.user_name).includes(userName))
     .filter((row) => !from || text(row.created_at).slice(0, 10) >= from)
     .filter((row) => !to || text(row.created_at).slice(0, 10) <= to)
@@ -1404,6 +1542,7 @@ function attachTransaction(state, row) {
     ...row,
     photo_paths: photoPaths,
     device_name: device.device_name || "",
+    device_owner_organization: device.owner_organization || "",
     device_category: device.category || "",
     device_model_name: device.model_name || "",
     device_capacity_gb: device.capacity_gb || "",
@@ -1670,7 +1809,9 @@ function assignedDevicesForUser(state, user) {
 
 function listUsers(state, params = new URLSearchParams()) {
   const keyword = lower(params.get("keyword"));
+  const organization = text(params.get("organization"));
   return active(state.Users)
+    .filter((row) => !organization || text(row.organization) === organization)
     .filter((row) => !keyword || searchable(row).includes(keyword))
     .sort((a, b) => text(a.name || a.user_id).localeCompare(text(b.name || b.user_id)))
     .map((row) => attachUserSummary(state, row));

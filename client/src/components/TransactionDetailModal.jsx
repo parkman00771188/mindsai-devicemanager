@@ -1,4 +1,4 @@
-import { Trash2, X } from "lucide-react";
+import { Pencil, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCurrentUser, isAdminUser } from "../auth.js";
 import { actionLabel, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
@@ -14,19 +14,65 @@ function DetailItem({ label, value, preserveWhitespace = false, className = "" }
   );
 }
 
-export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canDelete = false, deleteBusy = false, onDelete, onDeviceChanged }) {
+function dateTimeInputValue(value) {
+  return String(value || "").replace(" ", "T").slice(0, 16);
+}
+
+function placeLabel(actionType) {
+  return {
+    RENT: "대여 장소",
+    DELIVERY: "납품 장소",
+    RETURN: "반납 장소",
+    RECOVERY: "회수 장소"
+  }[actionType] || "처리 장소";
+}
+
+function editFormFromRow(row = {}) {
+  const source = row || {};
+  return {
+    created_at: dateTimeInputValue(source.created_at),
+    rented_at: String(source.rented_at || "").slice(0, 10),
+    expected_return_at: String(source.expected_return_at || "").slice(0, 10),
+    returned_at: String(source.returned_at || "").slice(0, 10),
+    user_name: source.user_name || "",
+    user_organization: source.user_organization || "",
+    user_department: source.user_department || "",
+    user_position: source.user_position || "",
+    user_contact: source.user_contact || "",
+    purpose: source.purpose || "",
+    place: transactionPlace(source),
+    condition_status: source.condition_status || "",
+    issue_description: source.issue_description || "",
+    handled_by: source.handled_by || "",
+    memo: transactionMemo(source)
+  };
+}
+
+function memoWithPlace(actionType, place, memo) {
+  return [place ? `${placeLabel(actionType)}: ${place}` : "", memo].filter(Boolean).join(" / ");
+}
+
+export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canDelete = false, canEdit = false, deleteBusy = false, updateBusy = false, onDelete, onUpdate, onDeviceChanged }) {
   const [deviceDetailId, setDeviceDetailId] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState(() => editFormFromRow(row));
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     setDeviceDetailId(null);
-  }, [row?.transaction_id]);
+    setEditing(false);
+    setEditError("");
+    setEditForm(editFormFromRow(row));
+  }, [row?.transaction_id, row?.created_at, row?.rented_at, row?.expected_return_at, row?.returned_at, row?.user_name, row?.user_organization, row?.user_department, row?.user_position, row?.user_contact, row?.purpose, row?.condition_status, row?.issue_description, row?.handled_by, row?.memo]);
 
   if (!row) return null;
 
   const canDeleteTransaction = canDelete && isAdminUser(getCurrentUser());
+  const canEditTransaction = canEdit && isAdminUser(getCurrentUser());
   const photos = splitPhotoPaths(row.photo_paths);
   const isDelivery = row.action_type === "DELIVERY";
   const isRecovery = row.action_type === "RECOVERY";
+  const isReturn = row.action_type === "RETURN";
   const borrowerOrgDepartment =
     row.user_org_department ||
     row.borrower_org_department ||
@@ -56,6 +102,21 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
   function requestDelete() {
     if (!window.confirm(`출납 ${transactionNumber(row)} 이력을 삭제할까요? 삭제 후 최근 이력 목록에서 사라집니다.`)) return;
     onDelete?.(row);
+  }
+
+  function updateEditField(field, value) {
+    setEditForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function saveChanges() {
+    setEditError("");
+    try {
+      const { place, ...changes } = editForm;
+      await onUpdate?.(row, { ...changes, memo: memoWithPlace(row.action_type, place.trim(), changes.memo.trim()) });
+      setEditing(false);
+    } catch (error) {
+      setEditError(error.message || "이력을 수정하지 못했습니다.");
+    }
   }
 
   return (
@@ -94,6 +155,7 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           </div>
           <DetailItem label={isDelivery ? "납품 대상" : isRecovery ? "회수 대상" : "사용자"} value={row.user_name} />
           <DetailItem label="기존 장비번호" value={row.device_legacy_device_id || row.legacy_device_id} />
+          <DetailItem label="장비 소유 소속" value={row.device_owner_organization || row.owner_organization} />
           <DetailItem label="소속/부서" value={borrowerOrgDepartment} />
           <DetailItem label="연락처" value={row.user_contact} />
           <DetailItem label="목적/사유" value={row.purpose} />
@@ -110,6 +172,89 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           <DetailItem label="메모" value={transactionMemo(row)} preserveWhitespace className="sm:col-span-2" />
           <DetailItem label="특이사항" value={row.issue_description} preserveWhitespace className="sm:col-span-2" />
         </dl>
+
+        {editing ? (
+          <section className="mt-5 rounded-lg border border-[#c9c4ff] bg-[#f7f7ff] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-ink">이력 수정</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">장비번호와 처리 유형을 제외한 이력 정보를 변경할 수 있습니다.</p>
+              </div>
+              <button className="btn-secondary h-9 w-9 p-0" type="button" onClick={() => setEditing(false)} disabled={updateBusy} aria-label="이력 수정 닫기">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label>
+                <span className="field-label">처리일시</span>
+                <input className="input" type="datetime-local" value={editForm.created_at} onChange={(event) => updateEditField("created_at", event.target.value)} required />
+              </label>
+              <label>
+                <span className="field-label">{isDelivery ? "납품일" : "대여일"}</span>
+                <input className="input" type="date" value={editForm.rented_at} onChange={(event) => updateEditField("rented_at", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">예상 반납일</span>
+                <input className="input" type="date" value={editForm.expected_return_at} onChange={(event) => updateEditField("expected_return_at", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">{isRecovery ? "회수일" : isReturn ? "반납일" : "실제 반납일"}</span>
+                <input className="input" type="date" value={editForm.returned_at} onChange={(event) => updateEditField("returned_at", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">{isDelivery ? "납품 대상" : isRecovery ? "회수 대상" : "사용자"}</span>
+                <input className="input" value={editForm.user_name} onChange={(event) => updateEditField("user_name", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">소속</span>
+                <input className="input" value={editForm.user_organization} onChange={(event) => updateEditField("user_organization", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">부서</span>
+                <input className="input" value={editForm.user_department} onChange={(event) => updateEditField("user_department", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">직책</span>
+                <input className="input" value={editForm.user_position} onChange={(event) => updateEditField("user_position", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">연락처</span>
+                <input className="input" value={editForm.user_contact} onChange={(event) => updateEditField("user_contact", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">처리자 ID</span>
+                <input className="input" value={editForm.handled_by} onChange={(event) => updateEditField("handled_by", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">목적/사유</span>
+                <input className="input" value={editForm.purpose} onChange={(event) => updateEditField("purpose", event.target.value)} />
+              </label>
+              <label>
+                <span className="field-label">{placeLabel(row.action_type)}</span>
+                <input className="input" value={editForm.place} onChange={(event) => updateEditField("place", event.target.value)} />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="field-label">상태/점검 결과</span>
+                <input className="input" value={editForm.condition_status} onChange={(event) => updateEditField("condition_status", event.target.value)} />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="field-label">메모</span>
+                <textarea className="textarea min-h-24" value={editForm.memo} onChange={(event) => updateEditField("memo", event.target.value)} />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="field-label">특이사항</span>
+                <textarea className="textarea min-h-24" value={editForm.issue_description} onChange={(event) => updateEditField("issue_description", event.target.value)} />
+              </label>
+            </div>
+            {editError ? <p className="mt-3 text-sm font-extrabold text-red-600">{editError}</p> : null}
+            <div className="mt-4 flex justify-end">
+              <button className="btn-primary" type="button" onClick={saveChanges} disabled={updateBusy || !editForm.created_at}>
+                <Save size={18} />
+                {updateBusy ? "저장 중" : "수정 저장"}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {photos.length ? (
           <div className="mt-5">
@@ -134,6 +279,12 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           <button className="btn-secondary" type="button" onClick={onClose} disabled={deleteBusy}>
             닫기
           </button>
+          {canEditTransaction && !editing ? (
+            <button className="btn-secondary" type="button" onClick={() => setEditing(true)} disabled={deleteBusy || updateBusy}>
+              <Pencil size={18} />
+              수정
+            </button>
+          ) : null}
           {canDeleteTransaction ? (
             <button className="btn-danger" type="button" onClick={requestDelete} disabled={deleteBusy}>
               <Trash2 size={18} />

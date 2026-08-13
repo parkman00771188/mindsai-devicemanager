@@ -47,7 +47,7 @@ export const DEVICE_FIELDS = [
   ["purchase_price", "구매금액", "number"],
   ["department", "관리부서", "text"],
   ["manager", "담당자", "text"],
-  ["location", "보관위치", "text", true],
+  ["location", "보관위치", "text"],
   ["components", "구성품", "text"],
   ["memo", "비고", "textarea"]
 ];

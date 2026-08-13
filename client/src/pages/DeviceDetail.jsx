@@ -9,6 +9,7 @@ import EmptyState from "../components/EmptyState.jsx";
 import Loading from "../components/Loading.jsx";
 import PhotoViewer from "../components/PhotoViewer.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
+import TransactionDetailModal from "../components/TransactionDetailModal.jsx";
 import { actionLabel, deviceCapacity, deviceTitle, formatDate, formatDateTime, isLaptopDevice, splitPhotoPaths, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 import { compressImageFiles } from "../utils/imageCompress.js";
 import { downloadQrImage, qrImageUrl } from "../utils/qrDownload.js";
@@ -153,7 +154,7 @@ function PhotoStrip({ paths, label, onOpen }) {
   );
 }
 
-function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = false, deleteBusy = false, onDelete }) {
+function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = false, canEdit = false, deleteBusy = false, onDelete, onEdit }) {
   const photoPaths = splitPhotoPaths(row.photo_paths);
   const memo = transactionMemo(row) || row.issue_description;
   const dateLabel = row.action_type === "DELIVERY" ? "납품일" : row.action_type === "RECOVERY" ? "회수일" : row.action_type === "RETURN" ? "반납일" : "대여일";
@@ -171,13 +172,23 @@ function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = f
           <ActionBadge action={row.action_type} />
           <p className="mt-1 truncate text-sm font-bold text-slate-500">{row.user_name || "-"} · {formatDateTime(row.created_at)}</p>
         </div>
-        {canDelete ? (
-          <button className="btn-danger h-9 w-9 shrink-0 p-0" type="button" onClick={requestDelete} disabled={deleteBusy} aria-label="이력 삭제">
-            <Trash2 size={16} />
-          </button>
+        {canDelete || canEdit ? (
+          <div className="flex shrink-0 gap-1.5">
+            {canEdit ? (
+              <button className="btn-secondary h-9 w-9 p-0" type="button" onClick={() => onEdit?.(row)} disabled={deleteBusy} aria-label="이력 수정">
+                <Edit size={16} />
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button className="btn-danger h-9 w-9 p-0" type="button" onClick={requestDelete} disabled={deleteBusy} aria-label="이력 삭제">
+                <Trash2 size={16} />
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
       <div className="mt-2 grid gap-1 rounded-lg bg-slate-50 px-3 py-2 sm:mt-3 sm:gap-1.5 sm:py-3">
+        <DetailLine label="소유 소속" value={row.device_owner_organization || row.owner_organization} />
         <DetailLine label="목적/사유" value={row.purpose} />
         <DetailLine label="처리 장소" value={transactionPlace(row)} />
         <DetailLine label={dateLabel} value={formatDate(dateValue) !== "-" ? formatDate(dateValue) : ""} />
@@ -213,6 +224,7 @@ function HistorySummaryModal({ rows, onClose }) {
                 <th className="w-20">출납</th>
                 <th className="w-24">작업</th>
                 <th className="w-28">사용자</th>
+                <th className="w-32">소유 소속</th>
                 <th>목적/사유</th>
                 <th className="w-36">장소</th>
                 <th className="w-28">상태</th>
@@ -231,6 +243,7 @@ function HistorySummaryModal({ rows, onClose }) {
                       <ActionBadge action={row.action_type} />
                     </td>
                     <td className="table-cell"><span className="block truncate">{row.user_name || row.handled_by || "-"}</span></td>
+                    <td className="table-cell"><span className="block truncate">{row.device_owner_organization || "-"}</span></td>
                     <td className="table-cell align-top" title={row.purpose || memo || ""}>
                       <span className="block whitespace-pre-wrap break-words leading-5">{row.purpose || memo || "-"}</span>
                     </td>
@@ -288,6 +301,7 @@ function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onO
           <InfoItem label="관리부서" value={device.department} />
           <InfoItem label="담당자" value={device.manager} />
           <InfoItem label="보관위치" value={device.location} />
+          <InfoItem label="장비 소유 소속" value={device.owner_organization} />
           <InfoItem label="최근 반납일" value={formatDate(device.last_returned_at)} />
           <InfoItem label="최근 점검일" value={formatDate(device.last_checked_at)} />
           <InfoItem label="구성품" value={device.components} />
@@ -447,6 +461,8 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   const [statusAction, setStatusAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [transactionDeleteBusy, setTransactionDeleteBusy] = useState(false);
+  const [transactionUpdateBusy, setTransactionUpdateBusy] = useState(false);
+  const [transactionDetail, setTransactionDetail] = useState(null);
   const [qrStyle, setQrStyle] = useState("plain");
   const [recentPage, setRecentPage] = useState(0);
   const [error, setError] = useState("");
@@ -454,7 +470,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   async function load() {
     const detail = await api(`/devices/${deviceId}/detail`);
     setDevice(detail.device);
-    setTransactions(detail.transactions || []);
+    setTransactions((detail.transactions || []).filter((row) => !["UPDATE", "RENTAL_UPDATE"].includes(row.action_type)));
   }
 
   useEffect(() => {
@@ -548,6 +564,22 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
       setError(err.message);
     } finally {
       setTransactionDeleteBusy(false);
+    }
+  }
+
+  async function updateTransaction(row, changes) {
+    if (!row?.transaction_id) return;
+    setTransactionUpdateBusy(true);
+    try {
+      const updated = await api(`/transactions/${encodeURIComponent(row.transaction_id)}`, { method: "PUT", body: changes });
+      setTransactionDetail(updated);
+      await load();
+      await onChanged?.();
+      return updated;
+    } catch (err) {
+      throw err;
+    } finally {
+      setTransactionUpdateBusy(false);
     }
   }
 
@@ -758,7 +790,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                 </button>
               </div>
               <p className="mt-1 break-words text-sm font-extrabold text-brand">{device.device_id}</p>
-              <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-500 sm:mt-2">{device.location || "위치 미입력"} · {device.category || "분류 미입력"}</p>
+              <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-500 sm:mt-2">{device.location || "위치 미입력"} · {device.category || "분류 미입력"} · 소유 {device.owner_organization || "미지정"}</p>
             </div>
           </div>
           <div className={actionGridClass}>
@@ -938,14 +970,16 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                       className="w-full"
                       onOpenPhoto={openPhotoViewer}
                       canDelete={isAdmin}
+                      canEdit={isAdmin}
                       deleteBusy={transactionDeleteBusy}
                       onDelete={deleteTransaction}
+                      onEdit={setTransactionDetail}
                     />
                   ))}
                 </div>
                 <div className="hidden gap-3 px-5 pb-5 xl:grid xl:grid-cols-2 2xl:grid-cols-4">
                   {pagedTransactions.map((row) => (
-                    <RecentTransactionCard key={row.transaction_id} row={row} onOpenPhoto={openPhotoViewer} canDelete={isAdmin} deleteBusy={transactionDeleteBusy} onDelete={deleteTransaction} />
+                    <RecentTransactionCard key={row.transaction_id} row={row} onOpenPhoto={openPhotoViewer} canDelete={isAdmin} canEdit={isAdmin} deleteBusy={transactionDeleteBusy} onDelete={deleteTransaction} onEdit={setTransactionDetail} />
                   ))}
                 </div>
               </>
@@ -1014,6 +1048,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                 </>
               ) : null}
               <InfoItem label="보관위치" value={device.location} />
+              <InfoItem label="소유 소속" value={device.owner_organization} />
             </dl>
           </section>
 
@@ -1068,6 +1103,21 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
       <HistorySummaryModal
         rows={summaryOpen ? transactions : null}
         onClose={() => setSummaryOpen(false)}
+      />
+      <TransactionDetailModal
+        row={transactionDetail}
+        onClose={() => setTransactionDetail(null)}
+        onOpenPhoto={openPhotoViewer}
+        canDelete={isAdmin}
+        canEdit={isAdmin}
+        deleteBusy={transactionDeleteBusy}
+        updateBusy={transactionUpdateBusy}
+        onDelete={async (row) => {
+          await deleteTransaction(row);
+          setTransactionDetail(null);
+        }}
+        onUpdate={updateTransaction}
+        onDeviceChanged={load}
       />
       <DeviceProcessModal
         key={`${device.device_id}-${processMode}`}
