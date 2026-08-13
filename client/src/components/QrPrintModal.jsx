@@ -2,10 +2,9 @@ import { Check, Printer, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { deviceCapacity, deviceTitle } from "../constants.js";
 import StatusBadge from "./StatusBadge.jsx";
-import { qrImageUrl } from "../utils/qrDownload.js";
+import { qrLabelPngDataUrl } from "../utils/qrDownload.js";
 
 const scaleOptions = Array.from({ length: 13 }, (_, index) => 30 + index * 10);
-const printBaseScale = 0.8;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -32,21 +31,6 @@ function deviceSearchText(device = {}) {
     .toLowerCase();
 }
 
-function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error || new Error("QR 이미지를 읽지 못했습니다."));
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function loadQrLabelDataUrl(deviceId) {
-  const response = await fetch(qrImageUrl(deviceId, "label"), { cache: "no-store" });
-  if (!response.ok) throw new Error(`${deviceId} QR 이미지를 불러오지 못했습니다.`);
-  return blobToDataUrl(await response.blob());
-}
-
 async function printQrLabels(devices, scale) {
   const printWindow = window.open("", "_blank", "width=1200,height=900");
   if (!printWindow) {
@@ -58,7 +42,7 @@ async function printQrLabels(devices, scale) {
 
   let qrImages;
   try {
-    qrImages = new Map(await Promise.all(devices.map(async (device) => [device.device_id, await loadQrLabelDataUrl(device.device_id)])));
+    qrImages = new Map(await Promise.all(devices.map(async (device) => [device.device_id, await qrLabelPngDataUrl(device.device_id)])));
   } catch (error) {
     if (!printWindow.closed) {
       printWindow.document.open();
@@ -69,7 +53,7 @@ async function printQrLabels(devices, scale) {
   }
   if (printWindow.closed) throw new Error("인쇄 창이 닫혔습니다.");
 
-  const effectiveScale = scale * printBaseScale;
+  const effectiveScale = scale;
   const labelWidthCm = (8 * effectiveScale) / 100;
   const labelHeightCm = (1.5 * effectiveScale) / 100;
   const infoFontPt = (13 * effectiveScale) / 100;
