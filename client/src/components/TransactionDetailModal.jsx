@@ -28,22 +28,23 @@ function placeLabel(actionType) {
 }
 
 function editFormFromRow(row = {}) {
+  const source = row || {};
   return {
-    created_at: dateTimeInputValue(row.created_at),
-    rented_at: String(row.rented_at || "").slice(0, 10),
-    expected_return_at: String(row.expected_return_at || "").slice(0, 10),
-    returned_at: String(row.returned_at || "").slice(0, 10),
-    user_name: row.user_name || "",
-    user_organization: row.user_organization || "",
-    user_department: row.user_department || "",
-    user_position: row.user_position || "",
-    user_contact: row.user_contact || "",
-    purpose: row.purpose || "",
-    place: transactionPlace(row),
-    condition_status: row.condition_status || "",
-    issue_description: row.issue_description || "",
-    handled_by: row.handled_by || "",
-    memo: transactionMemo(row)
+    created_at: dateTimeInputValue(source.created_at),
+    rented_at: String(source.rented_at || "").slice(0, 10),
+    expected_return_at: String(source.expected_return_at || "").slice(0, 10),
+    returned_at: String(source.returned_at || "").slice(0, 10),
+    user_name: source.user_name || "",
+    user_organization: source.user_organization || "",
+    user_department: source.user_department || "",
+    user_position: source.user_position || "",
+    user_contact: source.user_contact || "",
+    purpose: source.purpose || "",
+    place: transactionPlace(source),
+    condition_status: source.condition_status || "",
+    issue_description: source.issue_description || "",
+    handled_by: source.handled_by || "",
+    memo: transactionMemo(source)
   };
 }
 
