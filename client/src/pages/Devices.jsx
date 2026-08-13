@@ -17,6 +17,7 @@ const emptyFilters = {
   keyword: "",
   status: "",
   category: "",
+  owner_organization: "",
   mine: ""
 };
 
@@ -127,6 +128,7 @@ function deviceExcelRows(devices = []) {
     return {
       순번: index + 1,
       "현재 상태": statusLabel(device.status),
+      "장비 소유 소속": exportValue(device.owner_organization),
       "현재 처리 구분": context.flowLabel,
       "현재 대상": exportValue(device.current_borrower || currentTransaction.user_name),
       "현재 소속/부서": exportValue(context.orgDepartment),
@@ -172,6 +174,7 @@ function applyDeviceExcelColumnWidths(sheet, rows = []) {
   const preferredWidths = {
     순번: 6,
     "현재 상태": 12,
+    "장비 소유 소속": 20,
     "현재 처리 구분": 14,
     "현재 대상": 20,
     "현재 소속/부서": 24,
@@ -348,16 +351,19 @@ function DetailItem({ label, value }) {
 function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog }) {
   if (!isAdmin) {
     return (
-      <section className="panel p-4 sm:hidden">
-        <button className="group flex w-full min-w-0 items-center gap-3 text-left" type="button" onClick={onOpenCatalog}>
+      <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
+        <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" type="button" onClick={onOpenCatalog}>
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
             <PackageCheck size={21} />
           </span>
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-extrabold text-ink">대여하기</span>
-            <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">사용 가능한 장비를 선택하세요.</span>
-          </span>
+          <span className="line-clamp-2 text-xs font-extrabold text-ink">대여하기</span>
         </button>
+        <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+            <Plus size={22} />
+          </span>
+          <span className="line-clamp-2 text-xs font-extrabold text-ink">장비 등록</span>
+        </Link>
       </section>
     );
   }
@@ -429,6 +435,7 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
             <MobileStatusPill status={device.status} />
           </div>
           <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
+          <p className="mt-1 truncate text-xs font-extrabold text-slate-600">소유 소속 · {device.owner_organization || "미지정"}</p>
           {device.legacy_device_id ? <p className="mt-1 truncate text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
         </div>
       </div>
@@ -471,6 +478,7 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
             <tr>
               <th className="w-[5%]">순번</th>
               <th className="w-[7%]">상태</th>
+              <th className="w-[9%]">소유 소속</th>
               <th className="w-[8%]">분류</th>
               <th className="w-[10%]">장비번호</th>
               <th>장비명</th>
@@ -490,6 +498,7 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
                 <td className="table-cell">
                   <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
                 </td>
+                <td className="table-cell"><span className="block truncate">{device.owner_organization || "-"}</span></td>
                 <td className="table-cell"><span className="block truncate">{device.category || "-"}</span></td>
                 <td className="table-cell font-extrabold text-brand">{device.device_id}</td>
                 <td className="table-cell font-extrabold"><span className="block truncate">{deviceTitle(device)}</span></td>
@@ -654,6 +663,7 @@ export default function Devices() {
   const isAdmin = isAdminUser(currentUser);
   const [devices, setDevices] = useState(null);
   const [categoryRows, setCategoryRows] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
   const [qrDevice, setQrDevice] = useState(null);
   const [detailDevice, setDetailDevice] = useState(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -664,6 +674,7 @@ export default function Devices() {
     keyword: searchParams.get("keyword") || "",
     status: searchParams.get("status") || "",
     category: searchParams.get("category") || "",
+    owner_organization: searchParams.get("owner_organization") || "",
     mine: searchParams.get("mine") || ""
   }));
   const searchKey = searchParams.toString();
@@ -686,6 +697,7 @@ export default function Devices() {
       keyword: searchParams.get("keyword") || "",
       status: searchParams.get("status") || "",
       category: searchParams.get("category") || "",
+      owner_organization: searchParams.get("owner_organization") || "",
       mine: searchParams.get("mine") || ""
     };
     setFilters(nextFilters);
@@ -693,9 +705,15 @@ export default function Devices() {
   }, [searchKey, isAdmin, currentUser?.user_id]);
 
   useEffect(() => {
-    api("/categories")
-      .then(setCategoryRows)
-      .catch(() => setCategoryRows([]));
+    Promise.all([api("/categories"), api("/user-options?option_type=ORGANIZATION")])
+      .then(([categoryData, organizationData]) => {
+        setCategoryRows(categoryData);
+        setOrganizations(organizationData.map((option) => option.option_text).filter(Boolean));
+      })
+      .catch(() => {
+        setCategoryRows([]);
+        setOrganizations([]);
+      });
   }, []);
 
   const categories = useMemo(() => {
@@ -764,10 +782,16 @@ export default function Devices() {
                 장비 등록
               </Link>
             ) : (
-              <button className="btn-primary w-full md:w-auto" type="button" onClick={() => setCatalogOpen(true)}>
-                <PackageCheck size={18} />
-                대여하기
-              </button>
+              <>
+                <button className="btn-secondary w-full md:w-auto" type="button" onClick={() => setCatalogOpen(true)}>
+                  <PackageCheck size={18} />
+                  대여하기
+                </button>
+                <Link className="btn-primary w-full md:w-auto" to="/devices/new">
+                  <Plus size={18} />
+                  장비 등록
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -808,6 +832,18 @@ export default function Devices() {
           onMine={() => applyFilters({ ...filters, status: "", mine: filters.mine ? "" : "1", category: "" })}
           onChange={(status) => applyFilters({ ...filters, status, mine: "" })}
         />
+        <div className="grid gap-3 border-t border-line pt-4 sm:grid-cols-[9rem_minmax(0,22rem)] sm:items-center">
+          <label className="text-sm font-extrabold text-ink" htmlFor="device-owner-organization-filter">장비 소유 소속</label>
+          <select
+            id="device-owner-organization-filter"
+            className="select"
+            value={filters.owner_organization}
+            onChange={(event) => applyFilters({ ...filters, owner_organization: event.target.value, mine: "" })}
+          >
+            <option value="">전체 소속</option>
+            {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
+          </select>
+        </div>
         <KeywordChip keyword={appliedKeyword} onClear={() => applyFilters({ ...filters, keyword: "" })} />
       </form>
 

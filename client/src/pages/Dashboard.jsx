@@ -10,6 +10,10 @@ import PhotoViewer from "../components/PhotoViewer.jsx";
 import TransactionDetailModal from "../components/TransactionDetailModal.jsx";
 import { actionLabel, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 
+function transactionEventDate(row = {}) {
+  return ["RETURN", "RECOVERY"].includes(row.action_type) ? row.returned_at : row.rented_at;
+}
+
 function StatCard({ label, value, icon: Icon, tone, to }) {
   const content = (
       <div className="flex h-full items-start justify-between gap-2 sm:items-center sm:gap-3">
@@ -103,6 +107,7 @@ export default function Dashboard() {
   const [transactionDetail, setTransactionDetail] = useState(null);
   const [photoViewer, setPhotoViewer] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
   const navigate = useNavigate();
 
   async function loadDashboard() {
@@ -156,6 +161,21 @@ export default function Dashboard() {
     }
   }
 
+  async function updateTransaction(row, changes) {
+    if (!row?.transaction_id) return;
+    setUpdateBusy(true);
+    try {
+      const updated = await api(`/transactions/${encodeURIComponent(row.transaction_id)}`, { method: "PUT", body: changes });
+      setTransactionDetail(updated);
+      await loadDashboard();
+      return updated;
+    } catch (err) {
+      throw err;
+    } finally {
+      setUpdateBusy(false);
+    }
+  }
+
   if (!summary) {
     if (error) {
       return (
@@ -193,9 +213,9 @@ export default function Dashboard() {
               <QrCode size={18} />
               QR 스캔
             </Link>
-            <Link className="btn-accent min-h-[3.75rem] sm:min-h-12" to={isAdmin ? "/devices/new" : "/devices"}>
+            <Link className="btn-accent min-h-[3.75rem] sm:min-h-12" to="/devices/new">
               <ClipboardList size={18} />
-              {isAdmin ? "장비 등록" : "장비 대여"}
+              장비 등록
             </Link>
           </div>
         </div>
@@ -230,6 +250,7 @@ export default function Dashboard() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-extrabold text-ink">{deviceTitle(row)}</p>
                           <p className="mt-1 truncate text-xs font-bold text-slate-500">출납 {transactionNumber(row)} · {row.device_id} · {row.user_name || "사용자 없음"}</p>
+                          <p className="mt-1 truncate text-xs font-extrabold text-slate-600">소유 소속 · {row.device_owner_organization || "미지정"}</p>
                           <p className="mt-1 truncate text-sm font-bold text-slate-700">{row.purpose || "목적/사유 없음"}</p>
                           <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{summary}</p>
                         </div>
@@ -264,9 +285,10 @@ export default function Dashboard() {
                         <th className="w-20">작업</th>
                         <th className="w-40">장비번호</th>
                         <th className="w-36">장비명</th>
+                        <th className="w-28">소유 소속</th>
                         <th className="w-20">사용자</th>
                         <th className="w-32">목적/사유</th>
-                        <th className="w-24">대여/납품일</th>
+                        <th className="w-24">처리 기준일</th>
                         <th className="w-20">사진</th>
                         <th className="w-28">메모</th>
                         <th className="w-28">처리자</th>
@@ -289,9 +311,10 @@ export default function Dashboard() {
                           <td className="table-cell whitespace-nowrap align-middle">
                             <span className="block truncate font-extrabold text-ink">{deviceTitle(row)}</span>
                           </td>
+                          <td className="table-cell whitespace-nowrap align-middle"><span className="block truncate">{row.device_owner_organization || "-"}</span></td>
                           <td className="table-cell whitespace-nowrap align-middle">{row.user_name || "-"}</td>
                           <td className="table-cell whitespace-nowrap align-middle"><span className="block truncate">{row.purpose || "-"}</span></td>
-                          <td className="table-cell whitespace-nowrap align-middle">{formatDate(row.rented_at)}</td>
+                          <td className="table-cell whitespace-nowrap align-middle">{formatDate(transactionEventDate(row))}</td>
                           <td className="table-cell whitespace-nowrap align-middle">
                             {photos.length ? (
                               <div className="flex items-center gap-1.5">
@@ -373,8 +396,11 @@ export default function Dashboard() {
         onClose={() => setTransactionDetail(null)}
         onOpenPhoto={(paths, index, row) => openPhotoViewer(paths, index, row)}
         canDelete={isAdmin}
+        canEdit={isAdmin}
         deleteBusy={deleteBusy}
+        updateBusy={updateBusy}
         onDelete={deleteTransaction}
+        onUpdate={updateTransaction}
         onDeviceChanged={loadDashboard}
       />
       <PhotoViewer viewer={photoViewer} onClose={() => setPhotoViewer(null)} onMove={movePhoto} />

@@ -333,6 +333,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
   const [reasons, setReasons] = useState([]);
   const [purpose, setPurpose] = useState("");
   const [keyword, setKeyword] = useState("");
+  const [organizationFilter, setOrganizationFilter] = useState("");
   const [category, setCategory] = useState("전체");
   const [selectedIds, setSelectedIds] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -781,8 +782,8 @@ export default function Users() {
     return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   }
 
-  async function load(nextKeyword = keyword) {
-    const rows = await api(`/users${queryString({ keyword: nextKeyword })}`);
+  async function load(nextKeyword = keyword, nextOrganization = organizationFilter) {
+    const rows = await api(`/users${queryString({ keyword: nextKeyword, organization: nextOrganization })}`);
     setUsers(rows);
     if (selected) {
       const stillExists = rows.some((user) => user.user_id === selected.user_id);
@@ -812,6 +813,10 @@ export default function Users() {
     }
     return [...primaryAdmins, ...normalUsers];
   }, [users, sortMode]);
+  const organizations = useMemo(
+    () => userOptions.filter((option) => option.option_type === "ORGANIZATION").map((option) => option.option_text).filter(Boolean),
+    [userOptions]
+  );
 
   async function selectUser(userId, openMobileDetail = false) {
     setSelected(await api(`/users/${encodeURIComponent(userId)}`));
@@ -966,7 +971,7 @@ export default function Users() {
 
   function submitSearch(event) {
     event.preventDefault();
-    load(keyword).catch((err) => setError(err.message));
+    load(keyword, organizationFilter).catch((err) => setError(err.message));
   }
 
   if (!users) return <Loading />;
@@ -1106,9 +1111,13 @@ export default function Users() {
 
       {error ? <div className="rounded-lg border border-[#ffc8d6] bg-[#fff0f4] px-4 py-3 text-sm font-extrabold text-[#d84f71]">{error}</div> : null}
 
-      <form className="panel flex flex-col gap-3 p-3 sm:p-4 md:flex-row" onSubmit={submitSearch}>
+      <form className="panel grid gap-3 p-3 sm:p-4 md:grid-cols-[minmax(0,1fr)_minmax(12rem,20rem)_8rem]" onSubmit={submitSearch}>
         <input className="input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="이름, ID, 소속, 부서, 연락처 검색" />
-        <button className="btn-primary w-full md:w-32">
+        <select className="select" value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)} aria-label="사용자 소속 필터">
+          <option value="">전체 소속</option>
+          {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
+        </select>
+        <button className="btn-primary w-full">
           <Search size={18} />
           조회
         </button>

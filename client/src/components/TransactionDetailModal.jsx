@@ -1,4 +1,4 @@
-import { Trash2, X } from "lucide-react";
+import { Pencil, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCurrentUser, isAdminUser } from "../auth.js";
 import { actionLabel, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
@@ -14,19 +14,36 @@ function DetailItem({ label, value, preserveWhitespace = false, className = "" }
   );
 }
 
-export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canDelete = false, deleteBusy = false, onDelete, onDeviceChanged }) {
+function dateTimeInputValue(value) {
+  return String(value || "").replace(" ", "T").slice(0, 16);
+}
+
+export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canDelete = false, canEdit = false, deleteBusy = false, updateBusy = false, onDelete, onUpdate, onDeviceChanged }) {
   const [deviceDetailId, setDeviceDetailId] = useState(null);
+  const [editingDates, setEditingDates] = useState(false);
+  const [dateForm, setDateForm] = useState({ created_at: "", rented_at: "", expected_return_at: "", returned_at: "" });
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     setDeviceDetailId(null);
-  }, [row?.transaction_id]);
+    setEditingDates(false);
+    setEditError("");
+    setDateForm({
+      created_at: dateTimeInputValue(row?.created_at),
+      rented_at: String(row?.rented_at || "").slice(0, 10),
+      expected_return_at: String(row?.expected_return_at || "").slice(0, 10),
+      returned_at: String(row?.returned_at || "").slice(0, 10)
+    });
+  }, [row?.transaction_id, row?.created_at, row?.rented_at, row?.expected_return_at, row?.returned_at]);
 
   if (!row) return null;
 
   const canDeleteTransaction = canDelete && isAdminUser(getCurrentUser());
+  const canEditTransaction = canEdit && isAdminUser(getCurrentUser());
   const photos = splitPhotoPaths(row.photo_paths);
   const isDelivery = row.action_type === "DELIVERY";
   const isRecovery = row.action_type === "RECOVERY";
+  const isReturn = row.action_type === "RETURN";
   const borrowerOrgDepartment =
     row.user_org_department ||
     row.borrower_org_department ||
@@ -56,6 +73,16 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
   function requestDelete() {
     if (!window.confirm(`출납 ${transactionNumber(row)} 이력을 삭제할까요? 삭제 후 최근 이력 목록에서 사라집니다.`)) return;
     onDelete?.(row);
+  }
+
+  async function saveDates() {
+    setEditError("");
+    try {
+      await onUpdate?.(row, dateForm);
+      setEditingDates(false);
+    } catch (error) {
+      setEditError(error.message || "이력 날짜를 수정하지 못했습니다.");
+    }
   }
 
   return (
@@ -94,6 +121,7 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           </div>
           <DetailItem label={isDelivery ? "납품 대상" : isRecovery ? "회수 대상" : "사용자"} value={row.user_name} />
           <DetailItem label="기존 장비번호" value={row.device_legacy_device_id || row.legacy_device_id} />
+          <DetailItem label="장비 소유 소속" value={row.device_owner_organization || row.owner_organization} />
           <DetailItem label="소속/부서" value={borrowerOrgDepartment} />
           <DetailItem label="연락처" value={row.user_contact} />
           <DetailItem label="목적/사유" value={row.purpose} />
@@ -110,6 +138,45 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           <DetailItem label="메모" value={transactionMemo(row)} preserveWhitespace className="sm:col-span-2" />
           <DetailItem label="특이사항" value={row.issue_description} preserveWhitespace className="sm:col-span-2" />
         </dl>
+
+        {editingDates ? (
+          <section className="mt-5 rounded-lg border border-[#c9c4ff] bg-[#f7f7ff] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-ink">이력 날짜 수정</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">관리자만 처리일시와 작업 기준 날짜를 변경할 수 있습니다.</p>
+              </div>
+              <button className="btn-secondary h-9 w-9 p-0" type="button" onClick={() => setEditingDates(false)} disabled={updateBusy} aria-label="날짜 수정 닫기">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label>
+                <span className="field-label">처리일시</span>
+                <input className="input" type="datetime-local" value={dateForm.created_at} onChange={(event) => setDateForm((current) => ({ ...current, created_at: event.target.value }))} required />
+              </label>
+              <label>
+                <span className="field-label">{isDelivery ? "납품일" : "대여일"}</span>
+                <input className="input" type="date" value={dateForm.rented_at} onChange={(event) => setDateForm((current) => ({ ...current, rented_at: event.target.value }))} />
+              </label>
+              <label>
+                <span className="field-label">예상 반납일</span>
+                <input className="input" type="date" value={dateForm.expected_return_at} onChange={(event) => setDateForm((current) => ({ ...current, expected_return_at: event.target.value }))} />
+              </label>
+              <label>
+                <span className="field-label">{isRecovery ? "회수일" : isReturn ? "반납일" : "실제 반납일"}</span>
+                <input className="input" type="date" value={dateForm.returned_at} onChange={(event) => setDateForm((current) => ({ ...current, returned_at: event.target.value }))} />
+              </label>
+            </div>
+            {editError ? <p className="mt-3 text-sm font-extrabold text-red-600">{editError}</p> : null}
+            <div className="mt-4 flex justify-end">
+              <button className="btn-primary" type="button" onClick={saveDates} disabled={updateBusy || !dateForm.created_at}>
+                <Save size={18} />
+                {updateBusy ? "저장 중" : "날짜 저장"}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {photos.length ? (
           <div className="mt-5">
@@ -134,6 +201,12 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           <button className="btn-secondary" type="button" onClick={onClose} disabled={deleteBusy}>
             닫기
           </button>
+          {canEditTransaction && !editingDates ? (
+            <button className="btn-secondary" type="button" onClick={() => setEditingDates(true)} disabled={deleteBusy || updateBusy}>
+              <Pencil size={18} />
+              날짜 수정
+            </button>
+          ) : null}
           {canDeleteTransaction ? (
             <button className="btn-danger" type="button" onClick={requestDelete} disabled={deleteBusy}>
               <Trash2 size={18} />

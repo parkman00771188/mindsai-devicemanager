@@ -8,6 +8,7 @@ const emptyDevice = {
   device_id: "",
   legacy_device_id: "",
   device_name: "",
+  owner_organization: "",
   category: "",
   manufacturer: "",
   model_name: "",
@@ -172,6 +173,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
   const [form, setForm] = useState(initialDevice || emptyDevice);
   const [categories, setCategories] = useState([]);
   const [deviceTypes, setDeviceTypes] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [keptPhotoPaths, setKeptPhotoPaths] = useState(() => uniqueDevicePhotos(initialDevice || {}));
   const [existingPhotoSizes, setExistingPhotoSizes] = useState({});
@@ -205,14 +207,16 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
   }, [initialDevice]);
 
   useEffect(() => {
-    Promise.all([api("/categories"), api("/device-types")])
-      .then(([categoryData, typeData]) => {
+    Promise.all([api("/categories"), api("/device-types"), api("/user-options?option_type=ORGANIZATION")])
+      .then(([categoryData, typeData, organizationData]) => {
         setCategories(categoryData);
         setDeviceTypes(typeData);
+        setOrganizations(organizationData.map((option) => option.option_text).filter(Boolean));
       })
       .catch(() => {
         setCategories([]);
         setDeviceTypes([]);
+        setOrganizations([]);
       });
   }, []);
 
@@ -458,6 +462,23 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
           <h2 className="section-title">구매 및 관리</h2>
         </div>
         <div className="mt-4 grid gap-4">
+          <FormRow label="장비 소유 소속" required hint="설정의 사용자 항목 관리에 등록된 소속 중에서 선택합니다.">
+            <select
+              name="owner_organization"
+              className="select text-base"
+              value={form.owner_organization || ""}
+              onChange={(event) => update("owner_organization", event.target.value)}
+              required
+            >
+              <option value="">소속 선택</option>
+              {form.owner_organization && !organizations.includes(form.owner_organization) ? (
+                <option value={form.owner_organization}>{form.owner_organization}</option>
+              ) : null}
+              {organizations.map((organization) => (
+                <option key={organization} value={organization}>{organization}</option>
+              ))}
+            </select>
+          </FormRow>
           {purchaseFields.map(([name, label, type = "text", required]) => (
             <Field key={name} name={name} label={label} type={type} required={required} value={form[name]} onChange={update} />
           ))}

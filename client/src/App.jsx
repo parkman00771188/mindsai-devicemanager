@@ -57,7 +57,7 @@ export default function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/d/:deviceId" element={<DeviceQrRedirect />} />
         <Route path="/devices" element={<Devices />} />
-        <Route path="/devices/new" element={<AdminRoute><DeviceFormPage mode="create" /></AdminRoute>} />
+        <Route path="/devices/new" element={<DeviceFormPage mode="create" />} />
         <Route path="/devices/:deviceId" element={<DeviceDetail />} />
         <Route path="/devices/:deviceId/edit" element={<AdminRoute><DeviceFormPage mode="edit" /></AdminRoute>} />
         <Route path="/devices/:deviceId/rent" element={<RentPage />} />

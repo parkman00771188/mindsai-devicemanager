@@ -14,6 +14,7 @@ const SHEETS = {
     "device_id",
     "legacy_device_id",
     "device_name",
+    "owner_organization",
     "category",
     "manufacturer",
     "model_name",
@@ -862,6 +863,7 @@ function attachDevice(rows, devices) {
       ...row,
       photo_paths: rowPhotos.length ? row.photo_paths : row.action_type === "REGISTER" ? devicePhotos.join(";") : row.photo_paths,
       device_name: device?.device_name || "",
+      device_owner_organization: device?.owner_organization || "",
       device_legacy_device_id: device?.legacy_device_id || "",
       device_category: device?.category || "",
       device_model_name: device?.model_name || "",
@@ -2220,6 +2222,7 @@ function listDevices(filters = {}) {
       if (scopedDeviceIds && !scopedDeviceIds.has(device.device_id)) return false;
       if (filters.status && device.status !== filters.status) return false;
       if (filters.category && !text(device.category).includes(filters.category)) return false;
+      if (filters.owner_organization && text(device.owner_organization) !== text(filters.owner_organization)) return false;
       if (filters.location && !text(device.location).includes(filters.location)) return false;
       return true;
     }).map((device) => {
@@ -2236,6 +2239,7 @@ function listDevices(filters = {}) {
         device.device_id,
         device.legacy_device_id,
         device.device_name,
+        device.owner_organization,
         device.category,
         device.manufacturer,
         device.model_name,
@@ -3119,6 +3123,9 @@ function listTransactions(filters = {}) {
     if (filters.borrower_type) rows = rows.filter((row) => borrowerType(row) === text(filters.borrower_type).toUpperCase());
     if (filters.institution_id) rows = rows.filter((row) => text(row.institution_id) === text(filters.institution_id));
     if (filters.institution_name) rows = rows.filter((row) => text(row.institution_name || row.user_name).includes(text(filters.institution_name)));
+    if (filters.owner_organization) {
+      rows = rows.filter((row) => text(findDevice(data, row.device_id)?.owner_organization) === text(filters.owner_organization));
+    }
     if (filters.user_name) rows = rows.filter((row) => text(row.user_name).includes(filters.user_name));
     if (filters.from) rows = rows.filter((row) => text(row.created_at).slice(0, 10) >= filters.from);
     if (filters.to) rows = rows.filter((row) => text(row.created_at).slice(0, 10) <= filters.to);
@@ -3163,6 +3170,51 @@ function deleteTransaction(id, options = {}) {
       afterValue: {}
     });
     return removed;
+  });
+}
+
+function normalizeDateTimeInput(value) {
+  const source = text(value);
+  if (!source) return "";
+  const normalized = source.replace(" ", "T");
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(normalized)) {
+    throw Object.assign(new Error("처리일시 형식이 올바르지 않습니다."), { statusCode: 400 });
+  }
+  return normalized.length === 16 ? `${normalized}:00` : normalized;
+}
+
+function updateTransaction(id, changes = {}, options = {}) {
+  return withWrite((data) => {
+    if (!isAdminActor(data, options.userId)) {
+      throw Object.assign(new Error("이력 수정은 관리자만 가능합니다."), { statusCode: 403 });
+    }
+    const row = (data.Transactions || []).find((item) => item.transaction_id === id && !bool(item.is_deleted));
+    if (!row) throw Object.assign(new Error("이력을 찾을 수 없습니다."), { statusCode: 404 });
+
+    const before = { ...row };
+    if (changes.created_at !== undefined) row.created_at = normalizeDateTimeInput(changes.created_at);
+    if (changes.rented_at !== undefined) row.rented_at = normalizeDateInput(changes.rented_at);
+    if (changes.expected_return_at !== undefined) row.expected_return_at = normalizeDateInput(changes.expected_return_at);
+    if (changes.returned_at !== undefined) row.returned_at = normalizeDateInput(changes.returned_at);
+
+    const device = findDevice(data, row.device_id);
+    if (device) {
+      const deviceRows = deviceTransactionsDesc(data, device.device_id);
+      const latestCheckout = deviceRows.find((item) => ["RENT", "DELIVERY", "RENTAL_UPDATE"].includes(item.action_type));
+      const latestReturn = deviceRows.find((item) => ["RETURN", "RECOVERY"].includes(item.action_type));
+      if (latestCheckout?.transaction_id === row.transaction_id && ["RENTED", "DELIVERED"].includes(device.status)) {
+        device.borrowed_at = row.rented_at || "";
+        device.expected_return_at = row.expected_return_at || "";
+        device.updated_at = now();
+      }
+      if (latestReturn?.transaction_id === row.transaction_id) {
+        device.last_returned_at = row.returned_at || "";
+        device.updated_at = now();
+      }
+    }
+
+    audit(data, { ...options, action: "UPDATE_TRANSACTION", targetType: "Transaction", targetId: id, beforeValue: before, afterValue: row });
+    return attachTransactions([row], data)[0];
   });
 }
 
@@ -3266,7 +3318,7 @@ function getDashboardSummary() {
 }
 
 function getRecentTransactions(limit = 10) {
-  return listTransactions({ exclude_actions: "RETURN,RECOVERY" }).then((rows) => rows.slice(0, limit));
+  return listTransactions({ exclude_actions: "UPDATE,RENTAL_UPDATE" }).then((rows) => rows.slice(0, limit));
 }
 
 function searchDevices(keyword) {
@@ -3342,6 +3394,13 @@ function updateUserOption(id, changes, options = {}) {
           user.updated_at = row.updated_at;
         }
       });
+      if (row.option_type === "ORGANIZATION") {
+        activeDevices(data).forEach((device) => {
+          if (text(device.owner_organization) !== text(before.option_text)) return;
+          device.owner_organization = row.option_text;
+          device.updated_at = row.updated_at;
+        });
+      }
     }
 
     audit(data, { ...options, action: "UPDATE_USER_OPTION", targetType: "UserOption", targetId: id, beforeValue: before, afterValue: row });
@@ -3354,8 +3413,10 @@ function deleteUserOption(id, options = {}) {
     const row = data.UserOptions.find((option) => option.option_id === id && !bool(option.is_deleted));
     if (!row) throw Object.assign(new Error("사용자 항목을 찾을 수 없습니다."), { statusCode: 404 });
     const field = row.option_type === "POSITION" ? "position" : row.option_type === "ORGANIZATION" ? "organization" : "department";
-    if (activeUsers(data).some((user) => user[field] === row.option_text)) {
-      throw Object.assign(new Error("사용 중인 항목은 삭제할 수 없습니다. 사용자 정보를 먼저 변경해주세요."), { statusCode: 400 });
+    const usedByUser = activeUsers(data).some((user) => user[field] === row.option_text);
+    const usedByDevice = row.option_type === "ORGANIZATION" && activeDevices(data).some((device) => text(device.owner_organization) === text(row.option_text));
+    if (usedByUser || usedByDevice) {
+      throw Object.assign(new Error("사용 중인 항목은 삭제할 수 없습니다. 사용자 또는 장비 정보를 먼저 변경해주세요."), { statusCode: 400 });
     }
     const before = { ...row };
     row.is_deleted = true;
@@ -3496,6 +3557,7 @@ function listUsers(filters = {}) {
     const keyword = text(filters.keyword).toLowerCase();
     return activeUsers(data)
       .filter((user) => {
+        if (filters.organization && text(user.organization) !== text(filters.organization)) return false;
         if (!keyword) return true;
         return [user.user_id, user.name, user.role, user.organization, user.department, user.position, user.contact, user.email]
           .some((field) => text(field).toLowerCase().includes(keyword));
@@ -3979,6 +4041,7 @@ module.exports = {
   updateMaintenance,
   updateRentalInfo,
   updateReason,
+  updateTransaction,
   updateUserOption,
   updateUser
 };
