@@ -421,10 +421,6 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
               </FormRow>
             ) : null}
 
-            {primaryFields.map(([name, label, type = "text", required]) => (
-              <Field key={name} name={name} label={label} type={type} required={required} value={form[name]} onChange={update} />
-            ))}
-
             <FormRow label="장비 소유 소속" required hint="설정의 사용자 항목 관리에 등록된 소속 중에서 선택합니다.">
               <select
                 name="owner_organization"
@@ -442,6 +438,10 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
                 ))}
               </select>
             </FormRow>
+
+            {primaryFields.map(([name, label, type = "text", required]) => (
+              <Field key={name} name={name} label={label} type={type} required={required} value={form[name]} onChange={update} />
+            ))}
 
           </div>
         </div>
