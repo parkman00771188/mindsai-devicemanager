@@ -422,6 +422,24 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
               <Field key={name} name={name} label={label} type={type} required={required} value={form[name]} onChange={update} />
             ))}
 
+            <FormRow label="장비 소유 소속" required hint="설정의 사용자 항목 관리에 등록된 소속 중에서 선택합니다.">
+              <select
+                name="owner_organization"
+                className="select text-base"
+                value={form.owner_organization || ""}
+                onChange={(event) => update("owner_organization", event.target.value)}
+                required
+              >
+                <option value="">소속 선택</option>
+                {form.owner_organization && !organizations.includes(form.owner_organization) ? (
+                  <option value={form.owner_organization}>{form.owner_organization}</option>
+                ) : null}
+                {organizations.map((organization) => (
+                  <option key={organization} value={organization}>{organization}</option>
+                ))}
+              </select>
+            </FormRow>
+
           </div>
         </div>
       </section>
@@ -462,23 +480,6 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
           <h2 className="section-title">구매 및 관리</h2>
         </div>
         <div className="mt-4 grid gap-4">
-          <FormRow label="장비 소유 소속" required hint="설정의 사용자 항목 관리에 등록된 소속 중에서 선택합니다.">
-            <select
-              name="owner_organization"
-              className="select text-base"
-              value={form.owner_organization || ""}
-              onChange={(event) => update("owner_organization", event.target.value)}
-              required
-            >
-              <option value="">소속 선택</option>
-              {form.owner_organization && !organizations.includes(form.owner_organization) ? (
-                <option value={form.owner_organization}>{form.owner_organization}</option>
-              ) : null}
-              {organizations.map((organization) => (
-                <option key={organization} value={organization}>{organization}</option>
-              ))}
-            </select>
-          </FormRow>
           {purchaseFields.map(([name, label, type = "text", required]) => (
             <Field key={name} name={name} label={label} type={type} required={required} value={form[name]} onChange={update} />
           ))}

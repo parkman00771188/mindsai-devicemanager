@@ -333,7 +333,6 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
   const [reasons, setReasons] = useState([]);
   const [purpose, setPurpose] = useState("");
   const [keyword, setKeyword] = useState("");
-  const [organizationFilter, setOrganizationFilter] = useState("");
   const [category, setCategory] = useState("전체");
   const [selectedIds, setSelectedIds] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -768,6 +767,7 @@ export default function Users() {
   const [userOptions, setUserOptions] = useState([]);
   const [selected, setSelected] = useState(null);
   const [keyword, setKeyword] = useState("");
+  const [organizationFilter, setOrganizationFilter] = useState("");
   const [sortMode, setSortMode] = useState("name");
   const [modal, setModal] = useState(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -796,7 +796,10 @@ export default function Users() {
 
   useEffect(() => {
     Promise.all([load(), api("/user-options").then(setUserOptions)])
-      .catch((err) => setError(err.message));
+      .catch((err) => {
+        setError(err.message);
+        setUsers((current) => current || []);
+      });
   }, []);
 
   const sortedUsers = useMemo(() => {

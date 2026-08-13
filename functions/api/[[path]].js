@@ -1060,7 +1060,7 @@ function handleTransactions(state, parts, params, body, method, userId) {
     requireAdminActor(state, userId, "이력 수정은 관리자만 가능합니다.");
     const row = state.Transactions.find((item) => item.transaction_id === parts[1]);
     if (!row || isDeleted(row)) throw Object.assign(new Error("Transaction not found"), { statusCode: 404 });
-    updateTransactionDates(state, row, body);
+    updateTransaction(state, row, body);
     return { data: attachTransaction(state, row), save: true };
   }
   if (parts.length === 2 && method === "DELETE") {
@@ -1100,7 +1100,34 @@ function normalizeTransactionDate(value) {
   return source;
 }
 
-function updateTransactionDates(state, row, input = {}) {
+function transactionPlaceFromMemo(memo) {
+  const match = text(memo).match(/(?:대여|반납|납품|회수) 장소:\s*([^/]+)/);
+  return match ? match[1].trim() : "";
+}
+
+function transactionMemoWithoutPlace(memo) {
+  return text(memo)
+    .replace(/(?:대여|반납|납품|회수) 장소:\s*[^/]+\/?\s*/g, "")
+    .replace(/\s*\/?\s*(?:대여|납품) 정보 수정(?::.*)?$/g, "")
+    .trim();
+}
+
+function updateTransaction(state, row, input = {}) {
+  const editableFields = [
+    "user_name",
+    "user_organization",
+    "user_department",
+    "user_position",
+    "user_contact",
+    "purpose",
+    "condition_status",
+    "issue_description",
+    "handled_by",
+    "memo"
+  ];
+  editableFields.forEach((field) => {
+    if (input[field] !== undefined) row[field] = text(input[field]);
+  });
   if (input.created_at !== undefined) row.created_at = normalizeTransactionDateTime(input.created_at);
   if (input.rented_at !== undefined) row.rented_at = normalizeTransactionDate(input.rented_at);
   if (input.expected_return_at !== undefined) row.expected_return_at = normalizeTransactionDate(input.expected_return_at);
@@ -1112,8 +1139,23 @@ function updateTransactionDates(state, row, input = {}) {
   const latestCheckout = deviceTransactions.find((item) => ["RENT", "DELIVERY", "RENTAL_UPDATE"].includes(item.action_type));
   const latestReturn = deviceTransactions.find((item) => ["RETURN", "RECOVERY"].includes(item.action_type));
   if (latestCheckout?.transaction_id === row.transaction_id && ["RENTED", "DELIVERED"].includes(device.status)) {
-    device.borrowed_at = row.rented_at || "";
-    device.expected_return_at = row.expected_return_at || "";
+    const sourceActionType = device.status === "DELIVERED" || row.action_type === "DELIVERY" ? "DELIVERY" : "RENT";
+    applyCheckoutSnapshot(device, {
+      borrower_type: row.borrower_type,
+      institution_id: row.institution_id,
+      institution_name: row.institution_name,
+      user_name: row.user_name,
+      user_organization: row.user_organization,
+      user_department: row.user_department,
+      user_position: row.user_position,
+      user_contact: row.user_contact,
+      purpose: row.purpose,
+      rent_location: transactionPlaceFromMemo(row.memo),
+      condition_status: row.condition_status,
+      memo: transactionMemoWithoutPlace(row.memo),
+      rented_at: row.rented_at,
+      expected_return_at: row.expected_return_at
+    }, sourceActionType);
     device.updated_at = now();
   }
   if (latestReturn?.transaction_id === row.transaction_id) {

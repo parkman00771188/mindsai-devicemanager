@@ -3192,6 +3192,21 @@ function updateTransaction(id, changes = {}, options = {}) {
     if (!row) throw Object.assign(new Error("이력을 찾을 수 없습니다."), { statusCode: 404 });
 
     const before = { ...row };
+    const editableFields = [
+      "user_name",
+      "user_organization",
+      "user_department",
+      "user_position",
+      "user_contact",
+      "purpose",
+      "condition_status",
+      "issue_description",
+      "handled_by",
+      "memo"
+    ];
+    editableFields.forEach((field) => {
+      if (changes[field] !== undefined) row[field] = text(changes[field]);
+    });
     if (changes.created_at !== undefined) row.created_at = normalizeDateTimeInput(changes.created_at);
     if (changes.rented_at !== undefined) row.rented_at = normalizeDateInput(changes.rented_at);
     if (changes.expected_return_at !== undefined) row.expected_return_at = normalizeDateInput(changes.expected_return_at);
@@ -3203,8 +3218,8 @@ function updateTransaction(id, changes = {}, options = {}) {
       const latestCheckout = deviceRows.find((item) => ["RENT", "DELIVERY", "RENTAL_UPDATE"].includes(item.action_type));
       const latestReturn = deviceRows.find((item) => ["RETURN", "RECOVERY"].includes(item.action_type));
       if (latestCheckout?.transaction_id === row.transaction_id && ["RENTED", "DELIVERED"].includes(device.status)) {
-        device.borrowed_at = row.rented_at || "";
-        device.expected_return_at = row.expected_return_at || "";
+        const values = checkoutSnapshotValuesFromTransaction(data, device, row);
+        applyCurrentCheckoutSnapshot(device, values);
         device.updated_at = now();
       }
       if (latestReturn?.transaction_id === row.transaction_id) {

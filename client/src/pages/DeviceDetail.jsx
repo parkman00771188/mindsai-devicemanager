@@ -175,7 +175,7 @@ function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = f
         {canDelete || canEdit ? (
           <div className="flex shrink-0 gap-1.5">
             {canEdit ? (
-              <button className="btn-secondary h-9 w-9 p-0" type="button" onClick={() => onEdit?.(row)} disabled={deleteBusy} aria-label="이력 날짜 수정">
+              <button className="btn-secondary h-9 w-9 p-0" type="button" onClick={() => onEdit?.(row)} disabled={deleteBusy} aria-label="이력 수정">
                 <Edit size={16} />
               </button>
             ) : null}
@@ -282,7 +282,6 @@ function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onO
         </div>
         <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
           <InfoItem label="분류" value={device.category} />
-          <InfoItem label="장비 소유 소속" value={device.owner_organization} />
           <InfoItem label="기존 장비번호" value={device.legacy_device_id} />
           <InfoItem label="제조사" value={device.manufacturer} />
           <InfoItem label="모델명" value={device.model_name} />
@@ -302,6 +301,7 @@ function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onO
           <InfoItem label="관리부서" value={device.department} />
           <InfoItem label="담당자" value={device.manager} />
           <InfoItem label="보관위치" value={device.location} />
+          <InfoItem label="장비 소유 소속" value={device.owner_organization} />
           <InfoItem label="최근 반납일" value={formatDate(device.last_returned_at)} />
           <InfoItem label="최근 점검일" value={formatDate(device.last_checked_at)} />
           <InfoItem label="구성품" value={device.components} />
@@ -1036,7 +1036,6 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </div>
             <dl className="mt-3">
               <InfoItem label="분류" value={device.category} />
-              <InfoItem label="소유 소속" value={device.owner_organization} />
               <InfoItem label="기존 장비번호" value={device.legacy_device_id} />
               <InfoItem label="모델명" value={device.model_name} />
               {isLaptop ? (
@@ -1049,6 +1048,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                 </>
               ) : null}
               <InfoItem label="보관위치" value={device.location} />
+              <InfoItem label="소유 소속" value={device.owner_organization} />
             </dl>
           </section>
 

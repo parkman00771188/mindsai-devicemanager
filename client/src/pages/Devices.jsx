@@ -128,12 +128,12 @@ function deviceExcelRows(devices = []) {
     return {
       순번: index + 1,
       "현재 상태": statusLabel(device.status),
-      "장비 소유 소속": exportValue(device.owner_organization),
       "현재 처리 구분": context.flowLabel,
       "현재 대상": exportValue(device.current_borrower || currentTransaction.user_name),
       "현재 소속/부서": exportValue(context.orgDepartment),
       "현재 연락처": exportValue(currentTransaction.user_contact),
       "현재 목적/사유": exportValue(context.purpose || currentTransaction.purpose),
+      "장비 소유 소속": exportValue(device.owner_organization),
       "현재 시작일": exportDate(device.borrowed_at || currentTransaction.rented_at),
       "예상 반납일": exportDate(device.expected_return_at || currentTransaction.expected_return_at),
       "현재 처리 장소": exportValue(context.place || device.rent_location),
@@ -435,7 +435,6 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
             <MobileStatusPill status={device.status} />
           </div>
           <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
-          <p className="mt-1 truncate text-xs font-extrabold text-slate-600">소유 소속 · {device.owner_organization || "미지정"}</p>
           {device.legacy_device_id ? <p className="mt-1 truncate text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
         </div>
       </div>
@@ -443,6 +442,9 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
         <MobileInfoTile icon={UserRound} label={currentLabel} value={currentValue} />
         <MobileInfoTile icon={ClipboardList} label="목적/사유" value={purposeValue} />
       </div>
+      <p className="mt-2 truncate rounded-lg bg-slate-50 px-3 py-2 text-xs font-extrabold text-slate-600">
+        소유 소속 · {device.owner_organization || "미지정"}
+      </p>
       {action ? (
         <div className="mt-3">{action}</div>
       ) : (
@@ -478,7 +480,6 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
             <tr>
               <th className="w-[5%]">순번</th>
               <th className="w-[7%]">상태</th>
-              <th className="w-[9%]">소유 소속</th>
               <th className="w-[8%]">분류</th>
               <th className="w-[10%]">장비번호</th>
               <th>장비명</th>
@@ -486,6 +487,7 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
               <th className="w-[6%]">용량</th>
               <th className="w-[8%]">대여자</th>
               <th className="w-[11%]">목적/사유</th>
+              <th className="w-[9%]">소유 소속</th>
               <th className="w-[9%]">기존 장비번호</th>
               <th className="w-[10%]">비고</th>
               <th className="w-[7%]">관리</th>
@@ -498,7 +500,6 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
                 <td className="table-cell">
                   <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
                 </td>
-                <td className="table-cell"><span className="block truncate">{device.owner_organization || "-"}</span></td>
                 <td className="table-cell"><span className="block truncate">{device.category || "-"}</span></td>
                 <td className="table-cell font-extrabold text-brand">{device.device_id}</td>
                 <td className="table-cell font-extrabold"><span className="block truncate">{deviceTitle(device)}</span></td>
@@ -506,6 +507,7 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
                 <td className="table-cell font-bold text-slate-600">{deviceCapacity(device)}</td>
                 <td className="table-cell"><span className="block truncate">{device.current_borrower || "-"}</span></td>
                 <td className="table-cell"><span className="block truncate" title={device.current_status_purpose || device.current_purpose || ""}>{device.current_status_purpose || device.current_purpose || "-"}</span></td>
+                <td className="table-cell"><span className="block truncate">{device.owner_organization || "-"}</span></td>
                 <td className="table-cell"><span className="block truncate">{device.legacy_device_id || "-"}</span></td>
                 <td className="table-cell"><span className="block truncate" title={device.memo || ""}>{device.memo || "-"}</span></td>
                 <td className="table-cell">
