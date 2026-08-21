@@ -481,14 +481,14 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
               <th className="w-[4%]">순번</th>
               <th className="w-[8%]">상태</th>
               <th className="w-[7%]">분류</th>
-              <th className="w-[9%]">장비번호</th>
-              <th className="w-[13%]">장비명</th>
-              <th className="w-[9%]">모델명</th>
+              <th className="w-[15%]">장비번호</th>
+              <th className="w-[12%]">장비명</th>
+              <th className="w-[8%]">모델명</th>
               <th className="w-[6%]">용량</th>
               <th className="w-[7%]">대여자</th>
-              <th className="w-[10%]">목적/사유</th>
-              <th className="w-[8%]">소유 소속</th>
-              <th className="w-[8%]">기존 장비번호</th>
+              <th className="w-[9%]">목적/사유</th>
+              <th className="w-[7%]">소유 소속</th>
+              <th className="w-[6%]">기존 장비번호</th>
               <th className="w-[6%]">비고</th>
               <th className="w-[5%]">관리</th>
             </tr>
@@ -501,7 +501,7 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
                   <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
                 </td>
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.category || ""}>{device.category || "-"}</span></td>
-                <td className="table-cell font-extrabold text-brand"><span className="line-clamp-2 break-all leading-5" title={device.device_id}>{device.device_id}</span></td>
+                <td className="table-cell font-extrabold text-brand"><span className="block whitespace-nowrap" title={device.device_id}>{device.device_id}</span></td>
                 <td className="table-cell font-extrabold"><span className="line-clamp-2 break-words leading-5" title={deviceTitle(device)}>{deviceTitle(device)}</span></td>
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.model_name || ""}>{device.model_name || "-"}</span></td>
                 <td className="table-cell font-bold text-slate-600">{deviceCapacity(device)}</td>
