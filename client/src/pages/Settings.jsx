@@ -205,7 +205,7 @@ function Message({ message }) {
   if (!message) return null;
   const isError = message.type === "error";
   return (
-    <div className={`rounded-lg border px-4 py-3 text-sm font-extrabold ${isError ? "border-[#ffc8d6] bg-[#fff0f4] text-[#d84f71]" : "border-[#c7f1e9] bg-[#ecfbf7] text-[#1eb6a5]"}`}>
+    <div className={`rounded-lg border px-4 py-3 text-sm font-extrabold ${isError ? "border-[#ffc8d6] bg-[#fff0f4] text-[#d84f71]" : "border-[#bbf7d0] bg-[#e9f8ef] text-[#16a34a]"}`}>
       {message.text}
     </div>
   );
@@ -231,15 +231,15 @@ function DeviceCollectionBody({ devices, error, emptyText, busy, onOpenDetail, o
   return (
     <>
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="rounded-lg border border-line bg-[#f7f7fd] px-4 py-3">
+        <div className="rounded-lg border border-line bg-[#f8fafc] px-4 py-3">
           <p className="text-xs font-extrabold text-slate-500">전체</p>
           <p className="mt-1 text-2xl font-extrabold text-ink">{devices.length}대</p>
         </div>
-        <div className="rounded-lg border border-line bg-[#ecfbf7] px-4 py-3">
+        <div className="rounded-lg border border-line bg-[#e9f8ef] px-4 py-3">
           <p className="text-xs font-extrabold text-slate-500">대여 가능</p>
-          <p className="mt-1 text-2xl font-extrabold text-[#1eb6a5]">{devices.filter((device) => device.status === "AVAILABLE").length}대</p>
+          <p className="mt-1 text-2xl font-extrabold text-[#16a34a]">{devices.filter((device) => device.status === "AVAILABLE").length}대</p>
         </div>
-        <div className="rounded-lg border border-line bg-[#f1efff] px-4 py-3">
+        <div className="rounded-lg border border-line bg-[#eef4ff] px-4 py-3">
           <p className="text-xs font-extrabold text-slate-500">대여/납품</p>
           <p className="mt-1 text-2xl font-extrabold text-brand">{devices.filter((device) => ["RENTED", "DELIVERED"].includes(device.status)).length}대</p>
         </div>
@@ -355,7 +355,7 @@ function UnderlineTabs({ items, value, onChange }) {
           >
             {item.label}
             {item.count !== undefined ? (
-              <span className={`ml-2 rounded-lg px-2 py-0.5 text-xs ${value === item.value ? "bg-[#f2f0ff] text-brand" : "bg-slate-100 text-slate-500"}`}>
+              <span className={`ml-2 rounded-lg px-2 py-0.5 text-xs ${value === item.value ? "bg-[#eef4ff] text-brand" : "bg-slate-100 text-slate-500"}`}>
                 {item.count}
               </span>
             ) : null}
@@ -368,14 +368,14 @@ function UnderlineTabs({ items, value, onChange }) {
 
 function SegmentedTabs({ items, value, onChange }) {
   return (
-    <div className="border-b border-line bg-[#f7f7fd] px-3 py-3 sm:px-4 sm:py-4">
+    <div className="border-b border-line bg-[#f8fafc] px-3 py-3 sm:px-4 sm:py-4">
       <div className="scrollbar-none flex w-full gap-1 overflow-x-auto rounded-lg border border-line bg-white p-1 shadow-soft sm:inline-flex sm:w-auto">
         {items.map((item) => (
           <button
             key={item.value}
             type="button"
             className={`flex min-h-11 min-w-24 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-sm font-extrabold transition sm:min-w-28 sm:px-5 ${
-              value === item.value ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#f2f0ff] hover:text-brand"
+              value === item.value ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
             }`}
             onClick={() => onChange(item.value)}
           >
@@ -710,7 +710,7 @@ function UserOptionMembersModal({ option, userOptions, onClose, onUpdated }) {
       {error ? <div className="mb-4 rounded-lg border border-[#ffc8d6] bg-[#fff0f4] px-4 py-3 text-sm font-extrabold text-[#d84f71]">{error}</div> : null}
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
         <section className="overflow-hidden rounded-lg border border-line bg-white">
-          <div className="border-b border-line bg-[#f7f7fd] p-3">
+          <div className="border-b border-line bg-[#f8fafc] p-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input className="input pl-10" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="이름, ID, 소속, 부서, 직책 검색" />
@@ -727,7 +727,7 @@ function UserOptionMembersModal({ option, userOptions, onClose, onUpdated }) {
             {filteredUsers.map((user) => (
               <button key={user.user_id} className="soft-row text-left" type="button" onClick={() => toggleUser(user.user_id)}>
                 <div className="flex items-start gap-3">
-                  <input className="mt-2 h-5 w-5 accent-[#7367f0]" type="checkbox" checked={selectedIds.includes(user.user_id)} onChange={() => toggleUser(user.user_id)} onClick={(event) => event.stopPropagation()} />
+                  <input className="mt-2 h-5 w-5 accent-[#2563eb]" type="checkbox" checked={selectedIds.includes(user.user_id)} onChange={() => toggleUser(user.user_id)} onClick={(event) => event.stopPropagation()} />
                   <UserAvatar user={user} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-extrabold text-ink">{user.name}</p>
@@ -755,7 +755,7 @@ function UserOptionMembersModal({ option, userOptions, onClose, onUpdated }) {
                 {filteredUsers.map((user) => (
                   <tr key={user.user_id} className="cursor-pointer hover:bg-slate-50" onClick={() => toggleUser(user.user_id)}>
                     <td className="table-cell">
-                      <input className="h-5 w-5 accent-[#7367f0]" type="checkbox" checked={selectedIds.includes(user.user_id)} onChange={() => toggleUser(user.user_id)} onClick={(event) => event.stopPropagation()} />
+                      <input className="h-5 w-5 accent-[#2563eb]" type="checkbox" checked={selectedIds.includes(user.user_id)} onChange={() => toggleUser(user.user_id)} onClick={(event) => event.stopPropagation()} />
                     </td>
                     <td className="table-cell">
                       <div className="flex min-w-0 items-center gap-2">
@@ -777,7 +777,7 @@ function UserOptionMembersModal({ option, userOptions, onClose, onUpdated }) {
           </div>
         </section>
 
-        <aside className="rounded-lg border border-[#d8d2ff] bg-[#f7f7ff] p-4">
+        <aside className="rounded-lg border border-[#dbe7ff] bg-[#f8fafc] p-4">
           <h3 className="section-title">선택 인원 변경</h3>
           <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">선택한 값만 변경됩니다. 비워둔 항목은 그대로 유지됩니다.</p>
           <div className="mt-4 grid gap-3">
@@ -828,7 +828,7 @@ function UserOptionMembersModal({ option, userOptions, onClose, onUpdated }) {
           </div>
         }
       >
-        <div className="rounded-lg border border-[#d8d2ff] bg-[#f7f7ff] p-4">
+        <div className="rounded-lg border border-[#dbe7ff] bg-[#f8fafc] p-4">
           <p className="text-sm font-extrabold text-brand">변경 대상</p>
           <p className="mt-1 text-2xl font-extrabold text-ink">{selectedIds.length}명</p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -1403,14 +1403,14 @@ export default function Settings() {
     return (
       <section className="panel p-4 sm:p-6">
         <form className="grid gap-6 xl:grid-cols-[240px_1fr]" onSubmit={saveProfile}>
-          <aside className="rounded-lg border border-line bg-[#f7f7fd] p-5 text-center">
+          <aside className="rounded-lg border border-line bg-[#f8fafc] p-5 text-center">
             <div className="relative mx-auto w-fit">
               <UserAvatar user={profileForm} size="xl" className="h-36 w-36" />
               <ProfilePhotoUploader user={profileForm} iconOnly className="absolute bottom-0 left-0" disabled={busy || !profileForm.user_id} onUploaded={handleProfilePhotoUploaded} />
             </div>
             <h3 className="mt-4 text-xl font-extrabold text-ink">{profileForm.name || "사용자"}</h3>
             <p className="mt-1 text-sm font-bold text-slate-500">{profileForm.user_id || "-"}</p>
-            <span className="mt-3 inline-flex rounded-lg bg-[#f2f0ff] px-3 py-1.5 text-xs font-extrabold text-brand">{roleLabel(profileForm.role)}</span>
+            <span className="mt-3 inline-flex rounded-lg bg-[#eef4ff] px-3 py-1.5 text-xs font-extrabold text-brand">{roleLabel(profileForm.role)}</span>
           </aside>
 
           <div className="min-w-0">
@@ -1516,7 +1516,7 @@ export default function Settings() {
             </section>
 
             <section className="overflow-hidden rounded-lg border border-line bg-white">
-              <div className="border-b border-line bg-[#f7f7fd] px-4 py-3">
+              <div className="border-b border-line bg-[#f8fafc] px-4 py-3">
                 <h2 className="section-title">분류 목록</h2>
                 <p className="mt-1 text-sm font-semibold text-slate-500">장비번호의 큰 접두어와 분류명을 관리합니다.</p>
               </div>
@@ -1697,7 +1697,7 @@ export default function Settings() {
           </section>
 
           <section className="overflow-hidden rounded-lg border border-line bg-white">
-            <div className={`border-b border-line px-4 py-4 ${reasonManagerTab === "RENT" ? "bg-[#f2f0ff]" : "bg-[#ecfbf7]"}`}>
+            <div className={`border-b border-line px-4 py-4 ${reasonManagerTab === "RENT" ? "bg-[#eef4ff]" : "bg-[#e9f8ef]"}`}>
               <h3 className="section-title">{currentLabel} 목록</h3>
               <p className="mt-1 text-sm font-semibold text-slate-500">현재 탭에 등록된 항목 {rows.length}개</p>
             </div>
@@ -1794,7 +1794,7 @@ export default function Settings() {
           </section>
 
           <section className="overflow-hidden rounded-lg border border-line bg-white">
-            <div className="flex flex-col gap-3 border-b border-line bg-[#f7f7fd] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-line bg-[#f8fafc] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-brand shadow-soft"><Icon size={22} /></span>
                 <div>
@@ -1880,7 +1880,7 @@ export default function Settings() {
           </section>
 
           <section className="overflow-hidden rounded-lg border border-line bg-white">
-            <div className="flex flex-col gap-3 border-b border-line bg-[#f7f7fd] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-line bg-[#f8fafc] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-brand shadow-soft"><Building2 size={22} /></span>
                 <div>
@@ -2092,15 +2092,15 @@ export default function Settings() {
           ) : (
             <>
               <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                <div className="rounded-lg border border-line bg-[#f7f7fd] px-4 py-3">
+                <div className="rounded-lg border border-line bg-[#f8fafc] px-4 py-3">
                   <p className="text-xs font-extrabold text-slate-500">전체</p>
                   <p className="mt-1 text-2xl font-extrabold text-ink">{typeDevicesView.devices.length}대</p>
                 </div>
-                <div className="rounded-lg border border-line bg-[#ecfbf7] px-4 py-3">
+                <div className="rounded-lg border border-line bg-[#e9f8ef] px-4 py-3">
                   <p className="text-xs font-extrabold text-slate-500">대여 가능</p>
-                  <p className="mt-1 text-2xl font-extrabold text-[#1eb6a5]">{typeDevicesView.devices.filter((device) => device.status === "AVAILABLE").length}대</p>
+                  <p className="mt-1 text-2xl font-extrabold text-[#16a34a]">{typeDevicesView.devices.filter((device) => device.status === "AVAILABLE").length}대</p>
                 </div>
-                <div className="rounded-lg border border-line bg-[#f1efff] px-4 py-3">
+                <div className="rounded-lg border border-line bg-[#eef4ff] px-4 py-3">
                   <p className="text-xs font-extrabold text-slate-500">대여/납품</p>
                   <p className="mt-1 text-2xl font-extrabold text-brand">{typeDevicesView.devices.filter((device) => ["RENTED", "DELIVERED"].includes(device.status)).length}대</p>
                 </div>
@@ -2281,7 +2281,7 @@ export default function Settings() {
             </div>
           }
         >
-          <div className="rounded-lg border border-line bg-[#f7f7fd] p-4">
+          <div className="rounded-lg border border-line bg-[#f8fafc] p-4">
             <p className="text-sm font-bold text-slate-500">{optionMetaFor(userOptionDelete.option.option_type).label}</p>
             <p className="mt-1 text-xl font-extrabold text-ink">{userOptionDelete.option.option_text}</p>
             {userOptionDelete.option.memo ? <p className="mt-1 text-sm font-semibold text-slate-500">{userOptionDelete.option.memo}</p> : null}

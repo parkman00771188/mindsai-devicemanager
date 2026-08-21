@@ -71,13 +71,13 @@ export default function Maintenance() {
           <div className="panel overflow-hidden">
             {rows.length ? (
               <>
-                <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+                <div className="grid gap-2 p-2 sm:grid-cols-2 md:grid-cols-1 xl:hidden">
                   {rows.map((row) => (
                     <article key={`${row.maintenance_id}-mobile`} className="rounded-lg border border-line bg-white p-4 shadow-soft">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-base font-extrabold text-ink">{row.device_name || row.device_id}</p>
-                          <p className="mt-1 text-xs font-bold text-brand">{row.device_id} · {row.maintenance_id}</p>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-[9rem] flex-1">
+                          <p className="break-words text-base font-extrabold text-ink">{row.device_name || row.device_id}</p>
+                          <p className="mt-1 break-all text-xs font-bold text-brand">{row.device_id} · {row.maintenance_id}</p>
                         </div>
                         <StatusBadge status={row.status_after} />
                       </div>
@@ -100,8 +100,8 @@ export default function Maintenance() {
                   ))}
                 </div>
                 <div className="hidden p-2 xl:block">
-                  <div className="overflow-hidden rounded-lg border border-line/70">
-                    <table className="w-full table-fixed"><thead className="table-head"><tr><th className="w-24">점검 ID</th><th>장비</th><th className="w-20">유형</th><th className="w-32">결과</th><th className="w-20">긴급도</th><th className="w-24">상태</th><th className="w-32">생성일</th></tr></thead><tbody>{rows.map((row) => <tr key={row.maintenance_id} className="hover:bg-slate-50"><td className="table-cell font-semibold">{row.maintenance_id}</td><td className="table-cell"><Link className="block truncate font-semibold text-brand" to={`/devices/${row.device_id}`}>{row.device_name || row.device_id}</Link><p className="truncate text-xs text-slate-500">{row.device_id}</p></td><td className="table-cell">{row.maintenance_type}</td><td className="table-cell"><span className="block truncate">{row.result || row.action_taken || "-"}</span></td><td className="table-cell">{row.issue_level || "-"}</td><td className="table-cell"><StatusBadge status={row.status_after} /></td><td className="table-cell">{formatDateTime(row.created_at)}</td></tr>)}</tbody></table>
+                  <div className="overflow-x-auto rounded-lg border border-line/70">
+                    <table className="w-full min-w-[980px] table-fixed"><thead className="table-head"><tr><th className="w-24">점검 ID</th><th>장비</th><th className="w-20">유형</th><th className="w-32">결과</th><th className="w-20">긴급도</th><th className="w-24">상태</th><th className="w-32">생성일</th></tr></thead><tbody>{rows.map((row) => <tr key={row.maintenance_id} className="hover:bg-slate-50"><td className="table-cell font-semibold" title={row.maintenance_id}><span className="block truncate">{row.maintenance_id}</span></td><td className="table-cell"><Link className="block truncate font-semibold text-brand" to={`/devices/${row.device_id}`}>{row.device_name || row.device_id}</Link><p className="truncate text-xs text-slate-500">{row.device_id}</p></td><td className="table-cell whitespace-nowrap">{row.maintenance_type}</td><td className="table-cell"><span className="block truncate">{row.result || row.action_taken || "-"}</span></td><td className="table-cell whitespace-nowrap">{row.issue_level || "-"}</td><td className="table-cell"><StatusBadge status={row.status_after} /></td><td className="table-cell whitespace-nowrap">{formatDateTime(row.created_at)}</td></tr>)}</tbody></table>
                   </div>
                 </div>
               </>

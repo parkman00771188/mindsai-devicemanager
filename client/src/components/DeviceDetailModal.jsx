@@ -8,7 +8,7 @@ export default function DeviceDetailModal({ device, deviceId, onClose, onChanged
   return (
     <div className="fixed inset-0 z-[70] flex bg-slate-950/55 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
       <section
-        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f4f5fb] shadow-lift sm:h-auto sm:max-h-[94vh] sm:max-w-[min(96vw,1800px)] sm:rounded-lg"
+        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f3f5f9] shadow-lift sm:h-auto sm:max-h-[94vh] sm:max-w-[min(96vw,1800px)] sm:rounded-lg"
         onClick={(event) => event.stopPropagation()}
       >
         <button className="btn-secondary absolute right-3 top-3 z-30 h-11 w-11 bg-white/95 p-0 shadow-soft sm:right-4 sm:top-4" type="button" onClick={onClose} aria-label="상세 팝업 닫기">

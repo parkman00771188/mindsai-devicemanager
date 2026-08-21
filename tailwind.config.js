@@ -3,16 +3,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#2f3349",
-        line: "#e6e9f2",
-        panel: "#f7f8fc",
-        brand: "#7367f0",
-        aqua: "#39d0bd",
-        mint: "#ecfbf7"
+        ink: "#191f28",
+        line: "#e5e9f1",
+        panel: "#f3f5f9",
+        brand: "#2563eb",
+        aqua: "#16a34a",
+        mint: "#e9f8ef"
       },
       boxShadow: {
-        soft: "0 14px 34px rgba(47, 51, 73, 0.08)",
-        lift: "0 18px 44px rgba(115, 103, 240, 0.18)"
+        soft: "0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04)",
+        lift: "0 12px 40px rgba(16, 24, 40, 0.14)"
       }
     }
   },

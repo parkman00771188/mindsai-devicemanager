@@ -20,7 +20,7 @@ export default function UserAvatar({ user, size = "md", className = "" }) {
   return (
     <span
       className={[
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-white bg-gradient-to-br from-[#7f6df2] to-[#22c7ba] font-extrabold text-white shadow-soft",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-white bg-gradient-to-br from-[#2563eb] to-[#16a34a] font-extrabold text-white shadow-soft",
         hasImage ? "" : "bg-none bg-[#c9ccd4] text-white",
         sizeClasses[size] || sizeClasses.md,
         className

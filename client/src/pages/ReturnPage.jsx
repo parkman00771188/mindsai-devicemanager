@@ -199,7 +199,7 @@ export default function ReturnPage() {
               <Camera size={20} className="text-brand" />
               <h2 className="section-title">{processLabel} 사진</h2>
             </div>
-            <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#b9def7] bg-[#e8f6ff] px-4 py-6 text-center">
+            <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#eef4ff] px-4 py-6 text-center">
               <Camera size={28} className="text-brand" />
               <span className="mt-2 text-sm font-extrabold text-ink">{selectedPhotos.length ? `${selectedPhotos.length}장 선택됨` : "사진 선택"}</span>
               <span className="mt-1 text-xs font-semibold text-slate-500">{processLabel} 시 장비 상태를 남겨주세요.</span>

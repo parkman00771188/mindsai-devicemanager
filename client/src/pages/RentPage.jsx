@@ -154,7 +154,7 @@ export default function RentPage() {
               <MessageSquareText size={20} className="text-brand" />
               <h2 className="section-title">관리자 메모</h2>
             </div>
-            <div className="rounded-lg border border-[#b9def7] bg-[#e8f6ff] p-3">
+            <div className="rounded-lg border border-[#dbe7ff] bg-[#eef4ff] p-3">
               <p className="text-sm font-extrabold text-ink">내부 확인 사항</p>
               <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">장비 상태, 전달 특이사항, 별도 약속처럼 관리자만 확인할 내용을 남겨주세요.</p>
             </div>
@@ -169,7 +169,7 @@ export default function RentPage() {
               <Camera size={20} className="text-brand" />
               <h2 className="section-title">대여 사진</h2>
             </div>
-            <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#b9def7] bg-[#e8f6ff] px-4 py-6 text-center">
+            <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#eef4ff] px-4 py-6 text-center">
               <Camera size={28} className="text-brand" />
               <span className="mt-2 text-sm font-extrabold text-ink">{selectedPhotos.length ? `${selectedPhotos.length}장 선택됨` : "사진 선택"}</span>
               <span className="mt-1 text-xs font-semibold text-slate-500">대여 시 장비 상태를 남겨주세요.</span>

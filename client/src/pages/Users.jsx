@@ -43,10 +43,10 @@ function RoleBadge({ role }) {
   const Icon = normalizedRole === "ADMIN" ? ShieldCheck : UserCog;
   const styles = {
     ADMIN: "border-[#ffc8d6] bg-[#fff0f4] text-[#d84f71] shadow-[0_6px_18px_rgba(216,79,113,0.12)]",
-    USER: "border-[#c9c4ff] bg-[#f4f2ff] text-[#6554dc]"
+    USER: "border-[#dbe7ff] bg-[#eef4ff] text-[#1d4ed8]"
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-extrabold ${styles[normalizedRole] || "border-line bg-slate-50 text-slate-600"}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-extrabold ${styles[normalizedRole] || "border-line bg-slate-50 text-slate-600"}`}>
       <Icon size={13} />
       {roleLabel(normalizedRole)}
     </span>
@@ -70,7 +70,7 @@ function RoleDropdown({ value, disabled, onChange }) {
       }}
     >
       <button
-        className={`flex h-12 w-full items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 text-left outline-none transition focus:border-brand focus:ring-4 focus:ring-[#e5e1ff] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${disabled ? "bg-slate-100" : ""}`}
+        className={`flex h-12 w-full items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 text-left outline-none transition focus:border-brand focus:ring-4 focus:ring-[#dbe7ff] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${disabled ? "bg-slate-100" : ""}`}
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
@@ -88,7 +88,7 @@ function RoleDropdown({ value, disabled, onChange }) {
               <button
                 key={role}
                 className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition ${
-                  selected ? "bg-[#f7f7fd]" : "hover:bg-[#f7f7fd]"
+                  selected ? "bg-[#f8fafc]" : "hover:bg-[#f8fafc]"
                 }`}
                 type="button"
                 role="option"
@@ -443,7 +443,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
 
         {error ? <div className="mt-4 rounded-lg border border-[#ffc8d6] bg-[#fff0f4] px-4 py-3 text-sm font-extrabold text-[#d84f71]">{error}</div> : null}
 
-        <section className="mt-5 rounded-lg border border-[#d8d2ff] bg-[#f7f7ff] p-4">
+        <section className="mt-5 rounded-lg border border-[#dbe7ff] bg-[#f8fafc] p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-extrabold text-brand">대여자 정보</p>
@@ -494,7 +494,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
                       <label
                         key={device.device_id}
                         className={`grid cursor-pointer gap-3 rounded-lg border p-3 transition sm:grid-cols-[auto_1fr_auto] sm:items-center ${
-                          checked ? "border-brand bg-[#f4f2ff]" : "border-line bg-white hover:border-[#c9c4ff] hover:bg-[#fbfbff]"
+                          checked ? "border-brand bg-[#eef4ff]" : "border-line bg-white hover:border-[#dbe7ff] hover:bg-[#f8fafc]"
                         }`}
                       >
                         <input
@@ -523,10 +523,10 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
             </div>
           </section>
 
-          <aside className="rounded-lg border border-line bg-[#fbfbff] p-4">
+          <aside className="rounded-lg border border-line bg-[#f8fafc] p-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="section-title">선택 리스트</h3>
-              <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selectedDevices.length}대</span>
+              <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-xs font-extrabold text-brand">{selectedDevices.length}대</span>
             </div>
             <div className="mt-3 grid max-h-[42vh] gap-2 overflow-auto pr-1">
               {selectedDevices.length ? selectedDevices.map((device) => (
@@ -567,7 +567,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
             onConfirm={confirmAssign}
           >
             <div className="grid gap-3">
-              <div className="rounded-lg border border-line bg-[#fbfbff] p-4">
+              <div className="rounded-lg border border-line bg-[#f8fafc] p-4">
                 <p className="text-sm font-extrabold text-ink">대여자 정보</p>
                 <dl className="mt-3 grid gap-2 text-sm font-bold text-slate-600 sm:grid-cols-2">
                   <div className="flex justify-between gap-3"><dt>이름</dt><dd className="text-ink">{user.name || "-"}</dd></div>
@@ -593,7 +593,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
                 <p className="text-sm font-extrabold text-ink">할당 장비</p>
                 <div className="mt-3 grid max-h-48 gap-2 overflow-auto">
                   {selectedDevices.map((device) => (
-                    <div key={device.device_id} className="flex items-center justify-between gap-3 rounded-lg bg-[#f7f7fd] px-3 py-2">
+                    <div key={device.device_id} className="flex items-center justify-between gap-3 rounded-lg bg-[#f8fafc] px-3 py-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold text-ink">{deviceTitle(device)}</p>
                         <p className="text-xs font-bold text-brand">{device.device_id}</p>
@@ -638,7 +638,7 @@ function AssignedDeviceDetailModal({ user, device, busy, onClose, onRequest, onC
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <section className="rounded-lg border border-line bg-[#fbfbff] p-4">
+          <section className="rounded-lg border border-line bg-[#f8fafc] p-4">
             <h3 className="text-sm font-extrabold text-ink">할당 정보</h3>
             <dl className="mt-3">
               <DetailLine label="사용자" value={user?.name} />
@@ -730,7 +730,7 @@ function ReturnRequestModal({ user, device, busy, onClose, onSubmit }) {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3 rounded-lg border border-[#d8d2ff] bg-[#f7f7ff] p-4 text-sm font-bold text-slate-600 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 rounded-lg border border-[#dbe7ff] bg-[#f8fafc] p-4 text-sm font-bold text-slate-600 sm:grid-cols-2">
           <span>요청 대상: <b className="text-ink">{user?.name || "-"}</b></span>
           <span>장비번호: <b className="text-brand">{device.device_id}</b></span>
           <span className="sm:col-span-2">장비명: <b className="text-ink">{deviceTitle(device)}</b></span>
@@ -1015,11 +1015,11 @@ export default function Users() {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-          <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+          <div className="rounded-lg bg-[#f8fafc] px-2 py-3">
             <p className="text-lg font-extrabold text-ink">{selected.assigned_devices?.length || 0}</p>
             <p className="mt-1 text-xs font-bold text-slate-500">할당</p>
           </div>
-          <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+          <div className="rounded-lg bg-[#f8fafc] px-2 py-3">
             <p className="truncate text-lg font-extrabold text-ink">{selected.organization || "-"}</p>
             <p className="mt-1 text-xs font-bold text-slate-500">소속</p>
           </div>
@@ -1038,7 +1038,7 @@ export default function Users() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="section-title">할당 장비</h3>
             <div className="flex items-center gap-2">
-              <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
+              <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
               <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
                 <PackagePlus size={15} />
                 장비 할당
@@ -1047,7 +1047,7 @@ export default function Users() {
           </div>
           <div className="mt-3 grid gap-2">
             {selected.assigned_devices?.length ? selected.assigned_devices.map((device) => (
-              <div key={device.device_id} className="rounded-lg border border-line bg-[#f7f7fd] p-3 transition hover:border-[#c9c4ff] hover:bg-white">
+              <div key={device.device_id} className="rounded-lg border border-line bg-[#f8fafc] p-3 transition hover:border-[#dbe7ff] hover:bg-white">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-extrabold text-ink">{deviceTitle(device)}</p>
@@ -1105,7 +1105,7 @@ export default function Users() {
             <h1 className="page-title">사용자 관리</h1>
             <p className="mt-1 text-sm text-slate-500">사용자 정보와 할당 장비를 관리합니다.</p>
           </div>
-          <button className="btn-primary h-14 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", user: null })}>
+          <button className="btn-primary h-11 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", user: null })}>
             <Plus size={18} />
             사용자 등록
           </button>
@@ -1161,11 +1161,11 @@ export default function Users() {
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+                <div className="rounded-lg bg-[#f8fafc] px-2 py-3">
                   <p className="text-lg font-extrabold text-ink">{selected.assigned_devices?.length || 0}</p>
                   <p className="mt-1 text-xs font-bold text-slate-500">할당</p>
                 </div>
-                <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+                <div className="rounded-lg bg-[#f8fafc] px-2 py-3">
                   <p className="truncate text-lg font-extrabold text-ink">{selected.organization || "-"}</p>
                   <p className="mt-1 text-xs font-bold text-slate-500">소속</p>
                 </div>
@@ -1184,7 +1184,7 @@ export default function Users() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="section-title">할당 장비</h3>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
+                    <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
                     <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
                       <PackagePlus size={15} />
                       장비 할당
@@ -1193,7 +1193,7 @@ export default function Users() {
                 </div>
                 <div className="mt-3 grid gap-2">
                   {selected.assigned_devices?.length ? selected.assigned_devices.map((device) => (
-                    <div key={device.device_id} className="rounded-lg border border-line bg-[#f7f7fd] p-3 transition hover:border-[#c9c4ff] hover:bg-white">
+                    <div key={device.device_id} className="rounded-lg border border-line bg-[#f8fafc] p-3 transition hover:border-[#dbe7ff] hover:bg-white">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate font-extrabold text-ink">{deviceTitle(device)}</p>
@@ -1270,13 +1270,13 @@ export default function Users() {
                   </button>
                 </div>
               </div>
-              <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+              <div className="grid gap-2 p-2 sm:grid-cols-2 md:grid-cols-1 xl:hidden">
                 {sortedUsers.map((user, index) => {
                   const isSelected = selected?.user_id === user.user_id;
                   return (
                     <button
                       key={user.user_id}
-                      className={`soft-row text-left ${isPrimaryAdminUser(user) ? "admin-user-row" : ""} ${isSelected ? "border-brand bg-[#f4f2ff] shadow-lift" : ""}`}
+                      className={`soft-row text-left ${isPrimaryAdminUser(user) ? "admin-user-row" : ""} ${isSelected ? "border-brand bg-[#eef4ff] shadow-lift" : ""}`}
                       type="button"
                       onClick={() => selectUser(user.user_id, true)}
                     >
@@ -1285,11 +1285,11 @@ export default function Users() {
                           <div className="flex flex-wrap items-center gap-2">
                             <UserAvatar user={user} size="sm" />
                             <RoleBadge role={user.role} />
-                            <p className="truncate font-extrabold text-ink">{user.name}</p>
+                          <p className="break-words font-extrabold text-ink">{user.name}</p>
                           </div>
-                          <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {user.user_id} · {user.organization || "소속 없음"} · {user.department || "부서 없음"}</p>
+                          <p className="mt-1 line-clamp-2 break-words text-xs font-bold leading-5 text-slate-500">No {index + 1} · {user.user_id} · {user.organization || "소속 없음"} · {user.department || "부서 없음"}</p>
                         </div>
-                        <span className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{user.assigned_count || 0}대</span>
+                        <span className="rounded-lg bg-[#eef4ff] px-2.5 py-1 text-xs font-extrabold text-brand">{user.assigned_count || 0}대</span>
                       </div>
                       <p className="mt-2 text-sm font-bold text-slate-600">할당 장비 {user.assigned_count || 0}대</p>
                     </button>
@@ -1297,8 +1297,8 @@ export default function Users() {
                 })}
               </div>
               <div className="hidden p-2 xl:block">
-                <div className="overflow-hidden rounded-lg border border-line/70">
-                  <table className="w-full table-fixed">
+                <div className="overflow-x-auto rounded-lg border border-line/70">
+                  <table className="w-full min-w-[1280px] table-fixed">
                     <thead className="table-head">
                       <tr>
                         <th className="w-16">순번</th>

@@ -32,9 +32,9 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f4f5fb] px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-[#f3f5f9] px-4 py-8">
       <div className="w-full max-w-md">
-        <div className="mb-5 rounded-lg bg-gradient-to-r from-[#7f6df2] to-[#6554dc] px-5 py-5 text-white shadow-lift">
+        <div className="mb-5 rounded-lg bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] px-5 py-5 text-white shadow-lift">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/18">
               <TabletSmartphone size={25} />

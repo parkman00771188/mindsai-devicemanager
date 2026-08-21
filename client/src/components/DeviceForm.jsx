@@ -114,7 +114,7 @@ function CapacityField({ value, unit = "GB", onChange }) {
 
   return (
     <FormRow label="용량" hint="기본은 GB이며, 필요한 경우 TB로 바꿔 입력할 수 있습니다. 필수 항목은 아닙니다.">
-      <div className="flex max-w-md min-w-0 overflow-hidden rounded-lg border border-line bg-white focus-within:border-brand focus-within:ring-4 focus-within:ring-[#e5e1ff]">
+      <div className="flex max-w-md min-w-0 overflow-hidden rounded-lg border border-line bg-white focus-within:border-brand focus-within:ring-4 focus-within:ring-[#dbe7ff]">
         <input
           name="capacity_gb"
           className="h-12 min-w-0 flex-1 bg-white px-4 text-base font-semibold text-ink outline-none placeholder:text-slate-400"
@@ -493,7 +493,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
           <h2 className="section-title">장비 사진</h2>
         </div>
         <FormRow label="대표/상세 사진" hint="JPG, PNG, WEBP 최대 10장까지 선택할 수 있습니다." className="mt-4 border-b-0 pb-0">
-          <label className={`flex min-h-36 flex-col items-center justify-center rounded-lg border border-dashed border-[#c9c4ff] bg-[#f7f7fd] px-4 py-6 text-center transition hover:bg-[#f2f0ff] ${canAddPhotos ? "cursor-pointer" : "cursor-not-allowed opacity-70"}`}>
+          <label className={`flex min-h-36 flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#f8fafc] px-4 py-6 text-center transition hover:bg-[#eef4ff] ${canAddPhotos ? "cursor-pointer" : "cursor-not-allowed opacity-70"}`}>
             <ImagePlus size={28} className="text-brand" />
             <span className="mt-2 text-sm font-extrabold text-ink">{canAddPhotos ? (totalPhotoCount ? "사진 추가 선택" : "사진 여러 장 선택") : "최대 10장 선택됨"}</span>
             <span className="mt-1 text-xs font-bold text-slate-500">
@@ -520,12 +520,12 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
                   <p className="text-sm font-extrabold text-ink">사진 목록</p>
                   <p className="mt-1 text-xs font-bold text-slate-500">첫 번째 사진이 대표 사진으로 저장됩니다. 기존 사진도 삭제할 수 있습니다.</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="rounded-lg bg-[#f2f0ff] px-2 py-1 text-[11px] font-extrabold text-brand">총 {totalPhotoCount}장</span>
-                    <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-extrabold text-slate-600">
+                    <span className="rounded-lg bg-[#eef4ff] px-2 py-1 text-xs font-extrabold text-brand">총 {totalPhotoCount}장</span>
+                    <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-extrabold text-slate-600">
                       확인된 용량 {totalKnownPhotoSize ? formatFileSize(totalKnownPhotoSize) : "-"}
                     </span>
                     {selectedPhotoSize ? (
-                      <span className="rounded-lg bg-[#eaf7ff] px-2 py-1 text-[11px] font-extrabold text-sky-700">
+                      <span className="rounded-lg bg-[#eef4ff] px-2 py-1 text-xs font-extrabold text-sky-700">
                         신규 {formatFileSize(selectedPhotoSize)}
                       </span>
                     ) : null}
@@ -552,12 +552,12 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
                   const name = photoNameFromPath(path);
                   const size = existingPhotoSizes[path];
                   return (
-                    <div key={`${path}-${index}`} className="flex min-w-0 items-center gap-3 rounded-lg border border-line bg-[#f7f7fd] p-2">
+                    <div key={`${path}-${index}`} className="flex min-w-0 items-center gap-3 rounded-lg border border-line bg-[#f8fafc] p-2">
                       <img src={path} alt={`등록된 장비 사진 ${index + 1}`} className="h-16 w-16 shrink-0 rounded-lg border border-line bg-white object-cover" />
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-2">
-                          {index === 0 ? <span className="shrink-0 rounded-lg bg-[#f2f0ff] px-2 py-0.5 text-[11px] font-extrabold text-brand">대표</span> : null}
-                          <span className="shrink-0 rounded-lg bg-white px-2 py-0.5 text-[11px] font-extrabold text-slate-500">기존</span>
+                          {index === 0 ? <span className="shrink-0 rounded-lg bg-[#eef4ff] px-2 py-0.5 text-xs font-extrabold text-brand">대표</span> : null}
+                          <span className="shrink-0 rounded-lg bg-white px-2 py-0.5 text-xs font-extrabold text-slate-500">기존</span>
                           <p className="truncate text-sm font-extrabold text-ink">{name}</p>
                         </div>
                         <p className="mt-1 text-xs font-bold text-slate-500">
@@ -577,12 +577,12 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
                   );
                 })}
                 {photoPreviews.map((photo, index) => (
-                  <div key={photo.key} className="flex min-w-0 items-center gap-3 rounded-lg border border-line bg-[#f7f7fd] p-2">
+                  <div key={photo.key} className="flex min-w-0 items-center gap-3 rounded-lg border border-line bg-[#f8fafc] p-2">
                     <img src={photo.url} alt={`${photo.name} 미리보기`} className="h-16 w-16 shrink-0 rounded-lg border border-line bg-white object-cover" />
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2">
-                        {existingPhotos.length + index === 0 ? <span className="shrink-0 rounded-lg bg-[#f2f0ff] px-2 py-0.5 text-[11px] font-extrabold text-brand">대표</span> : null}
-                        <span className="shrink-0 rounded-lg bg-[#eaf7ff] px-2 py-0.5 text-[11px] font-extrabold text-sky-700">신규</span>
+                        {existingPhotos.length + index === 0 ? <span className="shrink-0 rounded-lg bg-[#eef4ff] px-2 py-0.5 text-xs font-extrabold text-brand">대표</span> : null}
+                        <span className="shrink-0 rounded-lg bg-[#eef4ff] px-2 py-0.5 text-xs font-extrabold text-sky-700">신규</span>
                         <p className="truncate text-sm font-extrabold text-ink">{photo.name}</p>
                       </div>
                       <p className="mt-1 text-xs font-bold text-slate-500">{formatFileSize(photo.size)}</p>

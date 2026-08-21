@@ -66,7 +66,7 @@ export default function ProfilePhotoUploader({ user, onUploaded, disabled = fals
           {busy ? "압축·업로드 중" : "프로필 사진 변경"}
           <input className="sr-only" type="file" accept="image/*" onChange={upload} disabled={busy || disabled} />
         </label>
-        {message ? <p className="mt-2 text-center text-xs font-extrabold text-[#1eb6a5]">{message}</p> : null}
+        {message ? <p className="mt-2 text-center text-xs font-extrabold text-[#16a34a]">{message}</p> : null}
         {error ? <p className="mt-2 text-center text-xs font-extrabold text-[#d84f71]">{error}</p> : null}
       </div>
     );
@@ -85,7 +85,7 @@ export default function ProfilePhotoUploader({ user, onUploaded, disabled = fals
           </div>
           <p className="mt-4 text-sm font-extrabold text-brand">프로필 사진</p>
           <p className="mt-1 text-xs font-bold leading-5 text-slate-500">업로드 전 512px 기준 WebP로 압축합니다.</p>
-          {message ? <p className="mt-2 text-xs font-extrabold text-[#1eb6a5]">{message}</p> : null}
+          {message ? <p className="mt-2 text-xs font-extrabold text-[#16a34a]">{message}</p> : null}
           {error ? <p className="mt-2 text-xs font-extrabold text-[#d84f71]">{error}</p> : null}
         </div>
       ) : (
@@ -105,7 +105,7 @@ export default function ProfilePhotoUploader({ user, onUploaded, disabled = fals
         {busy ? "압축·업로드 중" : "사진 선택"}
         <input className="sr-only" type="file" accept="image/*" onChange={upload} disabled={busy || disabled} />
       </label>
-      {message ? <p className="mt-2 text-xs font-extrabold text-[#1eb6a5]">{message}</p> : null}
+      {message ? <p className="mt-2 text-xs font-extrabold text-[#16a34a]">{message}</p> : null}
       {error ? <p className="mt-2 text-xs font-extrabold text-[#d84f71]">{error}</p> : null}
         </>
       )}

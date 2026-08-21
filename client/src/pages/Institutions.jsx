@@ -244,7 +244,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
 
         {error ? <div className="mt-4 rounded-lg border border-[#ffc8d6] bg-[#fff0f4] px-4 py-3 text-sm font-extrabold text-[#d84f71]">{error}</div> : null}
 
-        <section className="mt-5 rounded-lg border border-[#d8d2ff] bg-[#f7f7ff] p-4">
+        <section className="mt-5 rounded-lg border border-[#dbe7ff] bg-[#f8fafc] p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-extrabold text-brand">기관 정보</p>
@@ -294,7 +294,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
                       <label
                         key={device.device_id}
                         className={`grid cursor-pointer gap-3 rounded-lg border p-3 transition sm:grid-cols-[auto_1fr_auto] sm:items-center ${
-                          checked ? "border-brand bg-[#f4f2ff]" : "border-line bg-white hover:border-[#c9c4ff] hover:bg-[#fbfbff]"
+                          checked ? "border-brand bg-[#eef4ff]" : "border-line bg-white hover:border-[#dbe7ff] hover:bg-[#f8fafc]"
                         }`}
                       >
                         <input
@@ -323,10 +323,10 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
             </div>
           </section>
 
-          <aside className="rounded-lg border border-line bg-[#fbfbff] p-4">
+          <aside className="rounded-lg border border-line bg-[#f8fafc] p-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="section-title">선택 리스트</h3>
-              <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selectedDevices.length}대</span>
+              <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-xs font-extrabold text-brand">{selectedDevices.length}대</span>
             </div>
             <div className="mt-3 grid max-h-[42vh] gap-2 overflow-auto pr-1">
               {selectedDevices.length ? selectedDevices.map((device) => (
@@ -367,7 +367,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
             onConfirm={confirmAssign}
           >
             <div className="grid gap-3">
-              <div className="rounded-lg border border-line bg-[#fbfbff] p-4">
+              <div className="rounded-lg border border-line bg-[#f8fafc] p-4">
                 <p className="text-sm font-extrabold text-ink">기관 정보</p>
                 <dl className="mt-3 grid gap-2 text-sm font-bold text-slate-600 sm:grid-cols-2">
                   <div className="flex justify-between gap-3"><dt>기관명</dt><dd className="text-ink">{institution.institution_name || "-"}</dd></div>
@@ -392,7 +392,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
                 <p className="text-sm font-extrabold text-ink">할당 장비</p>
                 <div className="mt-3 grid max-h-48 gap-2 overflow-auto">
                   {selectedDevices.map((device) => (
-                    <div key={device.device_id} className="flex items-center justify-between gap-3 rounded-lg bg-[#f7f7fd] px-3 py-2">
+                    <div key={device.device_id} className="flex items-center justify-between gap-3 rounded-lg bg-[#f8fafc] px-3 py-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold text-ink">{deviceTitle(device)}</p>
                         <p className="text-xs font-bold text-brand">{device.device_id}</p>
@@ -554,7 +554,7 @@ export default function Institutions() {
     return (
       <div>
         <div className="border-b border-line pb-5 text-center">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-lg bg-[#f2f0ff] text-brand sm:h-28 sm:w-28">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-lg bg-[#eef4ff] text-brand sm:h-28 sm:w-28">
             <Building2 size={44} />
           </div>
           <h2 className="mt-4 truncate text-2xl font-extrabold text-ink">{selected.institution_name}</h2>
@@ -572,7 +572,7 @@ export default function Institutions() {
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-2 text-center">
-          <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+          <div className="rounded-lg bg-[#f8fafc] px-2 py-3">
             <p className="text-lg font-extrabold text-ink">{selected.assigned_count || 0}</p>
             <p className="mt-1 text-xs font-bold text-slate-500">대여/납품</p>
           </div>
@@ -590,7 +590,7 @@ export default function Institutions() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="section-title">대여/납품 장비</h3>
             <div className="flex items-center gap-2">
-              <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
+              <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
               <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
                 <PackagePlus size={15} />
                 장비 할당
@@ -599,7 +599,7 @@ export default function Institutions() {
           </div>
           <div className="mt-3 grid gap-2">
             {selected.assigned_devices?.length ? selected.assigned_devices.map((device) => (
-              <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f7f7fd] p-3 text-left transition hover:border-[#c9c4ff] hover:bg-white" type="button" onClick={() => openAssignedDeviceDetail(device.device_id)}>
+              <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f8fafc] p-3 text-left transition hover:border-[#dbe7ff] hover:bg-white" type="button" onClick={() => openAssignedDeviceDetail(device.device_id)}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-extrabold text-ink">{deviceTitle(device)}</p>
@@ -624,7 +624,7 @@ export default function Institutions() {
             <h1 className="page-title">기관 관리</h1>
             <p className="mt-1 text-sm text-slate-500">기관 정보와 대여 이력을 관리합니다.</p>
           </div>
-          <button className="btn-primary h-14 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", institution: null })}>
+          <button className="btn-primary h-11 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", institution: null })}>
             <Plus size={18} />
             기관 등록
           </button>
@@ -646,7 +646,7 @@ export default function Institutions() {
           {selected ? (
             <div>
               <div className="border-b border-line pb-5 text-center">
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-lg bg-[#f2f0ff] text-brand sm:h-28 sm:w-28">
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-lg bg-[#eef4ff] text-brand sm:h-28 sm:w-28">
                   <Building2 size={44} />
                 </div>
                 <h2 className="mt-4 truncate text-2xl font-extrabold text-ink">{selected.institution_name}</h2>
@@ -664,7 +664,7 @@ export default function Institutions() {
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-2 text-center">
-                <div className="rounded-lg bg-[#f7f7fd] px-2 py-3">
+                <div className="rounded-lg bg-[#f8fafc] px-2 py-3">
                   <p className="text-lg font-extrabold text-ink">{selected.assigned_count || 0}</p>
                   <p className="mt-1 text-xs font-bold text-slate-500">대여/납품</p>
                 </div>
@@ -682,7 +682,7 @@ export default function Institutions() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="section-title">대여/납품 장비</h3>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
+                    <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-xs font-extrabold text-brand">{selected.assigned_devices?.length || 0}대</span>
                     <button className="btn-primary h-9 px-3 text-xs" type="button" onClick={openAssignModal} disabled={busy}>
                       <PackagePlus size={15} />
                       장비 할당
@@ -691,7 +691,7 @@ export default function Institutions() {
                 </div>
                 <div className="mt-3 grid gap-2">
                   {selected.assigned_devices?.length ? selected.assigned_devices.map((device) => (
-                    <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f7f7fd] p-3 text-left transition hover:border-[#c9c4ff] hover:bg-white" type="button" onClick={() => openAssignedDeviceDetail(device.device_id)}>
+                    <button key={device.device_id} className="w-full rounded-lg border border-line bg-[#f8fafc] p-3 text-left transition hover:border-[#dbe7ff] hover:bg-white" type="button" onClick={() => openAssignedDeviceDetail(device.device_id)}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate font-extrabold text-ink">{deviceTitle(device)}</p>
@@ -726,13 +726,13 @@ export default function Institutions() {
                   </button>
                 </div>
               </div>
-              <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+              <div className="grid gap-2 p-2 sm:grid-cols-2 md:grid-cols-1 xl:hidden">
                 {sortedInstitutions.map((institution) => {
                   const isSelected = selected?.institution_id === institution.institution_id;
                   return (
                     <button
                       key={institution.institution_id}
-                      className={`soft-row text-left ${isSelected ? "border-brand bg-[#f4f2ff] shadow-lift" : ""}`}
+                      className={`soft-row text-left ${isSelected ? "border-brand bg-[#eef4ff] shadow-lift" : ""}`}
                       type="button"
                       onClick={() => selectInstitution(institution.institution_id, true)}
                     >
@@ -741,7 +741,7 @@ export default function Institutions() {
                           <p className="truncate font-extrabold text-ink">{institution.institution_name}</p>
                           <p className="mt-1 truncate text-xs font-bold text-slate-500">{institution.contact_person || "담당자 미등록"} · {institution.contact || "연락처 없음"}</p>
                         </div>
-                        <span className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{institution.assigned_count || 0}대</span>
+                        <span className="rounded-lg bg-[#eef4ff] px-2.5 py-1 text-xs font-extrabold text-brand">{institution.assigned_count || 0}대</span>
                       </div>
                       <p className="mt-2 text-sm font-bold text-slate-600">대여/납품 장비 {institution.assigned_count || 0}대</p>
                     </button>
@@ -749,8 +749,8 @@ export default function Institutions() {
                 })}
               </div>
               <div className="hidden p-2 xl:block">
-                <div className="overflow-hidden rounded-lg border border-line/70">
-                  <table className="w-full table-fixed">
+                <div className="overflow-x-auto rounded-lg border border-line/70">
+                  <table className="w-full min-w-[1080px] table-fixed">
                     <thead className="table-head">
                       <tr>
                         <th className="w-16">No</th>

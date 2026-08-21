@@ -89,7 +89,7 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
 
   const deviceFilterButton = row.device_id ? (
     <button
-      className="rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-brand transition hover:bg-[#e7e2ff]"
+      className="rounded-lg bg-[#eef4ff] px-2.5 py-1 text-brand transition hover:bg-[#dbe7ff]"
       type="button"
       onClick={openDeviceDetail}
     >
@@ -174,7 +174,7 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
         </dl>
 
         {editing ? (
-          <section className="mt-5 rounded-lg border border-[#c9c4ff] bg-[#f7f7ff] p-4">
+          <section className="mt-5 rounded-lg border border-[#dbe7ff] bg-[#f8fafc] p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-extrabold text-ink">이력 수정</h3>

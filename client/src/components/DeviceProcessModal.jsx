@@ -81,7 +81,7 @@ function UserPicker({ label, value, users, onInput, onSelect, required, placehol
             <button
               key={user.user_id}
               type="button"
-              className="flex w-full items-center justify-between gap-3 border-b border-line px-3 py-2.5 text-left last:border-b-0 hover:bg-[#f7f7fd]"
+              className="flex w-full items-center justify-between gap-3 border-b border-line px-3 py-2.5 text-left last:border-b-0 hover:bg-[#f8fafc]"
               onMouseDown={(event) => {
                 event.preventDefault();
                 onSelect(user);
@@ -94,7 +94,7 @@ function UserPicker({ label, value, users, onInput, onSelect, required, placehol
                   {[user.organization, user.department, user.position].filter(Boolean).join(" · ") || "-"}
                 </span>
               </span>
-              <span className="shrink-0 rounded-lg bg-[#e8f6ff] px-2.5 py-1 text-xs font-extrabold text-brand">{user.user_id}</span>
+              <span className="shrink-0 rounded-lg bg-[#eef4ff] px-2.5 py-1 text-xs font-extrabold text-brand">{user.user_id}</span>
             </button>
           ))}
         </div>
@@ -135,7 +135,7 @@ function InstitutionPicker({ label, value, institutions, onInput, onSelect, requ
             <button
               key={institution.institution_id}
               type="button"
-              className="flex w-full items-center justify-between gap-3 border-b border-line px-3 py-2.5 text-left last:border-b-0 hover:bg-[#f7f7fd]"
+              className="flex w-full items-center justify-between gap-3 border-b border-line px-3 py-2.5 text-left last:border-b-0 hover:bg-[#f8fafc]"
               onMouseDown={(event) => {
                 event.preventDefault();
                 onSelect(institution);
@@ -148,7 +148,7 @@ function InstitutionPicker({ label, value, institutions, onInput, onSelect, requ
                   {[institution.contact_person, institution.contact, institution.address].filter(Boolean).join(" · ") || "-"}
                 </span>
               </span>
-              <span className="shrink-0 rounded-lg bg-[#f2f0ff] px-2.5 py-1 text-xs font-extrabold text-brand">{institution.assigned_count || 0}대</span>
+              <span className="shrink-0 rounded-lg bg-[#eef4ff] px-2.5 py-1 text-xs font-extrabold text-brand">{institution.assigned_count || 0}대</span>
             </button>
           ))}
         </div>
@@ -169,7 +169,7 @@ function BorrowerTypeToggle({ value, onChange }) {
           key={type}
           type="button"
           className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-extrabold transition sm:flex-none ${
-            value === type ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-[#f2f0ff] hover:text-brand"
+            value === type ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
           }`}
           onClick={() => onChange(type)}
         >
@@ -577,7 +577,7 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
                 <Camera size={20} className="text-brand" />
                 <h3 className="section-title">{isDeliveryFlow ? "납품 사진" : isCheckout ? "대여 사진" : `${returnLabel} 사진`}</h3>
               </div>
-              <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#b9def7] bg-[#e8f6ff] px-4 py-6 text-center">
+              <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#eef4ff] px-4 py-6 text-center">
                 <Camera size={28} className="text-brand" />
                 <span className="mt-2 text-sm font-extrabold text-ink">{Array.from(photos).length ? `${Array.from(photos).length}장 선택됨` : "사진 선택"}</span>
                 <span className="mt-1 text-xs font-semibold text-slate-500">처리 시점의 장비 상태를 남겨주세요.</span>

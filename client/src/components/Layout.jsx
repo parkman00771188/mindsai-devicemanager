@@ -68,12 +68,12 @@ function NavItem({ item, onClick, variant = "sidebar" }) {
           [
             "flex min-h-14 items-center gap-3 rounded-lg border px-3 py-2 text-sm font-extrabold transition",
             isActive
-              ? "border-[#c9c4ff] bg-[#f2f0ff] text-brand shadow-soft"
-              : "border-line bg-white text-ink hover:border-[#c9c4ff] hover:bg-[#f7f7fd]"
+              ? "border-[#dbe7ff] bg-[#eef4ff] text-brand shadow-soft"
+              : "border-line bg-white text-ink hover:border-[#dbe7ff] hover:bg-[#f8fafc]"
           ].join(" ")
         }
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f2f0ff] text-brand">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef4ff] text-brand">
           <Icon size={18} />
         </span>
         <span className="min-w-0 truncate">{item.label}</span>
@@ -88,15 +88,15 @@ function NavItem({ item, onClick, variant = "sidebar" }) {
       onClick={onClick}
       className={({ isActive }) =>
         [
-          "group flex items-center justify-between rounded-lg px-3 py-3 text-sm font-extrabold transition",
+          "group flex items-center justify-between rounded-[10px] px-3 py-2.5 text-[14.5px] font-semibold transition",
           isActive
-            ? "is-active bg-white text-brand shadow-lift ring-2 ring-white/45"
-            : "text-white hover:bg-white/10 hover:text-white"
+            ? "is-active bg-[#eef4ff] text-brand"
+            : "text-slate-600 hover:bg-[#eef0f4] hover:text-ink"
         ].join(" ")
       }
     >
-      <span className="flex items-center gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white transition group-hover:bg-white/20 group-hover:text-white group-[.is-active]:bg-brand group-[.is-active]:text-white">
+      <span className="flex items-center gap-2.5">
+        <span className="flex h-5 w-5 items-center justify-center text-slate-500 transition group-hover:text-ink group-[.is-active]:text-brand">
           <Icon size={18} />
         </span>
         {item.label}
@@ -225,8 +225,8 @@ export default function Layout() {
         to={item.to}
         end={item.to === "/"}
         className={({ isActive }) =>
-          `flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
-            isActive ? "bg-[#f2f0ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
+          `flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-extrabold leading-tight transition sm:min-h-14 sm:text-xs ${
+            isActive ? "bg-[#eef4ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
           }`
         }
       >
@@ -315,26 +315,39 @@ export default function Layout() {
   const deletableCount = notifications.filter(canDeleteNotification).length;
 
   return (
-    <div className="min-h-screen bg-[#eef1f8] lg:bg-[#f4f5fb]">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 bg-gradient-to-b from-[#7f6df2] to-[#6554dc] px-5 py-5 lg:block">
+    <div className="min-h-screen bg-[#f3f5f9]">
+      <aside className="desktop-sidebar fixed inset-y-0 left-0 z-30 hidden border-r border-line bg-white lg:block">
         <div className="flex h-full flex-col">
-          <div className="mb-6 rounded-lg bg-white/12 px-4 py-4 text-white shadow-lift">
+          <div className="mx-4 mb-3 mt-4 rounded-xl px-3 py-3 text-ink">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/18">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef4ff] text-brand">
                 <TabletSmartphone size={23} />
               </div>
               <div>
-                <p className="text-lg font-extrabold tracking-normal">Device Manager</p>
-                <p className="text-xs font-bold text-white/70">장비 대여·반납 관리 시스템</p>
+                <p className="text-base font-extrabold tracking-tight">Device Manager</p>
+                <p className="text-xs font-semibold text-slate-400">장비 대여·반납 관리</p>
               </div>
             </div>
           </div>
 
-          <nav className="flex flex-1 flex-col gap-1.5">
+          <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
             {visibleNavItems.map((item) => (
               <NavItem key={item.to} item={item} />
             ))}
           </nav>
+
+          <div className="border-t border-line p-3">
+            <div className="flex items-center gap-2 rounded-xl p-2 transition hover:bg-[#eef0f4]">
+              <UserAvatar user={user} size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-ink">{user?.name || "사용자"}</p>
+                <p className="truncate text-xs font-semibold text-slate-400">{user?.organization || roleLabel(user?.role)}</p>
+              </div>
+              <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-[#ef4444]" onClick={logout} aria-label="로그아웃" title="로그아웃">
+                <LogOut size={17} />
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -345,7 +358,7 @@ export default function Layout() {
         onClick={() => setOpen(false)}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(86vw,22rem)] flex-col overflow-hidden rounded-r-lg bg-[#f4f5fb] px-3 py-3 shadow-lift transition lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(86vw,22rem)] flex-col overflow-hidden rounded-r-lg bg-[#f3f5f9] px-3 py-3 shadow-lift transition lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -378,7 +391,7 @@ export default function Layout() {
         </button>
       </aside>
 
-      <main className="lg:pl-72">
+      <main className="app-main">
         <header className="sticky top-0 z-20 border-b border-line bg-white/95 px-3 py-2 backdrop-blur-xl sm:px-4 sm:py-3 lg:px-7">
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -386,12 +399,12 @@ export default function Layout() {
                 <Menu size={19} />
               </button>
               <div className="min-w-0">
-                <p className="truncate text-[11px] font-extrabold text-brand sm:text-xs">Device Manager</p>
+                <p className="truncate text-xs font-extrabold text-brand sm:text-xs">Device Manager</p>
                 <p className="truncate text-lg font-extrabold leading-tight text-ink sm:text-xl">{currentTitle}</p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <div className="hidden min-w-[220px] max-w-[300px] items-center gap-3 rounded-lg bg-[#f7f7fd] px-4 py-2.5 sm:flex">
+              <div className="hidden min-w-[220px] max-w-[300px] items-center gap-3 rounded-lg bg-[#f8fafc] px-4 py-2.5 sm:flex lg:hidden">
                 <UserAvatar user={user} size="md" />
                 <div className="min-w-0 flex-1 text-left">
                   <p className="truncate text-sm font-extrabold text-ink">{user?.name || "사용자"} ({user?.user_id || "-"})</p>
@@ -407,14 +420,14 @@ export default function Layout() {
                 >
                   <Bell size={18} />
                   {unreadCount ? (
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff4f7a] px-1 text-[11px] font-extrabold text-white">
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff4f7a] px-1 text-xs font-extrabold text-white">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   ) : null}
                 </button>
                 {notificationOpen ? (
                   <div className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-lg border border-line bg-white shadow-lift sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-[min(92vw,380px)]">
-                    <div className="flex items-center justify-between gap-3 border-b border-line bg-[#f7f7fd] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 border-b border-line bg-[#f8fafc] px-4 py-3">
                       <div>
                         <p className="text-sm font-extrabold text-ink">알림</p>
                         <p className="text-xs font-bold text-slate-500">반납 요청과 장비 관련 안내</p>
@@ -442,8 +455,8 @@ export default function Layout() {
                         return (
                           <div
                             key={notification.notification_id}
-                            className={`w-full rounded-lg p-3 text-left transition hover:bg-[#f7f7fd] ${
-                              notification.is_read ? "bg-white" : "bg-[#f4f2ff]"
+                            className={`w-full rounded-lg p-3 text-left transition hover:bg-[#f8fafc] ${
+                              notification.is_read ? "bg-white" : "bg-[#eef4ff]"
                             }`}
                           >
                             <button className="block w-full text-left" type="button" onClick={() => openNotification(notification)}>
@@ -461,7 +474,7 @@ export default function Layout() {
                               <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-600">{notification.message}</p>
                             </button>
                             <div className="mt-2 flex items-center justify-between gap-2">
-                              <p className="min-w-0 truncate text-[11px] font-bold text-slate-400">{formatDateTime(notification.created_at)}</p>
+                              <p className="min-w-0 truncate text-xs font-bold text-slate-400">{formatDateTime(notification.created_at)}</p>
                               {deletable ? (
                                 <button
                                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-slate-400 transition hover:border-[#ffc8d6] hover:bg-[#fff0f4] hover:text-[#d84f71]"
@@ -473,7 +486,7 @@ export default function Layout() {
                                   <Trash2 size={15} />
                                 </button>
                               ) : (
-                                <span className="shrink-0 rounded-lg bg-[#fff4ee] px-2 py-1 text-[11px] font-extrabold text-[#d47a3d]">요청 진행 중</span>
+                                <span className="shrink-0 rounded-lg bg-[#fff4ee] px-2 py-1 text-xs font-extrabold text-[#d47a3d]">요청 진행 중</span>
                               )}
                             </div>
                           </div>
@@ -485,7 +498,7 @@ export default function Layout() {
                   </div>
                 ) : null}
               </div>
-              <button className="btn-secondary hidden h-10 shrink-0 px-3 sm:flex sm:h-11" onClick={logout}>
+              <button className="btn-secondary hidden h-10 shrink-0 px-3 sm:flex sm:h-11 lg:hidden" onClick={logout}>
                 <LogOut size={17} />
                 <span className="hidden sm:inline">로그아웃</span>
               </button>
@@ -493,7 +506,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <div className="px-3 py-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-5 lg:px-6 lg:pb-8">
+        <div className="app-content">
           <Outlet />
         </div>
       </main>
@@ -504,8 +517,8 @@ export default function Layout() {
       >
         {leadingMobileItems.map(renderBottomNavItem)}
         <button
-          className={`mx-0.5 flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight text-white shadow-lift transition sm:min-h-14 sm:text-[11px] ${
-            scanActive ? "bg-[#5f51e8]" : "bg-brand hover:bg-[#6658e8]"
+          className={`mx-0.5 flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-extrabold leading-tight text-white shadow-lift transition sm:min-h-14 sm:text-xs ${
+            scanActive ? "bg-[#1e40af]" : "bg-brand hover:bg-[#1d4ed8]"
           }`}
           type="button"
           onClick={openQuickScan}
@@ -517,8 +530,8 @@ export default function Layout() {
         {trailingMobileItems.map(renderBottomNavItem)}
         {secondaryNavItems.length ? (
           <button
-            className={`flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-extrabold leading-tight transition sm:min-h-14 sm:text-[11px] ${
-              moreActive || open ? "bg-[#f2f0ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
+            className={`flex min-h-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-extrabold leading-tight transition sm:min-h-14 sm:text-xs ${
+              moreActive || open ? "bg-[#eef4ff] text-brand shadow-soft" : "text-slate-500 hover:bg-slate-50 hover:text-ink"
             }`}
             type="button"
             onClick={() => setOpen(true)}
@@ -531,7 +544,7 @@ export default function Layout() {
       <MobileQuickScanner open={quickScanOpen} onClose={() => setQuickScanOpen(false)} onScan={openScannedDevice} />
       {toastNotification ? (
         <div
-          className="fixed bottom-24 left-1/2 z-[80] w-[min(92vw,420px)] -translate-x-1/2 rounded-lg border border-[#d8d2ff] bg-white p-4 text-left shadow-lift transition hover:border-brand lg:bottom-6 lg:left-auto lg:right-6 lg:translate-x-0"
+          className="fixed bottom-24 left-1/2 z-[80] w-[min(92vw,420px)] -translate-x-1/2 rounded-lg border border-[#dbe7ff] bg-white p-4 text-left shadow-lift transition hover:border-brand lg:bottom-6 lg:left-auto lg:right-6 lg:translate-x-0"
           role="button"
           tabIndex={0}
           onClick={() => openNotification(toastNotification)}
@@ -540,7 +553,7 @@ export default function Layout() {
           }}
         >
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f2f0ff] text-brand">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eef4ff] text-brand">
               <Bell size={18} />
             </span>
             <div className="min-w-0 flex-1">
@@ -548,7 +561,7 @@ export default function Layout() {
               <p className="mt-1 text-xs font-extrabold text-brand">{toastNotification.device_id} · {deviceTitle(toastNotification)}</p>
               <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-600">{toastNotification.message}</p>
             </div>
-            <span className="mt-1 text-[11px] font-extrabold text-brand">{toastNotification.device_id ? "장비 상세로 이동" : "알림 확인"}</span>
+            <span className="mt-1 text-xs font-extrabold text-brand">{toastNotification.device_id ? "장비 상세로 이동" : "알림 확인"}</span>
             <button
               className="h-8 w-8 rounded-lg bg-slate-50 text-slate-500"
               type="button"

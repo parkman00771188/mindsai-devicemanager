@@ -213,9 +213,9 @@ const statusIconMap = {
 };
 
 const mobileStatusClass = {
-  AVAILABLE: "bg-[#ecfbf7] text-[#159d8f] ring-[#c7f1e9]",
+  AVAILABLE: "bg-[#e9f8ef] text-[#159d8f] ring-[#bbf7d0]",
   RENTED: "bg-brand text-white ring-brand",
-  DELIVERED: "bg-[#e8f6ff] text-[#1178c7] ring-[#b9def7]",
+  DELIVERED: "bg-[#eef4ff] text-[#2563eb] ring-[#dbe7ff]",
   MAINTENANCE: "bg-[#fff4ee] text-[#d47a3d] ring-[#ffd9c1]",
   BROKEN: "bg-[#fff0f4] text-[#d84f71] ring-[#ffc8d6]",
   LOST: "bg-[#eef1f7] text-[#657186] ring-[#d8deea]",
@@ -282,7 +282,7 @@ function StatusFilters({ value, mine, onChange, onMine }) {
         {onMine ? (
           <button
             className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-              mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+              mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
             }`}
             type="button"
             onClick={onMine}
@@ -293,7 +293,7 @@ function StatusFilters({ value, mine, onChange, onMine }) {
         ) : null}
         <button
           className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-            !value && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+            !value && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
           }`}
           type="button"
           onClick={() => onChange("")}
@@ -307,7 +307,7 @@ function StatusFilters({ value, mine, onChange, onMine }) {
             <button
               key={status}
               className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-                value === status && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#c9c4ff] hover:bg-[#f2f0ff] hover:text-brand"
+                value === status && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
               }`}
               type="button"
               onClick={() => onChange(status)}
@@ -327,7 +327,7 @@ function KeywordChip({ keyword, onClear }) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
       <button
-        className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e9e8f2]"
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e5e9f1]"
         type="button"
         onClick={onClear}
         title="키워드 필터 해제"
@@ -353,13 +353,13 @@ function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenC
     return (
       <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
         <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" type="button" onClick={onOpenCatalog}>
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
             <PackageCheck size={21} />
           </span>
           <span className="line-clamp-2 text-xs font-extrabold text-ink">대여하기</span>
         </button>
         <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
             <Plus size={22} />
           </span>
           <span className="line-clamp-2 text-xs font-extrabold text-ink">장비 등록</span>
@@ -371,13 +371,13 @@ function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenC
   return (
     <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
       <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center disabled:opacity-50" type="button" onClick={onDownload} disabled={!canExport || exportBusy}>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f2f0ff] text-brand transition group-hover:bg-brand group-hover:text-white">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eef4ff] text-brand transition group-hover:bg-brand group-hover:text-white">
           <Download size={20} />
         </span>
         <span className="line-clamp-2 text-xs font-extrabold text-ink">{exportBusy ? "생성 중" : "엑셀 다운로드"}</span>
       </button>
       <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#6658e8]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
           <Plus size={22} />
         </span>
         <span className="line-clamp-2 text-xs font-extrabold text-ink">장비 등록</span>
@@ -388,13 +388,13 @@ function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenC
 
 function MobileInfoTile({ icon: Icon, label, value }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f8f6ff] px-3 py-2">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eeeaff] text-brand">
+    <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f8fafc] px-3 py-2">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef4ff] text-brand">
         <Icon size={17} />
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-[11px] font-extrabold text-slate-500">{label}</span>
-        <span className="mt-0.5 block truncate text-sm font-extrabold text-ink">{value || "-"}</span>
+        <span className="block break-words text-xs font-extrabold leading-tight text-slate-500">{label}</span>
+        <span className="mt-0.5 block break-words text-sm font-extrabold leading-tight text-ink">{value || "-"}</span>
       </span>
     </div>
   );
@@ -419,7 +419,7 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
       }}
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8f6ff]">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#eef4ff] sm:h-20 sm:w-20">
           {photos[0] ? (
             <img src={photos[0]} alt={`${deviceTitle(device)} 사진`} className="h-full w-full object-cover" />
           ) : (
@@ -427,15 +427,15 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-base font-extrabold text-ink">{deviceTitle(device)}</p>
-              <p className="mt-1 truncate text-xs font-extrabold text-brand">{device.device_id}</p>
+          <div className="flex min-w-0 flex-wrap items-start gap-2">
+            <div className="min-w-[7rem] flex-1">
+              <p className="break-words text-base font-extrabold leading-snug text-ink">{deviceTitle(device)}</p>
+              <p className="mt-1 break-all text-xs font-extrabold text-brand">{device.device_id}</p>
             </div>
             <MobileStatusPill status={device.status} />
           </div>
-          <p className="mt-1 truncate text-xs font-bold text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
-          {device.legacy_device_id ? <p className="mt-1 truncate text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
+          <p className="mt-1 line-clamp-2 break-words text-xs font-bold leading-5 text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
+          {device.legacy_device_id ? <p className="mt-1 break-all text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
         </div>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -449,12 +449,12 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
         <div className="mt-3">{action}</div>
       ) : (
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
-          <p className="flex min-w-0 items-center gap-2 truncate text-xs font-bold text-slate-600" title={memoValue === "-" ? "" : memoValue}>
+          <p className="flex min-w-0 items-start gap-2 text-xs font-bold leading-5 text-slate-600" title={memoValue === "-" ? "" : memoValue}>
             <Building2 size={15} className="shrink-0 text-slate-500" />
-            <span className="min-w-0 truncate">{memoValue}</span>
+            <span className="min-w-0 break-words">{memoValue}</span>
           </p>
           <button
-            className="btn-secondary h-10 shrink-0 border-[#c9c4ff] px-3 text-xs text-brand"
+            className="btn-secondary h-10 shrink-0 border-[#dbe7ff] px-3 text-xs text-brand"
             type="button"
             onClick={(event) => {
               event.preventDefault();
@@ -474,23 +474,23 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
 function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
   return (
     <div className="hidden p-2 xl:block">
-      <div className="overflow-hidden rounded-lg border border-line/70">
-        <table className="w-full table-fixed">
+      <div className="overflow-x-auto rounded-lg border border-line/70">
+        <table className="w-full min-w-[1440px] table-fixed">
           <thead className="table-head">
             <tr>
-              <th className="w-[5%]">순번</th>
-              <th className="w-[7%]">상태</th>
-              <th className="w-[8%]">분류</th>
-              <th className="w-[10%]">장비번호</th>
-              <th>장비명</th>
-              <th className="w-[10%]">모델명</th>
+              <th className="w-[4%]">순번</th>
+              <th className="w-[8%]">상태</th>
+              <th className="w-[7%]">분류</th>
+              <th className="w-[9%]">장비번호</th>
+              <th className="w-[13%]">장비명</th>
+              <th className="w-[9%]">모델명</th>
               <th className="w-[6%]">용량</th>
-              <th className="w-[8%]">대여자</th>
-              <th className="w-[11%]">목적/사유</th>
-              <th className="w-[9%]">소유 소속</th>
-              <th className="w-[9%]">기존 장비번호</th>
-              <th className="w-[10%]">비고</th>
-              <th className="w-[7%]">관리</th>
+              <th className="w-[7%]">대여자</th>
+              <th className="w-[10%]">목적/사유</th>
+              <th className="w-[8%]">소유 소속</th>
+              <th className="w-[8%]">기존 장비번호</th>
+              <th className="w-[6%]">비고</th>
+              <th className="w-[5%]">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -500,22 +500,22 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
                 <td className="table-cell">
                   <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
                 </td>
-                <td className="table-cell"><span className="block truncate">{device.category || "-"}</span></td>
-                <td className="table-cell font-extrabold text-brand">{device.device_id}</td>
-                <td className="table-cell font-extrabold"><span className="block truncate">{deviceTitle(device)}</span></td>
-                <td className="table-cell"><span className="block truncate">{device.model_name || "-"}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.category || ""}>{device.category || "-"}</span></td>
+                <td className="table-cell font-extrabold text-brand"><span className="line-clamp-2 break-all leading-5" title={device.device_id}>{device.device_id}</span></td>
+                <td className="table-cell font-extrabold"><span className="line-clamp-2 break-words leading-5" title={deviceTitle(device)}>{deviceTitle(device)}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.model_name || ""}>{device.model_name || "-"}</span></td>
                 <td className="table-cell font-bold text-slate-600">{deviceCapacity(device)}</td>
-                <td className="table-cell"><span className="block truncate">{device.current_borrower || "-"}</span></td>
-                <td className="table-cell"><span className="block truncate" title={device.current_status_purpose || device.current_purpose || ""}>{device.current_status_purpose || device.current_purpose || "-"}</span></td>
-                <td className="table-cell"><span className="block truncate">{device.owner_organization || "-"}</span></td>
-                <td className="table-cell"><span className="block truncate">{device.legacy_device_id || "-"}</span></td>
-                <td className="table-cell"><span className="block truncate" title={device.memo || ""}>{device.memo || "-"}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_status_purpose || device.current_purpose || ""}>{device.current_status_purpose || device.current_purpose || "-"}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-all leading-5" title={device.legacy_device_id || ""}>{device.legacy_device_id || "-"}</span></td>
+                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.memo || ""}>{device.memo || "-"}</span></td>
                 <td className="table-cell">
                   {actionForDevice ? (
                     actionForDevice(device)
                   ) : (
                     <button
-                      className="btn-secondary h-8 px-2 text-xs"
+                      className="btn-secondary h-8 !min-h-8 px-2 text-xs"
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();

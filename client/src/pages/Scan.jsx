@@ -399,13 +399,13 @@ export default function Scan() {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>보안 주소</span>
-                <span className={environment.secure ? "font-extrabold text-[#1eb6a5]" : "font-extrabold text-[#d84f71]"}>
+                <span className={environment.secure ? "font-extrabold text-[#16a34a]" : "font-extrabold text-[#d84f71]"}>
                   {environment.secure ? "가능" : "실시간 제한"}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>카메라 API</span>
-                <span className={environment.hasCameraApi ? "font-extrabold text-[#1eb6a5]" : "font-extrabold text-[#d84f71]"}>
+                <span className={environment.hasCameraApi ? "font-extrabold text-[#16a34a]" : "font-extrabold text-[#d84f71]"}>
                   {environment.hasCameraApi ? "감지됨" : "없음"}
                 </span>
               </div>
@@ -451,7 +451,7 @@ export default function Scan() {
           <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-lift sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#e8f6ff] text-brand">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#eef4ff] text-brand">
                   <DialogIcon size={24} />
                 </div>
                 <div>

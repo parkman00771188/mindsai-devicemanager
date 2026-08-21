@@ -1,9 +1,9 @@
 import { statusLabel } from "../constants.js";
 
 const styles = {
-  AVAILABLE: "bg-[#ecfbf7] text-[#1eb6a5] ring-[#c7f1e9]",
-  RENTED: "bg-[#f1efff] text-[#6554dc] ring-[#d8d2ff]",
-  DELIVERED: "bg-[#e8f6ff] text-[#1178c7] ring-[#b9def7]",
+  AVAILABLE: "bg-[#e9f8ef] text-[#16a34a] ring-[#bbf7d0]",
+  RENTED: "bg-[#eef4ff] text-[#1d4ed8] ring-[#dbe7ff]",
+  DELIVERED: "bg-[#eef4ff] text-[#2563eb] ring-[#dbe7ff]",
   MAINTENANCE: "bg-[#fff4ee] text-[#d47a3d] ring-[#ffd9c1]",
   BROKEN: "bg-[#fff0f4] text-[#d84f71] ring-[#ffc8d6]",
   LOST: "bg-[#eef1f7] text-[#657186] ring-[#d8deea]",

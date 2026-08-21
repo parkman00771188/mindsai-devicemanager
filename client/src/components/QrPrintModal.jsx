@@ -181,7 +181,7 @@ function DevicePickRow({ device, selected, onToggle }) {
   return (
     <button
       className={`flex min-h-[74px] w-full items-center gap-3 rounded-lg border bg-white px-3 py-3 text-left transition ${
-        selected ? "border-brand bg-[#f4f2ff] shadow-soft" : "border-line hover:border-[#c9c4ff] hover:bg-[#fbfaff]"
+        selected ? "border-brand bg-[#eef4ff] shadow-soft" : "border-line hover:border-[#dbe7ff] hover:bg-[#f8fafc]"
       }`}
       type="button"
       onClick={onToggle}
@@ -344,11 +344,11 @@ export default function QrPrintModal({ devices = [], categories = [], onClose })
             </div>
           </div>
 
-          <aside className="flex min-h-0 flex-col bg-[#fbfbff]">
+          <aside className="flex min-h-0 flex-col bg-[#f8fafc]">
             <div className="flex min-h-0 flex-1 flex-col p-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-extrabold text-ink">선택 리스트</h3>
-                <span className="rounded-lg bg-[#f2f0ff] px-3 py-1 text-sm font-extrabold text-brand">{selectedDevices.length}대</span>
+                <span className="rounded-lg bg-[#eef4ff] px-3 py-1 text-sm font-extrabold text-brand">{selectedDevices.length}대</span>
               </div>
 
               <div className="mt-4 min-h-0 flex-1 overflow-auto rounded-lg border border-line bg-white p-3">

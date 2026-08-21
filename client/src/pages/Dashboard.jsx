@@ -1,4 +1,4 @@
-import { Bell, BellRing, CheckCircle2, ClipboardList, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
+import { ArrowRight, Bell, BellRing, CheckCircle2, ClipboardList, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -16,18 +16,17 @@ function transactionEventDate(row = {}) {
 
 function StatCard({ label, value, icon: Icon, tone, to }) {
   const content = (
-      <div className="flex h-full items-start justify-between gap-2 sm:items-center sm:gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[11px] font-extrabold text-slate-500 sm:text-sm">{label}</p>
-          <p className="mt-1 text-xl font-extrabold tracking-normal text-ink sm:mt-2 sm:text-3xl">{value}</p>
+      <div className="flex h-full items-center gap-3 sm:gap-4 xl:gap-2 2xl:gap-4">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 xl:h-10 xl:w-10 2xl:h-12 2xl:w-12 ${tone}`}>
+          <Icon size={20} />
         </div>
-        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 ${tone}`}>
-          <Icon size={18} className="sm:hidden" />
-          <Icon size={21} className="hidden sm:block" />
+        <div className="min-w-0">
+          <p className="text-xl font-extrabold leading-tight tracking-tight text-ink sm:text-[22px]">{value}</p>
+          <p className="mt-1 break-words text-xs font-semibold leading-tight text-slate-400 sm:text-[13px]">{label}</p>
         </div>
       </div>
   );
-  const className = "metric-card block p-3 sm:p-4";
+  const className = "metric-card block p-4 sm:px-5 sm:py-[18px] xl:px-3 xl:py-4 2xl:px-5 2xl:py-[18px]";
   return to ? <Link className={className} to={to}>{content}</Link> : <div className={className}>{content}</div>;
 }
 
@@ -43,13 +42,13 @@ function NoticeTabs({ value, onChange, requestCount }) {
           key={tab.value}
           type="button"
           className={`flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-extrabold transition sm:min-w-24 sm:flex-none ${
-            value === tab.value ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#f2f0ff] hover:text-brand"
+            value === tab.value ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
           }`}
           onClick={() => onChange(tab.value)}
         >
           {tab.label}
           {tab.count ? (
-            <span className={`rounded-full px-1.5 py-0.5 text-[11px] ${value === tab.value ? "bg-white/20 text-white" : "bg-[#f2f0ff] text-brand"}`}>
+            <span className={`rounded-full px-1.5 py-0.5 text-xs ${value === tab.value ? "bg-white/20 text-white" : "bg-[#eef4ff] text-brand"}`}>
               {tab.count}
             </span>
           ) : null}
@@ -67,7 +66,7 @@ function NotificationCard({ notification, isAdmin, onOpen }) {
       ? "반납 요청 중"
       : "반납 요청"
     : notification.title || "알림";
-  const tone = isReturnComplete ? "bg-[#ecfbf7] text-[#1eb6a5]" : isReturnRequest ? "bg-[#fff4ee] text-[#d47a3d]" : "bg-[#f2f0ff] text-brand";
+  const tone = isReturnComplete ? "bg-[#e9f8ef] text-[#16a34a]" : isReturnRequest ? "bg-[#fff4ee] text-[#d47a3d]" : "bg-[#eef4ff] text-brand";
   const Icon = isReturnComplete ? CheckCircle2 : isReturnRequest ? BellRing : Bell;
 
   return (
@@ -89,7 +88,7 @@ function NotificationCard({ notification, isAdmin, onOpen }) {
             {!notification.is_read && notification.type !== "RETURN_REQUEST" ? <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand" /> : null}
           </div>
           <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-600">{notification.message || "-"}</p>
-          <p className="mt-2 text-[11px] font-bold text-slate-400">{formatDateTime(notification.created_at)}</p>
+          <p className="mt-2 text-xs font-bold text-slate-400">{formatDateTime(notification.created_at)}</p>
         </div>
       </div>
     </button>
@@ -202,18 +201,18 @@ export default function Dashboard() {
 
   return (
     <div className="app-page dashboard-page">
-      <section className="hero-strip hidden sm:block">
+      <section className="dashboard-hero">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-          <div className="hidden lg:block">
-            <h1 className="page-title">대시보드</h1>
-            <p className="mt-1 text-sm text-slate-500">장비 현황과 최근 이력을 확인합니다.</p>
+          <div>
+            <h1 className="dashboard-greeting">안녕하세요, {currentUser?.name || "사용자"}님 👋</h1>
+            <p className="mt-1.5 text-sm font-medium text-slate-500 sm:text-[15px]">오늘의 장비 현황과 최근 출납 이력을 한눈에 확인하세요.</p>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Link className="btn-primary min-h-[3.75rem] sm:min-h-12" to="/scan?auto=1">
+          <div className="hidden gap-2 sm:flex">
+            <Link className="btn-primary" to="/scan?auto=1">
               <QrCode size={18} />
               QR 스캔
             </Link>
-            <Link className="btn-accent min-h-[3.75rem] sm:min-h-12" to="/devices/new">
+            <Link className="btn-secondary" to="/devices/new">
               <ClipboardList size={18} />
               장비 등록
             </Link>
@@ -221,13 +220,22 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
-        <StatCard label="전체 장비" value={summary.total} icon={TabletSmartphone} tone="bg-[#f1efff] text-brand" to="/devices" />
-        <StatCard label="대여 가능" value={summary.available} icon={ClipboardList} tone="bg-[#ecfbf7] text-[#1eb6a5]" to="/devices?status=AVAILABLE" />
-        <StatCard label="대여 중" value={summary.rented} icon={PackageCheck} tone="bg-[#f1efff] text-[#6554dc]" to="/devices?status=RENTED" />
-        <StatCard label="납품" value={summary.delivered} icon={Truck} tone="bg-[#e8f6ff] text-[#1178c7]" to="/devices?status=DELIVERED" />
+      <Link className="dashboard-mobile-cta sm:hidden" to="/scan?auto=1">
+        <span className="dashboard-mobile-cta-icon"><QrCode size={23} /></span>
+        <span className="relative z-10 min-w-0 flex-1">
+          <strong className="block text-lg font-extrabold">QR로 장비 확인</strong>
+          <span className="mt-1 block text-sm font-medium text-white/80">스캔하여 대여·반납을 빠르게 처리하세요.</span>
+        </span>
+        <span className="dashboard-mobile-cta-arrow"><ArrowRight size={23} /></span>
+      </Link>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <StatCard label="전체 장비" value={summary.total} icon={TabletSmartphone} tone="bg-[#eef4ff] text-brand" to="/devices" />
+        <StatCard label="대여 가능" value={summary.available} icon={ClipboardList} tone="bg-[#e9f8ef] text-[#16a34a]" to="/devices?status=AVAILABLE" />
+        <StatCard label="대여 중" value={summary.rented} icon={PackageCheck} tone="bg-[#eef4ff] text-[#2563eb]" to="/devices?status=RENTED" />
+        <StatCard label="납품" value={summary.delivered} icon={Truck} tone="bg-[#eef0f4] text-[#4e5968]" to="/devices?status=DELIVERED" />
         <StatCard label="점검 중" value={summary.maintenance} icon={Stethoscope} tone="bg-[#fff4ee] text-[#d47a3d]" to="/devices?status=MAINTENANCE" />
-        <StatCard label="고장" value={summary.broken} icon={Wrench} tone="bg-[#fff0f4] text-[#d84f71]" to="/devices?status=BROKEN" />
+        <StatCard label="고장" value={summary.broken} icon={Wrench} tone="bg-[#fdecec] text-[#ef4444]" to="/devices?status=BROKEN" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -326,7 +334,7 @@ export default function Dashboard() {
                                       event.stopPropagation();
                                       openPhotoViewer(photos, index, row);
                                     }}
-                                    className="h-8 w-8 overflow-hidden rounded-lg border border-line bg-slate-100"
+                                    className="h-7 w-7 overflow-hidden rounded-lg border border-line bg-slate-100"
                                     title="사진 크게 보기"
                                   >
                                     <img src={path} alt={`${actionLabel(row.action_type)} 사진 ${index + 1}`} className="h-full w-full object-cover" />
@@ -362,8 +370,8 @@ export default function Dashboard() {
 
         <aside className="order-1 lg:order-2">
           <div className="panel p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between 2xl:flex-col 2xl:items-start">
-              <div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-[12rem] flex-1">
                 <h2 className="section-title">알림</h2>
                 <p className="mt-1 text-sm font-semibold text-slate-500">
                   {isAdmin ? "반납 요청 상태와 완료 알림을 확인합니다." : "관리자가 보낸 반납 요청을 확인합니다."}

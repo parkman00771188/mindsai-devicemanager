@@ -20,21 +20,21 @@ const statusPanels = {
     title: "바로 대여할 수 있습니다",
     description: "장비 상태가 정상이며 대여 처리 버튼으로 바로 출고할 수 있습니다.",
     icon: PackageCheck,
-    className: "border-[#c7f1e9] bg-[#ecfbf7] text-[#1eb6a5]"
+    className: "border-[#bbf7d0] bg-[#e9f8ef] text-[#16a34a]"
   },
   RENTED: {
     label: "대여 중",
     title: "현재 대여 중입니다",
     description: "반납 처리 전까지 다른 사용자나 기관에 대여할 수 없습니다.",
     icon: RotateCcw,
-    className: "border-[#d8d2ff] bg-[#f1efff] text-[#6554dc]"
+    className: "border-[#dbe7ff] bg-[#eef4ff] text-[#1d4ed8]"
   },
   DELIVERED: {
     label: "납품",
     title: "납품되었습니다",
     description: "회수 처리 전까지 다른 사용자나 기관에 대여하거나 납품할 수 없습니다.",
     icon: Truck,
-    className: "border-[#b9def7] bg-[#e8f6ff] text-[#1178c7]"
+    className: "border-[#dbe7ff] bg-[#eef4ff] text-[#2563eb]"
   },
   MAINTENANCE: {
     label: "점검 중",
@@ -170,7 +170,7 @@ function RecentTransactionCard({ row, className = "", onOpenPhoto, canDelete = f
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <ActionBadge action={row.action_type} />
-          <p className="mt-1 truncate text-sm font-bold text-slate-500">{row.user_name || "-"} · {formatDateTime(row.created_at)}</p>
+          <p className="mt-1 break-words text-sm font-bold leading-5 text-slate-500">{row.user_name || "-"} · {formatDateTime(row.created_at)}</p>
         </div>
         {canDelete || canEdit ? (
           <div className="flex shrink-0 gap-1.5">
@@ -393,7 +393,7 @@ function ReasonModal({ title, description, label, submitLabel, danger, allowPhot
           {allowPhotos ? (
             <label className="block">
               <span className="field-label">사진 첨부</span>
-              <span className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#b9def7] bg-[#e8f6ff] px-4 py-6 text-center">
+              <span className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#eef4ff] px-4 py-6 text-center">
                 <Camera size={28} className="text-brand" />
                 <span className="mt-2 text-sm font-extrabold text-ink">{photos.length ? `${photos.length}장 선택됨` : "사진 선택"}</span>
                 <span className="mt-1 text-xs font-semibold text-slate-500">처리 시점의 장비 상태를 남겨주세요.</span>
@@ -735,8 +735,8 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     ? "grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-3 sm:flex sm:items-center sm:gap-4"
     : "flex flex-col gap-4 sm:flex-row sm:items-center";
   const heroPhotoClass = inModal
-    ? "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8f6ff] transition hover:ring-4 hover:ring-[#e5e1ff] sm:h-20 sm:w-20"
-    : "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8f6ff] transition hover:ring-4 hover:ring-[#e5e1ff]";
+    ? "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#eef4ff] transition hover:ring-4 hover:ring-[#dbe7ff] sm:h-20 sm:w-20"
+    : "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#eef4ff] transition hover:ring-4 hover:ring-[#dbe7ff]";
   const actionGridClass = inModal
     ? "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end"
     : "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
@@ -1063,7 +1063,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                   <button
                     key={`${path}-${index}`}
                     type="button"
-                    className="aspect-square overflow-hidden rounded-lg border border-line bg-slate-100 transition hover:border-brand hover:ring-4 hover:ring-[#e5e1ff]"
+                    className="aspect-square overflow-hidden rounded-lg border border-line bg-slate-100 transition hover:border-brand hover:ring-4 hover:ring-[#dbe7ff]"
                     onClick={() =>
                       setPhotoViewer({
                         paths: devicePhotos,

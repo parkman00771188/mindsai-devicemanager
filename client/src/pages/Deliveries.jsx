@@ -143,7 +143,7 @@ export default function Deliveries() {
             {Object.entries(filters).filter(([, value]) => value).map(([key, value]) => (
               <button
                 key={key}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-extrabold text-ink transition hover:bg-[#e9e8f2]"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-extrabold text-ink transition hover:bg-[#e5e9f1]"
                 type="button"
                 onClick={() => clearFilter(key)}
               >
@@ -166,10 +166,10 @@ export default function Deliveries() {
                   <button key={row.transaction_id} className="soft-row w-full max-w-full overflow-hidden text-left" type="button" onClick={() => setDetail(row)}>
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-base font-extrabold text-ink">{deviceTitle(row)}</p>
-                        <p className="mt-1 truncate text-xs font-bold text-slate-500">출납 {transactionNumber(row)} · {row.device_id} · {row.user_name || "대상 없음"}</p>
-                        <p className="mt-1 truncate text-sm font-bold text-slate-700">{row.purpose || `${actionLabel(row.action_type)} 사유 없음`}</p>
-                        <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{summaryText}</p>
+                        <p className="break-words text-base font-extrabold text-ink">{deviceTitle(row)}</p>
+                        <p className="mt-1 line-clamp-2 break-words text-xs font-bold leading-5 text-slate-500">출납 {transactionNumber(row)} · {row.device_id} · {row.user_name || "대상 없음"}</p>
+                        <p className="mt-1 line-clamp-2 break-words text-sm font-bold text-slate-700">{row.purpose || `${actionLabel(row.action_type)} 사유 없음`}</p>
+                        <p className="mt-0.5 line-clamp-2 break-words text-xs font-semibold leading-5 text-slate-500">{summaryText}</p>
                       </div>
                       <ActionBadge action={row.action_type} />
                     </div>
@@ -183,8 +183,8 @@ export default function Deliveries() {
             </div>
 
             <div className="hidden p-2 xl:block">
-              <div className="overflow-hidden rounded-lg border border-line/70">
-                <table className="w-full table-fixed">
+              <div className="overflow-x-auto rounded-lg border border-line/70">
+                <table className="w-full min-w-[1360px] table-fixed">
                   <thead className="table-head">
                     <tr>
                       <th className="w-20">출납번호</th>

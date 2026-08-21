@@ -178,8 +178,8 @@ export default function Transactions() {
 
   if (!rows) return <Loading />;
 
-  const thClass = "px-2.5 py-2.5";
-  const tdClass = "overflow-hidden border-t border-line px-2.5 py-2.5 text-sm whitespace-nowrap align-middle";
+  const thClass = "px-2.5 py-2";
+  const tdClass = "overflow-hidden whitespace-nowrap border-t border-line px-2.5 py-2 text-[13.5px] align-middle";
 
   return (
     <div className="app-page">
@@ -199,7 +199,7 @@ export default function Transactions() {
           <input className="input col-span-2 sm:col-span-1" placeholder="키워드" value={filters.keyword} onChange={(event) => update("keyword", event.target.value)} />
           <input className="input" placeholder="장비번호" value={filters.device_id} onChange={(event) => update("device_id", event.target.value)} />
           <input className="input" placeholder="사용자명" value={filters.user_name} onChange={(event) => update("user_name", event.target.value)} />
-          <select className="select" value={filters.owner_organization} onChange={(event) => update("owner_organization", event.target.value)} aria-label="장비 소유 소속">
+          <select className="select col-span-2 sm:col-span-1" value={filters.owner_organization} onChange={(event) => update("owner_organization", event.target.value)} aria-label="장비 소유 소속">
             <option value="">전체 소속</option>
             {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
           </select>
@@ -244,7 +244,7 @@ export default function Transactions() {
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
             {appliedKeyword ? (
               <button
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e9e8f2]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e5e9f1]"
                 type="button"
                 onClick={() => applyFilters({ ...filters, keyword: "" })}
                 title="키워드 필터 해제"
@@ -261,7 +261,7 @@ export default function Transactions() {
             {selectedDeviceIds.map((deviceId) => (
               <button
                 key={deviceId}
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e9e8f2]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e5e9f1]"
                 type="button"
                 onClick={() => removeDeviceFilter(deviceId)}
                 title="장비번호 필터 해제"
@@ -272,7 +272,7 @@ export default function Transactions() {
             ))}
             {filters.action_type ? (
               <button
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e9e8f2]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-base font-extrabold leading-tight text-ink transition hover:bg-[#e5e9f1]"
                 type="button"
                 onClick={() => selectAction("")}
               >
@@ -295,11 +295,11 @@ export default function Transactions() {
                   <button key={row.transaction_id} className="soft-row w-full max-w-full overflow-hidden text-left" type="button" onClick={() => setTransactionDetail(row)}>
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-base font-extrabold text-ink">{deviceTitle(row)}</p>
-                        <p className="mt-1 truncate text-xs font-bold text-slate-500">출납 {transactionNumber(row)} · {row.device_id} · {row.user_name || "사용자 없음"}</p>
-                        <p className="mt-1 truncate text-xs font-extrabold text-slate-600">소유 소속 · {row.device_owner_organization || "미지정"}</p>
-                        <p className="mt-1 truncate text-sm font-bold text-slate-700">{row.purpose || "목적/사유 없음"}</p>
-                        <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{summary}</p>
+                        <p className="break-words text-base font-extrabold text-ink">{deviceTitle(row)}</p>
+                        <p className="mt-1 line-clamp-2 break-words text-xs font-bold leading-5 text-slate-500">출납 {transactionNumber(row)} · {row.device_id} · {row.user_name || "사용자 없음"}</p>
+                        <p className="mt-1 break-words text-xs font-extrabold text-slate-600">소유 소속 · {row.device_owner_organization || "미지정"}</p>
+                        <p className="mt-1 line-clamp-2 break-words text-sm font-bold text-slate-700">{row.purpose || "목적/사유 없음"}</p>
+                        <p className="mt-0.5 line-clamp-2 break-words text-xs font-semibold leading-5 text-slate-500">{summary}</p>
                       </div>
                       <ActionBadge action={row.action_type} />
                     </div>
@@ -325,8 +325,8 @@ export default function Transactions() {
             </div>
 
             <div className="hidden p-2 xl:block">
-              <div className="overflow-hidden rounded-lg border border-line/70">
-                <table className="w-full table-fixed">
+              <div className="overflow-x-auto rounded-lg border border-line/70">
+                <table className="w-full min-w-[1440px] table-fixed">
                   <thead className="table-head">
                     <tr>
                       <th className={`${thClass} w-20`}>출납번호</th>
@@ -376,7 +376,7 @@ export default function Transactions() {
                                       event.stopPropagation();
                                       openPhotoViewer(photos, index, row);
                                     }}
-                                    className="h-8 w-8 overflow-hidden rounded-lg border border-line bg-slate-100"
+                                    className="h-7 w-7 overflow-hidden rounded-lg border border-line bg-slate-100"
                                     title="사진 크게 보기"
                                   >
                                     <img src={path} alt={`${actionLabel(row.action_type)} 사진 ${index + 1}`} className="h-full w-full object-cover" />
