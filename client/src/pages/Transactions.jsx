@@ -331,8 +331,8 @@ export default function Transactions() {
                     <tr>
                       <th className={`${thClass} w-20`}>출납번호</th>
                       <th className={`${thClass} w-[72px]`}>작업</th>
-                      <th className={`${thClass} w-56`}>장비번호</th>
-                      <th className={`${thClass} w-36`}>장비명</th>
+                      <th className={`${thClass} w-52`}>장비번호</th>
+                      <th className={`${thClass} w-40`}>장비명</th>
                       <th className={`${thClass} w-28`}>소유 소속</th>
                       <th className={`${thClass} w-20`}>사용자</th>
                       <th className={`${thClass} w-32`}>목적/사유</th>
