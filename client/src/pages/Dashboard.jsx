@@ -286,12 +286,12 @@ export default function Dashboard() {
               </div>
               <div className="hidden p-2 xl:block">
                 <div className="overflow-x-auto rounded-lg border border-line/70">
-                  <table className="w-full min-w-[1200px] table-fixed">
+                  <table className="w-full min-w-[1360px] table-fixed">
                     <thead className="table-head">
                       <tr>
                         <th className="w-20">출납번호</th>
-                        <th className="w-20">작업</th>
-                        <th className="w-40">장비번호</th>
+                        <th className="w-[72px]">작업</th>
+                        <th className="w-56">장비번호</th>
                         <th className="w-36">장비명</th>
                         <th className="w-28">소유 소속</th>
                         <th className="w-20">사용자</th>
@@ -314,7 +314,7 @@ export default function Dashboard() {
                             <ActionBadge action={row.action_type} />
                           </td>
                           <td className="table-cell whitespace-nowrap align-middle font-extrabold text-brand" title={row.device_id || ""}>
-                            <span className="block truncate">{row.device_id || "-"}</span>
+                            <span className="block whitespace-nowrap">{row.device_id || "-"}</span>
                           </td>
                           <td className="table-cell whitespace-nowrap align-middle">
                             <span className="block truncate font-extrabold text-ink">{deviceTitle(row)}</span>

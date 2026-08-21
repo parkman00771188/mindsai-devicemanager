@@ -326,12 +326,12 @@ export default function Transactions() {
 
             <div className="hidden p-2 xl:block">
               <div className="overflow-x-auto rounded-lg border border-line/70">
-                <table className="w-full min-w-[1440px] table-fixed">
+                <table className="w-full min-w-[1560px] table-fixed">
                   <thead className="table-head">
                     <tr>
                       <th className={`${thClass} w-20`}>출납번호</th>
-                      <th className={`${thClass} w-20`}>작업</th>
-                      <th className={`${thClass} w-28`}>장비번호</th>
+                      <th className={`${thClass} w-[72px]`}>작업</th>
+                      <th className={`${thClass} w-56`}>장비번호</th>
                       <th className={`${thClass} w-36`}>장비명</th>
                       <th className={`${thClass} w-28`}>소유 소속</th>
                       <th className={`${thClass} w-20`}>사용자</th>
@@ -354,7 +354,7 @@ export default function Transactions() {
                             <ActionBadge action={row.action_type} />
                           </td>
                           <td className={tdClass}>
-                            <span className="block truncate font-extrabold text-brand">{row.device_id || "-"}</span>
+                            <span className="block whitespace-nowrap font-extrabold text-brand">{row.device_id || "-"}</span>
                           </td>
                           <td className={tdClass} title={deviceTitle(row)}>
                             <span className="block truncate font-extrabold text-ink">{deviceTitle(row)}</span>

@@ -184,12 +184,12 @@ export default function Deliveries() {
 
             <div className="hidden p-2 xl:block">
               <div className="overflow-x-auto rounded-lg border border-line/70">
-                <table className="w-full min-w-[1360px] table-fixed">
+                <table className="w-full min-w-[1440px] table-fixed">
                   <thead className="table-head">
                     <tr>
                       <th className="w-20">출납번호</th>
-                      <th className="w-20">작업</th>
-                      <th className="w-28">장비번호</th>
+                      <th className="w-[72px]">작업</th>
+                      <th className="w-56">장비번호</th>
                       <th className="w-36">장비명</th>
                       <th className="w-28">대상</th>
                       <th className="w-32">목적/사유</th>
@@ -210,7 +210,7 @@ export default function Deliveries() {
                         <tr key={row.transaction_id} className="cursor-pointer hover:bg-slate-50" onClick={() => setDetail(row)}>
                           <td className="table-cell font-extrabold text-brand">{transactionNumber(row)}</td>
                           <td className="table-cell"><ActionBadge action={row.action_type} /></td>
-                          <td className="table-cell font-extrabold text-brand"><span className="block truncate">{row.device_id || "-"}</span></td>
+                          <td className="table-cell font-extrabold text-brand"><span className="block whitespace-nowrap">{row.device_id || "-"}</span></td>
                           <td className="table-cell font-extrabold text-ink"><span className="block truncate">{deviceTitle(row)}</span></td>
                           <td className="table-cell"><span className="block truncate">{row.user_name || "-"}</span></td>
                           <td className="table-cell"><span className="block truncate">{row.purpose || "-"}</span></td>
