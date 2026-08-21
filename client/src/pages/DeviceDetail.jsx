@@ -123,6 +123,22 @@ function currentCheckoutFromDevice(device = {}) {
   };
 }
 
+function currentIssueContext(status, transactions = []) {
+  if (!["BROKEN", "LOST"].includes(status)) return null;
+
+  const directAction = status === "BROKEN" ? "BROKEN" : "LOST";
+  const directRow = transactions.find((row) => row.action_type === directAction && row.after_status === status);
+  const statusRow = directRow || transactions.find((row) => row.after_status === status);
+  if (!statusRow) return null;
+
+  const directReason = String(statusRow.purpose || statusRow.issue_description || transactionMemo(statusRow) || "").trim();
+  const fallbackReason = String(statusRow.issue_description || statusRow.purpose || transactionMemo(statusRow) || "").trim();
+  return {
+    label: status === "BROKEN" ? "고장 사유" : "분실 사유",
+    reason: statusRow.action_type === directAction ? directReason : fallbackReason
+  };
+}
+
 function DetailLine({ label, value }) {
   return value ? (
     <p className="grid grid-cols-[4.75rem_minmax(0,1fr)] gap-3 text-sm font-semibold leading-6 text-slate-600">
@@ -667,6 +683,14 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
       : null);
   const currentRentalMemo = currentRental ? transactionMemo(currentRental) : "";
   const currentRentalPlace = currentRental ? transactionPlace(currentRental) : "";
+  const currentIssue = currentIssueContext(device.status, transactions);
+  const deviceMemo = String(device.memo || "").trim();
+  const statusMemo =
+    currentIssue?.reason ||
+    currentRentalMemo ||
+    deviceMemo ||
+    (device.status === "AVAILABLE" ? "대여 가능한 상태입니다." : "등록된 메모가 없습니다.");
+  const showSeparateDeviceMemo = Boolean(currentIssue?.reason && deviceMemo && deviceMemo !== currentIssue.reason);
   const lastCheckout = ["RENTED", "DELIVERED"].includes(device.status) ? transactions.find((row) => ["DELIVERY", "RENT"].includes(row.action_type)) : null;
   const currentRentalIsDelivery = device.status === "DELIVERED" || currentRental?.action_type === "DELIVERY" || (currentRental?.action_type === "RENTAL_UPDATE" && lastCheckout?.action_type === "DELIVERY");
   const currentStatus = statusPanels[device.status] || {
@@ -927,7 +951,14 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
 
             <div className={inModal ? "mt-3 rounded-lg border border-white/70 bg-white/75 px-3 py-3" : "mt-4 rounded-lg border border-white/70 bg-white/75 px-4 py-3"}>
               <p className="text-sm font-extrabold text-slate-500">메모</p>
-              <p className={inModal ? "mt-1 whitespace-pre-wrap break-words text-sm font-extrabold leading-6 text-ink" : "mt-1 whitespace-pre-wrap text-base font-extrabold leading-7 text-ink"}>{currentRentalMemo || (device.status === "AVAILABLE" ? "대여 가능한 상태입니다." : "등록된 메모가 없습니다.")}</p>
+              {currentIssue?.reason ? <p className="mt-2 text-xs font-extrabold text-slate-500">{currentIssue.label}</p> : null}
+              <p className={inModal ? "mt-1 whitespace-pre-wrap break-words text-sm font-extrabold leading-6 text-ink" : "mt-1 whitespace-pre-wrap break-words text-base font-extrabold leading-7 text-ink"}>{statusMemo}</p>
+              {showSeparateDeviceMemo ? (
+                <div className="mt-3 border-t border-slate-200/80 pt-3">
+                  <p className="text-xs font-extrabold text-slate-500">장비 메모</p>
+                  <p className={inModal ? "mt-1 whitespace-pre-wrap break-words text-sm font-bold leading-6 text-ink" : "mt-1 whitespace-pre-wrap break-words text-base font-bold leading-7 text-ink"}>{deviceMemo}</p>
+                </div>
+              ) : null}
             </div>
           </div>
 
