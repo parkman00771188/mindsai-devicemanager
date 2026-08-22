@@ -97,8 +97,7 @@ let cachedSessionSecret = "";
 let cachedSessionKey = null;
 let cachedState = null;
 let cachedStateExpiresAt = 0;
-let pendingStateLoad = null;
-let pendingEnsureDb = null;
+let dbEnsured = false;
 
 export async function onRequest(context) {
   const requestId = crypto.randomUUID();
@@ -237,18 +236,14 @@ function segments(path) {
 
 async function ensureDb(db) {
   if (!db) throw Object.assign(new Error("Cloudflare D1 binding DB is not configured."), { statusCode: 500 });
-  if (!pendingEnsureDb) {
-    pendingEnsureDb = withD1Retry("ensureDb", async () => {
-      await db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)");
-      await db.exec(
-        "CREATE TABLE IF NOT EXISTS app_blobs (key TEXT PRIMARY KEY, value TEXT NOT NULL, content_type TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
-      );
-    }).catch((error) => {
-      pendingEnsureDb = null;
-      throw error;
-    });
-  }
-  await pendingEnsureDb;
+  if (dbEnsured) return;
+  await withD1Retry("ensureDb", async () => {
+    await db.exec("CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)");
+    await db.exec(
+      "CREATE TABLE IF NOT EXISTS app_blobs (key TEXT PRIMARY KEY, value TEXT NOT NULL, content_type TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"
+    );
+  });
+  dbEnsured = true;
 }
 
 async function loadState(context) {
@@ -327,16 +322,7 @@ async function loadAuthUsers(context) {
 async function getCachedState(context) {
   const current = Date.now();
   if (cachedState && current < cachedStateExpiresAt) return cachedState;
-
-  if (!pendingStateLoad) {
-    pendingStateLoad = loadStateFromD1(context)
-      .then((state) => rememberState(state))
-      .finally(() => {
-        pendingStateLoad = null;
-      });
-  }
-
-  return pendingStateLoad;
+  return rememberState(await loadStateFromD1(context));
 }
 
 async function loadStateFromD1(context) {
