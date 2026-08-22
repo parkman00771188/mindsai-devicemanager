@@ -11,7 +11,7 @@ import Loading from "../components/Loading.jsx";
 import PhotoViewer from "../components/PhotoViewer.jsx";
 import QrPrintModal from "../components/QrPrintModal.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
-import { deviceCapacity, deviceTitle, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
+import { deviceTitle, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 
 const emptyFilters = {
   keyword: "",
@@ -451,33 +451,36 @@ function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
             <tr>
               <th className="w-[4%]">순번</th>
               <th className="w-[8%]">상태</th>
-              <th className="w-[9%]">분류</th>
-              <th className="w-[17%]">장비번호</th>
-              <th className="w-[15%]">장비명</th>
-              <th className="w-[9%]">모델명</th>
-              <th className="w-[7%]">용량</th>
-              <th className="w-[8%]">대여자</th>
-              <th className="w-[9%]">목적/사유</th>
-              <th className="w-[14%]">소유 소속</th>
+              <th className="w-[10%]">분류</th>
+              <th className="w-[18%]">장비번호</th>
+              <th className="w-[9%]">대여자</th>
+              <th className="w-[12%]">목적/사유</th>
+              <th className="w-[11%]">소유/소속</th>
+              <th className="w-[15%]">기존 장비번호</th>
+              <th className="w-[13%]">메모</th>
             </tr>
           </thead>
           <tbody>
-            {devices.map((device, index) => (
-              <tr key={device.device_id} className="cursor-pointer hover:bg-slate-50" onClick={() => onOpen(device)}>
-                <td className="table-cell font-bold text-slate-500">{startIndex + index + 1}</td>
-                <td className="table-cell">
-                  <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
-                </td>
-                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.category || ""}>{device.category || "-"}</span></td>
-                <td className="table-cell font-extrabold text-brand"><span className="block whitespace-nowrap" title={device.device_id}>{device.device_id}</span></td>
-                <td className="table-cell font-extrabold"><span className="line-clamp-2 break-words leading-5" title={deviceTitle(device)}>{deviceTitle(device)}</span></td>
-                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.model_name || ""}>{device.model_name || "-"}</span></td>
-                <td className="table-cell font-bold text-slate-600">{deviceCapacity(device)}</td>
-                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
-                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_status_purpose || device.current_purpose || ""}>{device.current_status_purpose || device.current_purpose || "-"}</span></td>
-                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
-              </tr>
-            ))}
+            {devices.map((device, index) => {
+              const statusContext = currentStatusContext(device);
+              const purpose = statusContext.purpose || device.current_status_purpose || device.current_purpose || "-";
+              const memo = statusContext.memo || device.memo || "-";
+              return (
+                <tr key={device.device_id} className="cursor-pointer hover:bg-slate-50" onClick={() => onOpen(device)}>
+                  <td className="table-cell font-bold text-slate-500">{startIndex + index + 1}</td>
+                  <td className="table-cell">
+                    <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
+                  </td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.category || ""}>{device.category || "-"}</span></td>
+                  <td className="table-cell font-extrabold text-brand"><span className="block whitespace-nowrap" title={device.device_id}>{device.device_id}</span></td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={purpose === "-" ? "" : purpose}>{purpose}</span></td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
+                  <td className="table-cell font-bold text-slate-600"><span className="block whitespace-nowrap" title={device.legacy_device_id || ""}>{device.legacy_device_id || "-"}</span></td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={memo === "-" ? "" : memo}>{memo}</span></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

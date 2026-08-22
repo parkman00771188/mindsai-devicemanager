@@ -1218,6 +1218,8 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
         canEdit={isAdmin}
         deleteBusy={transactionDeleteBusy}
         updateBusy={transactionUpdateBusy}
+        initialEditing
+        nested={inModal}
         onDelete={async (row) => {
           await deleteTransaction(row);
           setTransactionDetail(null);
