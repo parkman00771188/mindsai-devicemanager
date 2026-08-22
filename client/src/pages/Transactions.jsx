@@ -164,7 +164,7 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
                 className={`relative min-h-[4.75rem] min-w-0 border-b border-r border-line p-1 transition sm:min-h-[8.25rem] sm:p-1.5 ${(index + 1) % 7 === 0 ? "border-r-0" : ""} ${index >= 35 ? "border-b-0" : ""} ${isCurrentMonth ? "bg-white" : "bg-[#f8fafc]"} ${isSelected ? "z-[1] ring-2 ring-inset ring-brand" : ""} ${dayRows.length ? "cursor-pointer hover:bg-[#f7faff]" : ""}`}
                 onClick={() => dayRows.length && setSelectedDateKey(key)}
               >
-                <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1">
                   <button
                     className={`flex h-6 min-w-6 items-center justify-center rounded-full text-xs font-extrabold ${isToday ? "bg-brand text-white" : isCurrentMonth ? "text-ink" : "text-slate-300"}`}
                     type="button"
@@ -177,8 +177,12 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
                   >
                     {date.getDate()}
                   </button>
-                  {dayRows.length ? <span className="rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[10px] font-extrabold text-brand sm:hidden">{dayRows.length}</span> : null}
                 </div>
+                {dayRows.length ? (
+                  <span className="mt-2 inline-flex min-h-6 items-center justify-center rounded-full bg-[#eef4ff] px-2 text-[10px] font-extrabold text-brand sm:hidden">
+                    {dayRows.length}
+                  </span>
+                ) : null}
                 <div className="mt-1 hidden space-y-1 sm:block">
                   {dayRows.slice(0, 3).map((row) => (
                     <button

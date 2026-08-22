@@ -261,15 +261,15 @@ function HistorySummaryModal({ rows, onClose }) {
                 const photos = splitPhotoPaths(row.photo_paths);
                 const memo = transactionMemo(row) || row.issue_description;
                 return (
-                  <tr key={`summary-${row.transaction_id}`}>
+                  <tr key={`summary-${row.transaction_id}`} className="h-12">
                     <td className="table-cell font-extrabold text-brand">{transactionNumber(row)}</td>
                     <td className="table-cell">
                       <ActionBadge action={row.action_type} />
                     </td>
                     <td className="table-cell"><span className="block truncate">{row.user_name || row.handled_by || "-"}</span></td>
                     <td className="table-cell"><span className="block truncate">{row.device_owner_organization || "-"}</span></td>
-                    <td className="table-cell align-top" title={row.purpose || memo || ""}>
-                      <span className="block whitespace-pre-wrap break-words leading-5">{row.purpose || memo || "-"}</span>
+                    <td className="table-cell" title={row.purpose || memo || ""}>
+                      <span className="block truncate">{row.purpose || memo || "-"}</span>
                     </td>
                     <td className="table-cell"><span className="block truncate">{transactionPlace(row) || "-"}</span></td>
                     <td className="table-cell"><span className="block truncate">{row.condition_status || statusLabel(row.after_status)}</span></td>
