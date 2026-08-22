@@ -21,6 +21,25 @@ const emptyFilters = {
   mine: ""
 };
 
+const deviceSortCollator = new Intl.Collator("ko-KR", { numeric: true, sensitivity: "base" });
+
+function compareDeviceText(left, right) {
+  const leftValue = String(left || "").trim();
+  const rightValue = String(right || "").trim();
+  if (!leftValue && !rightValue) return 0;
+  if (!leftValue) return 1;
+  if (!rightValue) return -1;
+  return deviceSortCollator.compare(leftValue, rightValue);
+}
+
+function sortDeviceRows(rows) {
+  return [...rows].sort((left, right) => {
+    const categoryComparison = compareDeviceText(left.category, right.category);
+    if (categoryComparison) return categoryComparison;
+    return compareDeviceText(left.device_id, right.device_id);
+  });
+}
+
 function visibleFilters(filters) {
   return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
 }
@@ -722,10 +741,11 @@ export default function Devices() {
     return [...new Set([...fromSettings, ...fromDevices])];
   }, [categoryRows, devices]);
 
+  const sortedDevices = useMemo(() => sortDeviceRows(devices || []), [devices]);
   const devicePageSize = 50;
-  const devicePageCount = Math.max(1, Math.ceil((devices || []).length / devicePageSize));
+  const devicePageCount = Math.max(1, Math.ceil(sortedDevices.length / devicePageSize));
   const safeDevicePage = Math.min(devicePage, devicePageCount - 1);
-  const visibleDevices = (devices || []).slice(safeDevicePage * devicePageSize, (safeDevicePage + 1) * devicePageSize);
+  const visibleDevices = sortedDevices.slice(safeDevicePage * devicePageSize, (safeDevicePage + 1) * devicePageSize);
 
   useEffect(() => {
     if (devicePage !== safeDevicePage) setDevicePage(safeDevicePage);
@@ -838,10 +858,10 @@ export default function Devices() {
           compact
         />
 
-        {devices.length ? (
+        {sortedDevices.length ? (
           <>
             <DeviceList devices={visibleDevices} onOpen={setDetailDevice} onQr={setQrDevice} startIndex={safeDevicePage * devicePageSize} />
-            <DevicePagination total={devices.length} page={safeDevicePage} pageSize={devicePageSize} onChange={setDevicePage} />
+            <DevicePagination total={sortedDevices.length} page={safeDevicePage} pageSize={devicePageSize} onChange={setDevicePage} />
           </>
         ) : (
           <div className="p-4">
@@ -867,7 +887,7 @@ export default function Devices() {
           }}
         />
       ) : null}
-      {qrPrintOpen ? <QrPrintModal devices={devices} categories={categories} onClose={() => setQrPrintOpen(false)} /> : null}
+      {qrPrintOpen ? <QrPrintModal devices={sortedDevices} categories={categories} onClose={() => setQrPrintOpen(false)} /> : null}
       <DeviceProcessModal
         key={processDevice?.device_id || "rent-catalog"}
         device={processDevice}
