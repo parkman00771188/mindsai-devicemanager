@@ -443,16 +443,16 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-ink/35 px-3 pb-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" onClick={onClose}>
-      <section className="max-h-[92vh] w-full max-w-[1500px] overflow-auto rounded-lg bg-white p-4 shadow-lift sm:p-6" onClick={(event) => event.stopPropagation()}>
+      <section className="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-xl bg-white p-4 shadow-lift sm:p-5" onClick={(event) => event.stopPropagation()}>
         <Header mode={mode} device={device} onClose={onClose} />
         {error ? <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
 
-        <form className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_440px]" onSubmit={submit}>
-          <div className="space-y-4">
+        <form className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]" onSubmit={submit}>
+          <div className="space-y-3">
             {isCheckout ? (
               <>
-                <section className="panel p-4 sm:p-5">
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <section className="panel p-4">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <div className="flex items-center gap-2">
                       {form.borrower_type === "INSTITUTION" ? <Building2 size={20} className="text-brand" /> : <UserRound size={20} className="text-brand" />}
                       <h3 className="section-title">{isDeliveryFlow ? "납품 대상 정보" : "대여자 정보"}</h3>
@@ -460,21 +460,21 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
                     <BorrowerTypeToggle value={form.borrower_type} onChange={changeBorrowerType} />
                   </div>
                   {form.borrower_type === "INSTITUTION" ? (
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <InstitutionPicker label="기관명" value={form.institution_name} institutions={institutions} onInput={inputInstitutionName} onSelect={selectInstitution} required placeholder="기관명을 검색하세요" />
                       <TextField label={isDeliveryFlow ? "납품 구분" : "대여 구분"} value={form.user_department} onChange={() => {}} readOnly />
                       <TextField label="담당자" value={form.user_position} onChange={(value) => update("user_position", value)} placeholder="담당자 이름" />
                       <TextField label="담당자 연락처" value={form.user_contact} onChange={(value) => update("user_contact", value)} placeholder="010-0000-0000" inputMode="tel" />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <UserPicker label={isDeliveryFlow ? "납품 대상자 이름" : "대여자 이름"} value={form.user_name} users={users} onInput={inputUserName} onSelect={selectUser} required placeholder="이름을 입력하세요" />
                       <TextField label={isDeliveryFlow ? "납품 대상자 부서" : "대여자 부서"} value={form.user_department} onChange={(value) => update("user_department", value)} placeholder="부서를 입력하세요" />
                       <TextField label="직책" value={form.user_position} onChange={(value) => update("user_position", value)} placeholder="직책을 입력하세요" />
                       <TextField label="연락처" value={form.user_contact} onChange={(value) => update("user_contact", value)} placeholder="010-0000-0000" inputMode="tel" />
                     </div>
                   )}
-                  <label className="mt-4 block">
+                  <label className="mt-3 block">
                     <span className="field-label">{isDeliveryFlow ? "납품 사유" : "대여 사유"}</span>
                     <select className="select text-base" value={form.purpose} onChange={(event) => update("purpose", event.target.value)} required>
                       <option value="">사유 선택</option>
@@ -484,12 +484,12 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
                     </select>
                   </label>
                 </section>
-                <section className="panel p-4 sm:p-5">
-                  <div className="mb-4 flex items-center gap-2">
+                <section className="panel p-4">
+                  <div className="mb-3 flex items-center gap-2">
                     {isDeliveryFlow ? <Truck size={20} className="text-brand" /> : <PackageCheck size={20} className="text-brand" />}
                     <h3 className="section-title">일정 및 상태</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <TextField label={isDeliveryFlow ? "납품일" : "대여일"} type="date" value={form.rented_at} onChange={(value) => update("rented_at", value)} />
                     {!isDeliveryFlow ? <TextField label="예상 반납일" type="date" value={form.expected_return_at} onChange={(value) => update("expected_return_at", value)} /> : null}
                     <TextField label={isDeliveryFlow ? "납품 장소" : "대여 장소"} value={form.rent_location} onChange={(value) => update("rent_location", value)} placeholder="장비 인계 장소" />
@@ -506,19 +506,19 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
               </>
             ) : (
               <>
-                <section className="panel p-4 sm:p-5">
-                  <div className="mb-4 flex items-center gap-2">
+                <section className="panel p-4">
+                  <div className="mb-3 flex items-center gap-2">
                     <UserRound size={20} className="text-brand" />
                     <h3 className="section-title">{returnLabel}자 정보</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <UserPicker label={`${returnLabel}자 이름`} value={form.user_name} users={users} onInput={inputUserName} onSelect={selectUser} required placeholder="이름을 입력하세요" />
                     <TextField label="부서" value={form.user_department} onChange={() => {}} readOnly placeholder="이름 선택 시 자동 입력" />
                     <TextField label="직책" value={form.user_position} onChange={() => {}} readOnly placeholder="이름 선택 시 자동 입력" />
                     <TextField label={`${returnLabel}일`} type="date" value={form.returned_at} onChange={(value) => update("returned_at", value)} />
                     <TextField label={`${returnLabel} 장소`} value={form.return_location} onChange={(value) => update("return_location", value)} />
                   </div>
-                  <label className="mt-4 block">
+                  <label className="mt-3 block">
                     <span className="field-label">{returnLabel} 사유</span>
                     <select className="select text-base" value={form.return_reason} onChange={(event) => update("return_reason", event.target.value)} required>
                       <option value="">사유 선택</option>
@@ -528,12 +528,12 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
                     </select>
                   </label>
                 </section>
-                <section className="panel p-4 sm:p-5">
-                  <div className="mb-4 flex items-center gap-2">
+                <section className="panel p-4">
+                  <div className="mb-3 flex items-center gap-2">
                     <AlertTriangle size={20} className="text-brand" />
                     <h3 className="section-title">상태 확인</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <label>
                       <span className="field-label">{returnLabel} 시 상태</span>
                       <select className="select text-base" value={form.condition_status} onChange={(event) => update("condition_status", event.target.value)}>
@@ -555,7 +555,7 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
                       </select>
                     </label>
                   </div>
-                  <label className="mt-4 block">
+                  <label className="mt-3 block">
                     <span className="field-label">이상 내용</span>
                     <textarea className="textarea text-base" value={form.issue_description} onChange={(event) => update("issue_description", event.target.value)} placeholder="파손, 오염, 구성품 누락 등 특이사항을 입력해주세요." />
                   </label>
@@ -564,20 +564,20 @@ export default function DeviceProcessModal({ device, mode, currentTransaction, o
             )}
           </div>
 
-          <aside className="grid gap-4 md:grid-cols-2 xl:block xl:space-y-4">
-            <section className="panel p-4 sm:p-5">
-              <div className="mb-4 flex items-center gap-2">
+          <aside className="grid gap-3 md:grid-cols-2 lg:block lg:space-y-3">
+            <section className="panel p-4">
+              <div className="mb-3 flex items-center gap-2">
                 <MapPin size={20} className="text-brand" />
                 <h3 className="section-title">메모</h3>
               </div>
-              <textarea className="textarea min-h-48 text-base sm:min-h-56 xl:min-h-64" value={form.memo} onChange={(event) => update("memo", event.target.value)} placeholder="추가 확인 사항을 입력하세요." />
+              <textarea className="textarea min-h-32 text-base lg:min-h-36" value={form.memo} onChange={(event) => update("memo", event.target.value)} placeholder="추가 확인 사항을 입력하세요." />
             </section>
-            <section className="panel p-4 sm:p-5">
-              <div className="mb-4 flex items-center gap-2">
+            <section className="panel p-4">
+              <div className="mb-3 flex items-center gap-2">
                 <Camera size={20} className="text-brand" />
                 <h3 className="section-title">{isDeliveryFlow ? "납품 사진" : isCheckout ? "대여 사진" : `${returnLabel} 사진`}</h3>
               </div>
-              <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#eef4ff] px-4 py-6 text-center">
+              <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#dbe7ff] bg-[#eef4ff] px-4 py-4 text-center">
                 <Camera size={28} className="text-brand" />
                 <span className="mt-2 text-sm font-extrabold text-ink">{Array.from(photos).length ? `${Array.from(photos).length}장 선택됨` : "사진 선택"}</span>
                 <span className="mt-1 text-xs font-semibold text-slate-500">처리 시점의 장비 상태를 남겨주세요.</span>

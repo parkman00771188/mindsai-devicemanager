@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, ClipboardList, Download, LayoutGrid, Menu, PackageCheck, Plus, Printer, QrCode, RotateCcw, Search, UserRound, Wrench, X } from "lucide-react";
+import { Building2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ClipboardList, HardDrive, LayoutGrid, Menu, Monitor, MoreHorizontal, PackageCheck, Plus, Printer, QrCode, RotateCcw, Search, TabletSmartphone, UserRound, Wrench, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
@@ -11,7 +11,7 @@ import PhotoViewer from "../components/PhotoViewer.jsx";
 import QrDownloadModal from "../components/QrDownloadModal.jsx";
 import QrPrintModal from "../components/QrPrintModal.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
-import { actionLabel, deviceCapacity, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
+import { deviceCapacity, deviceTitle, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 
 const emptyFilters = {
   keyword: "",
@@ -23,27 +23,6 @@ const emptyFilters = {
 
 function visibleFilters(filters) {
   return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
-}
-
-function exportValue(value) {
-  if (value === undefined || value === null || value === "-") return "";
-  return value;
-}
-
-function exportDateTime(value) {
-  const formatted = formatDateTime(value);
-  return formatted === "-" ? "" : formatted;
-}
-
-function exportDate(value) {
-  const formatted = formatDate(value);
-  return formatted === "-" ? "" : formatted;
-}
-
-function fileDateStamp() {
-  const now = new Date();
-  const two = (value) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}-${two(now.getHours())}${two(now.getMinutes())}`;
 }
 
 function currentStatusContext(device = {}) {
@@ -120,88 +99,6 @@ function currentStatusContext(device = {}) {
   };
 }
 
-function deviceExcelRows(devices = []) {
-  return devices.map((device, index) => {
-    const context = currentStatusContext(device);
-    const currentTransaction = context.currentTransaction || {};
-    const latestTransaction = context.latestTransaction || {};
-    return {
-      순번: index + 1,
-      "현재 상태": statusLabel(device.status),
-      "현재 처리 구분": context.flowLabel,
-      "현재 대상": exportValue(device.current_borrower || currentTransaction.user_name),
-      "현재 소속/부서": exportValue(context.orgDepartment),
-      "현재 연락처": exportValue(currentTransaction.user_contact),
-      "현재 목적/사유": exportValue(context.purpose || currentTransaction.purpose),
-      "장비 소유 소속": exportValue(device.owner_organization),
-      "현재 시작일": exportDate(device.borrowed_at || currentTransaction.rented_at),
-      "예상 반납일": exportDate(device.expected_return_at || currentTransaction.expected_return_at),
-      "현재 처리 장소": exportValue(context.place || device.rent_location),
-      "현재 장비 상태": exportValue(currentTransaction.condition_status),
-      "현재 메모": exportValue(context.memo),
-      "최근 처리 작업": latestTransaction.action_type ? actionLabel(latestTransaction.action_type) : "",
-      "최근 처리자": exportValue(latestTransaction.handled_by_display || latestTransaction.handled_by_name || latestTransaction.handled_by),
-      "최근 처리일": exportDateTime(latestTransaction.created_at),
-      분류: exportValue(device.category),
-      장비번호: exportValue(device.device_id),
-      "기존 장비번호": exportValue(device.legacy_device_id),
-      장비명: exportValue(deviceTitle(device)),
-      제조사: exportValue(device.manufacturer),
-      모델명: exportValue(device.model_name),
-      용량: exportValue(deviceCapacity(device)),
-      RAM: exportValue(device.ram_capacity),
-      저장장치: exportValue(device.storage_capacity),
-      CPU: exportValue(device.cpu),
-      GPU: exportValue(device.gpu),
-      "Windows 사양": exportValue(device.windows_spec),
-      시리얼번호: exportValue(device.serial_number),
-      구매일: exportDate(device.purchase_date),
-      구매금액: exportValue(device.purchase_price),
-      관리부서: exportValue(device.department),
-      담당자: exportValue(device.manager),
-      보관위치: exportValue(device.location),
-      "최근 반납일": exportDate(device.last_returned_at),
-      구성품: exportValue(device.components),
-      비고: exportValue(device.memo),
-      등록일: exportDateTime(device.created_at),
-      수정일: exportDateTime(device.updated_at)
-    };
-  });
-}
-
-function applyDeviceExcelColumnWidths(sheet, rows = []) {
-  const headers = rows[0] ? Object.keys(rows[0]) : [];
-  const preferredWidths = {
-    순번: 6,
-    "현재 상태": 12,
-    "장비 소유 소속": 20,
-    "현재 처리 구분": 14,
-    "현재 대상": 20,
-    "현재 소속/부서": 24,
-    "현재 연락처": 16,
-    "현재 목적/사유": 24,
-    "현재 처리 장소": 24,
-    "현재 메모": 36,
-    "최근 처리 작업": 16,
-    "최근 처리자": 24,
-    장비번호: 20,
-    "기존 장비번호": 22,
-    장비명: 24,
-    CPU: 26,
-    GPU: 28,
-    "Windows 사양": 18,
-    구성품: 24,
-    비고: 32
-  };
-  sheet["!cols"] = headers.map((header) => {
-    const measured = Math.max(
-      String(header).length + 2,
-      ...rows.slice(0, 200).map((row) => String(row[header] || "").split(/\r?\n/)[0].length + 2)
-    );
-    return { wch: Math.min(42, Math.max(preferredWidths[header] || 12, measured)) };
-  });
-}
-
 const statusIconMap = {
   AVAILABLE: CheckCircle2,
   RENTED: RotateCcw,
@@ -234,7 +131,42 @@ function MobileStatusPill({ status }) {
   );
 }
 
-function CategoryTabs({ categories, value, mine, onChange }) {
+function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
+  if (compact) {
+    return (
+      <div className="flex items-center border-b border-line bg-white px-2 py-2.5 sm:px-3">
+        <div className="scrollbar-none min-w-0 flex-1 overflow-x-auto">
+          <div className="flex min-w-max items-center gap-1.5">
+            <button
+              type="button"
+              className={`flex min-h-9 snap-start items-center rounded-lg px-4 text-sm font-extrabold transition ${
+                !value && !mine ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
+              }`}
+              onClick={() => onChange("")}
+            >
+              전체
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                className={`flex min-h-9 snap-start items-center rounded-lg px-4 text-sm font-extrabold transition ${
+                  value === category ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
+                }`}
+                onClick={() => onChange(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-500" aria-hidden="true">
+          <ChevronRight size={18} />
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center border-b border-line bg-white">
       <div className="scrollbar-none min-w-0 flex-1 overflow-x-auto">
@@ -269,11 +201,46 @@ function CategoryTabs({ categories, value, mine, onChange }) {
   );
 }
 
-function StatusFilters({ value, mine, onChange, onMine }) {
+function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
   const orderedStatuses = [
     ...STATUS_OPTIONS.filter(([status]) => ["AVAILABLE", "RENTED", "DELIVERED"].includes(status)),
     ...STATUS_OPTIONS.filter(([status]) => !["AVAILABLE", "RENTED", "DELIVERED"].includes(status))
   ];
+
+  if (compact) {
+    const buttonClass = (active) =>
+      `inline-flex min-h-10 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-3.5 text-sm font-extrabold leading-tight transition ${
+        active
+          ? "border-brand bg-white text-brand shadow-[0_0_0_1px_rgba(37,99,235,0.08)]"
+          : "border-line bg-white text-slate-700 hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand"
+      }`;
+
+    return (
+      <div className="grid gap-2 border-t border-line pt-3 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-start">
+        <p className="text-sm font-extrabold text-ink lg:pt-2.5">상태</p>
+        <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+          {onMine ? (
+            <button className={buttonClass(Boolean(mine))} type="button" onClick={onMine}>
+              <UserRound size={16} />
+              내 장비
+            </button>
+          ) : null}
+          <button className={buttonClass(!value && !mine)} type="button" onClick={() => onChange("")}>
+            전체
+          </button>
+          {orderedStatuses.map(([status, label]) => {
+            const Icon = statusIconMap[status] || PackageCheck;
+            return (
+              <button key={status} className={buttonClass(value === status && !mine)} type="button" onClick={() => onChange(status)}>
+                <Icon size={16} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-3 pt-1 sm:border-t sm:border-line sm:pt-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start lg:pt-4">
@@ -348,7 +315,7 @@ function DetailItem({ label, value }) {
   );
 }
 
-function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenCatalog }) {
+function MobileActionPanel({ isAdmin, onOpenCatalog }) {
   if (!isAdmin) {
     return (
       <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
@@ -369,13 +336,7 @@ function MobileActionPanel({ isAdmin, exportBusy, canExport, onDownload, onOpenC
   }
 
   return (
-    <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
-      <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center disabled:opacity-50" type="button" onClick={onDownload} disabled={!canExport || exportBusy}>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eef4ff] text-brand transition group-hover:bg-brand group-hover:text-white">
-          <Download size={20} />
-        </span>
-        <span className="line-clamp-2 text-xs font-extrabold text-ink">{exportBusy ? "생성 중" : "엑셀 다운로드"}</span>
-      </button>
+    <section className="panel grid grid-cols-1 gap-2 p-3 sm:hidden">
       <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
           <Plus size={22} />
@@ -471,32 +432,30 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
   );
 }
 
-function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
+function DeviceTable({ devices, onOpen, onQr, actionForDevice, startIndex = 0 }) {
   return (
-    <div className="hidden p-2 xl:block">
+    <div className="hidden p-2 lg:block">
       <div className="overflow-x-auto rounded-lg border border-line/70">
-        <table className="w-full min-w-[1440px] table-fixed">
+        <table className="w-full min-w-[1180px] table-fixed">
           <thead className="table-head">
             <tr>
               <th className="w-[4%]">순번</th>
               <th className="w-[8%]">상태</th>
-              <th className="w-[7%]">분류</th>
-              <th className="w-[15%]">장비번호</th>
-              <th className="w-[12%]">장비명</th>
-              <th className="w-[8%]">모델명</th>
-              <th className="w-[6%]">용량</th>
-              <th className="w-[7%]">대여자</th>
+              <th className="w-[9%]">분류</th>
+              <th className="w-[17%]">장비번호</th>
+              <th className="w-[15%]">장비명</th>
+              <th className="w-[9%]">모델명</th>
+              <th className="w-[7%]">용량</th>
+              <th className="w-[8%]">대여자</th>
               <th className="w-[9%]">목적/사유</th>
-              <th className="w-[7%]">소유 소속</th>
-              <th className="w-[6%]">기존 장비번호</th>
-              <th className="w-[6%]">비고</th>
-              <th className="w-[5%]">관리</th>
+              <th className="w-[10%]">소유 소속</th>
+              <th className="w-[4%]" aria-label="관리" />
             </tr>
           </thead>
           <tbody>
             {devices.map((device, index) => (
               <tr key={device.device_id} className="cursor-pointer hover:bg-slate-50" onClick={() => onOpen(device)}>
-                <td className="table-cell font-bold text-slate-500">{index + 1}</td>
+                <td className="table-cell font-bold text-slate-500">{startIndex + index + 1}</td>
                 <td className="table-cell">
                   <StatusBadge status={device.status} label={device.status === "DELIVERED" ? "납품" : undefined} />
                 </td>
@@ -508,22 +467,21 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_status_purpose || device.current_purpose || ""}>{device.current_status_purpose || device.current_purpose || "-"}</span></td>
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
-                <td className="table-cell"><span className="line-clamp-2 break-all leading-5" title={device.legacy_device_id || ""}>{device.legacy_device_id || "-"}</span></td>
-                <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.memo || ""}>{device.memo || "-"}</span></td>
-                <td className="table-cell">
+                <td className="table-cell text-center">
                   {actionForDevice ? (
                     actionForDevice(device)
                   ) : (
                     <button
-                      className="btn-secondary h-8 !min-h-8 px-2 text-xs"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-[#eef4ff] hover:text-brand"
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onQr?.(device);
                       }}
+                      aria-label={`${device.device_id} QR 코드 보기`}
+                      title="QR 코드 보기"
                     >
-                      <Download size={15} />
-                      QR
+                      <MoreHorizontal size={18} />
                     </button>
                   )}
                 </td>
@@ -536,23 +494,62 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice }) {
   );
 }
 
-function DeviceList({ devices, onOpen, onQr, actionForDevice }) {
+function DeviceList({ devices, onOpen, onQr, actionForDevice, startIndex = 0 }) {
   return (
     <>
-      <div className="grid gap-3 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:hidden">
+      <div className="grid gap-3 p-2 sm:grid-cols-2 lg:hidden">
         {devices.map((device, index) => (
           <DeviceMobileCard
             key={device.device_id}
             device={device}
-            index={index}
+            index={startIndex + index}
             onOpen={() => onOpen(device)}
             onQr={() => onQr?.(device)}
             action={actionForDevice?.(device, true)}
           />
         ))}
       </div>
-      <DeviceTable devices={devices} onOpen={onOpen} onQr={onQr} actionForDevice={actionForDevice} />
+      <DeviceTable devices={devices} onOpen={onOpen} onQr={onQr} actionForDevice={actionForDevice} startIndex={startIndex} />
     </>
+  );
+}
+
+function DevicePagination({ total, page, pageSize, onChange }) {
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const firstVisible = Math.max(0, Math.min(page - 2, pageCount - 5));
+  const visiblePages = Array.from({ length: Math.min(5, pageCount) }, (_, index) => firstVisible + index);
+  const pageButtonClass = "inline-flex h-8 w-8 !min-h-8 items-center justify-center rounded-lg border border-line bg-white p-0 text-xs font-extrabold text-slate-600 transition hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand disabled:cursor-not-allowed disabled:opacity-35";
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-line px-3 py-3 text-sm font-bold text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+      <p>전체 {total}건</p>
+      <div className="flex items-center justify-center gap-1">
+        <button className={pageButtonClass} type="button" onClick={() => onChange(0)} disabled={page === 0} aria-label="첫 페이지">
+          <ChevronsLeft size={15} />
+        </button>
+        <button className={pageButtonClass} type="button" onClick={() => onChange(page - 1)} disabled={page === 0} aria-label="이전 페이지">
+          <ChevronLeft size={15} />
+        </button>
+        {visiblePages.map((pageIndex) => (
+          <button
+            key={pageIndex}
+            className={`${pageButtonClass} ${pageIndex === page ? "!border-brand !bg-brand !text-white shadow-lift" : ""}`}
+            type="button"
+            onClick={() => onChange(pageIndex)}
+            aria-current={pageIndex === page ? "page" : undefined}
+          >
+            {pageIndex + 1}
+          </button>
+        ))}
+        <button className={pageButtonClass} type="button" onClick={() => onChange(page + 1)} disabled={page >= pageCount - 1} aria-label="다음 페이지">
+          <ChevronRight size={15} />
+        </button>
+        <button className={pageButtonClass} type="button" onClick={() => onChange(pageCount - 1)} disabled={page >= pageCount - 1} aria-label="마지막 페이지">
+          <ChevronsRight size={15} />
+        </button>
+      </div>
+      <p className="text-left sm:text-right">{pageSize}개씩 보기</p>
+    </div>
   );
 }
 
@@ -671,7 +668,7 @@ export default function Devices() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [qrPrintOpen, setQrPrintOpen] = useState(false);
   const [processDevice, setProcessDevice] = useState(null);
-  const [exportBusy, setExportBusy] = useState(false);
+  const [devicePage, setDevicePage] = useState(0);
   const [filters, setFilters] = useState(() => ({
     keyword: searchParams.get("keyword") || "",
     status: searchParams.get("status") || "",
@@ -690,6 +687,7 @@ export default function Devices() {
   }
 
   function applyFilters(nextFilters) {
+    setDevicePage(0);
     setFilters(nextFilters);
     setSearchParams(visibleFilters(nextFilters));
   }
@@ -724,59 +722,34 @@ export default function Devices() {
     return [...new Set([...fromSettings, ...fromDevices])];
   }, [categoryRows, devices]);
 
-  async function downloadDeviceExcel() {
-    if (!isAdmin || !devices?.length || exportBusy) return;
-    setExportBusy(true);
-    try {
-      const XLSX = await import("xlsx");
-      const enrichedDevices = await Promise.all(
-        devices.map(async (device) => {
-          if (!device?.device_id) return device;
-          try {
-            const detail = await api(`/devices/${encodeURIComponent(device.device_id)}/detail`);
-            return { ...device, current_transactions: detail.transactions || [] };
-          } catch {
-            return { ...device, current_transactions: [] };
-          }
-        })
-      );
-      const rows = deviceExcelRows(enrichedDevices);
-      const sheet = XLSX.utils.json_to_sheet(rows);
-      applyDeviceExcelColumnWidths(sheet, rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, sheet, "장비목록");
-      XLSX.writeFile(workbook, `장비목록-${fileDateStamp()}.xlsx`);
-    } catch (err) {
-      window.alert(err.message || "엑셀 다운로드 중 오류가 발생했습니다.");
-    } finally {
-      setExportBusy(false);
-    }
-  }
+  const devicePageSize = 50;
+  const devicePageCount = Math.max(1, Math.ceil((devices || []).length / devicePageSize));
+  const safeDevicePage = Math.min(devicePage, devicePageCount - 1);
+  const visibleDevices = (devices || []).slice(safeDevicePage * devicePageSize, (safeDevicePage + 1) * devicePageSize);
+
+  useEffect(() => {
+    if (devicePage !== safeDevicePage) setDevicePage(safeDevicePage);
+  }, [devicePage, safeDevicePage]);
 
   if (!devices) return <Loading />;
 
   return (
     <div className="app-page">
-      <section className="hero-strip hidden sm:block">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="hidden lg:block">
-            <h1 className="page-title">장비 목록</h1>
-            <p className="mt-1 text-sm text-slate-500">
+      <section className="device-list-hero hidden sm:block">
+        <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-between gap-5 md:flex-row md:items-start">
+          <div className="max-w-xl">
+            <p className="page-kicker">Device Manager</p>
+            <h1 className="page-title mt-1">장비 목록</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">
               {isAdmin ? "장비번호, 상태, 분류별로 장비를 조회합니다." : "전체 장비를 조회하고 내 장비 필터로 할당 장비를 확인합니다."}
             </p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+          <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:justify-end">
             {isAdmin ? (
-              <>
-                <button className="btn-secondary w-full md:w-auto" type="button" onClick={downloadDeviceExcel} disabled={!devices.length || exportBusy}>
-                  <Download size={18} />
-                  {exportBusy ? "생성 중" : "엑셀 다운로드"}
-                </button>
-                <button className="btn-secondary w-full md:w-auto" type="button" onClick={() => setQrPrintOpen(true)} disabled={!devices.length}>
-                  <Printer size={18} />
-                  QR 코드 인쇄
-                </button>
-              </>
+              <button className="btn-secondary w-full md:w-auto" type="button" onClick={() => setQrPrintOpen(true)} disabled={!devices.length}>
+                <Printer size={18} />
+                QR 코드 인쇄
+              </button>
             ) : null}
             {isAdmin ? (
               <Link className="btn-primary w-full md:w-auto" to="/devices/new">
@@ -797,24 +770,37 @@ export default function Devices() {
             )}
           </div>
         </div>
+        <div className="device-list-hero-art" aria-hidden="true">
+          <span className="device-list-hero-monitor"><Monitor size={62} strokeWidth={1.6} /></span>
+          <span className="device-list-hero-drive"><HardDrive size={25} strokeWidth={1.8} /></span>
+          <span className="device-list-hero-tablet"><TabletSmartphone size={29} strokeWidth={1.8} /></span>
+          <span className="device-list-hero-card"><QrCode size={28} strokeWidth={1.8} /></span>
+        </div>
       </section>
 
       <MobileActionPanel
         isAdmin={isAdmin}
-        exportBusy={exportBusy}
-        canExport={devices.length > 0}
-        onDownload={downloadDeviceExcel}
         onOpenCatalog={() => setCatalogOpen(true)}
       />
 
       <form
-        className="panel space-y-4 p-3 sm:space-y-4 sm:p-4"
+        className="panel space-y-3 p-3 sm:p-4"
         onSubmit={(event) => {
           event.preventDefault();
           applyFilters(filters);
         }}
       >
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5.5rem] gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
+        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(11rem,15rem)_minmax(22rem,1fr)_auto_auto] xl:items-center">
+          <select
+            id="device-owner-organization-filter"
+            className="select"
+            value={filters.owner_organization}
+            onChange={(event) => setFilters((current) => ({ ...current, owner_organization: event.target.value, mine: "" }))}
+            aria-label="장비 소유 소속"
+          >
+            <option value="">전체 소속</option>
+            {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
+          </select>
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={21} />
             <input
@@ -824,8 +810,13 @@ export default function Devices() {
               placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
             />
           </div>
-          <button className="btn-primary w-full px-0 sm:w-auto sm:px-4">
-            조회
+          <button className="btn-secondary w-full whitespace-nowrap px-4" type="button" onClick={() => applyFilters(emptyFilters)}>
+            <RotateCcw size={16} />
+            필터 초기화
+          </button>
+          <button className="btn-primary w-full whitespace-nowrap px-5">
+            <Search size={17} />
+            조회하기
           </button>
         </div>
         <StatusFilters
@@ -833,19 +824,8 @@ export default function Devices() {
           mine={filters.mine}
           onMine={() => applyFilters({ ...filters, status: "", mine: filters.mine ? "" : "1", category: "" })}
           onChange={(status) => applyFilters({ ...filters, status, mine: "" })}
+          compact
         />
-        <div className="grid gap-3 border-t border-line pt-4 sm:grid-cols-[9rem_minmax(0,22rem)] sm:items-center">
-          <label className="text-sm font-extrabold text-ink" htmlFor="device-owner-organization-filter">장비 소유 소속</label>
-          <select
-            id="device-owner-organization-filter"
-            className="select"
-            value={filters.owner_organization}
-            onChange={(event) => applyFilters({ ...filters, owner_organization: event.target.value, mine: "" })}
-          >
-            <option value="">전체 소속</option>
-            {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
-          </select>
-        </div>
         <KeywordChip keyword={appliedKeyword} onClear={() => applyFilters({ ...filters, keyword: "" })} />
       </form>
 
@@ -855,10 +835,14 @@ export default function Devices() {
           value={filters.category}
           mine={filters.mine}
           onChange={(category) => applyFilters({ ...filters, category, mine: "" })}
+          compact
         />
 
         {devices.length ? (
-          <DeviceList devices={devices} onOpen={setDetailDevice} onQr={setQrDevice} />
+          <>
+            <DeviceList devices={visibleDevices} onOpen={setDetailDevice} onQr={setQrDevice} startIndex={safeDevicePage * devicePageSize} />
+            <DevicePagination total={devices.length} page={safeDevicePage} pageSize={devicePageSize} onChange={setDevicePage} />
+          </>
         ) : (
           <div className="p-4">
             <EmptyState

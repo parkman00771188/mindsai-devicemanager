@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { CalendarClock, ClipboardList, PackageCheck, RotateCcw, Search, SlidersHorizontal, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
@@ -24,11 +24,23 @@ function compactFilters(filters) {
   return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
 }
 
-function StatBox({ label, value }) {
+const statToneClasses = {
+  blue: "bg-[#eef4ff] text-brand",
+  indigo: "bg-[#f0efff] text-[#6557c8]",
+  cyan: "bg-[#ebf8fb] text-[#1789a7]",
+  slate: "bg-[#f1f4f8] text-slate-600"
+};
+
+function StatBox({ label, value, icon: Icon, tone = "blue" }) {
   return (
-    <div className="rounded-lg border border-line bg-white px-4 py-3 shadow-soft">
-      <p className="text-xs font-extrabold text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold text-ink">{value}</p>
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-line bg-white px-3.5 py-3 shadow-soft sm:px-4">
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${statToneClasses[tone] || statToneClasses.blue}`}>
+        <Icon size={19} />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-extrabold text-slate-500">{label}</p>
+        <p className="mt-0.5 truncate text-xl font-extrabold text-ink sm:text-2xl">{value}</p>
+      </div>
     </div>
   );
 }
@@ -40,8 +52,13 @@ export default function Deliveries() {
   const [detail, setDetail] = useState(null);
   const [photoViewer, setPhotoViewer] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(() => {
+    const initial = initialFilters(searchParams);
+    return Boolean(initial.device_id || initial.user_name || initial.from || initial.to);
+  });
   const searchKey = searchParams.toString();
   const isAdmin = isAdminUser(getCurrentUser());
+  const advancedFilterCount = [filters.device_id, filters.user_name, filters.from, filters.to].filter(Boolean).length;
 
   async function load(nextFilters = filters) {
     setRows(await api(`/transactions${queryString({ ...nextFilters, actions: "DELIVERY,RECOVERY" })}`));
@@ -62,10 +79,11 @@ export default function Deliveries() {
     setFilters((current) => ({ ...current, [name]: value }));
   }
 
-  function clearFilter(name) {
-    const nextFilters = { ...filters, [name]: "" };
+  function resetFilters() {
+    const nextFilters = initialFilters(new URLSearchParams());
     setFilters(nextFilters);
-    setSearchParams(compactFilters(nextFilters));
+    setSearchParams({});
+    setAdvancedFiltersOpen(false);
   }
 
   function openPhotoViewer(paths, index, row) {
@@ -112,50 +130,89 @@ export default function Deliveries() {
 
   return (
     <div className="app-page">
-      <section className="hero-strip">
-        <div>
-          <h1 className="page-title">납품 관리</h1>
-          <p className="mt-1 text-sm text-slate-500">개인과 기관으로 납품·회수 처리된 장비 이력을 확인합니다.</p>
+      <section className="device-list-hero delivery-list-hero hidden sm:block">
+        <div className="relative z-10 flex min-h-[7.5rem] items-start">
+          <div className="max-w-xl">
+            <p className="page-kicker">Delivery Operations</p>
+            <h1 className="page-title mt-1">납품 관리</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">개인과 기관으로 납품·회수 처리된 장비 흐름을 확인합니다.</p>
+          </div>
+        </div>
+        <div className="delivery-list-hero-art" aria-hidden="true">
+          <span className="delivery-list-hero-truck"><Truck size={43} strokeWidth={1.7} /></span>
+          <span className="delivery-list-hero-route"><i /><i /><i /></span>
+          <span className="delivery-list-hero-package"><PackageCheck size={31} strokeWidth={1.8} /></span>
         </div>
       </section>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatBox label="납품/회수 이력" value={`${summary.total}건`} />
-        <StatBox label="납품" value={`${summary.delivery}건`} />
-        <StatBox label="회수" value={`${summary.recovery}건`} />
-        <StatBox label="최근 처리일" value={summary.latest} />
+        <StatBox label="납품/회수 이력" value={`${summary.total}건`} icon={ClipboardList} />
+        <StatBox label="납품" value={`${summary.delivery}건`} icon={Truck} tone="indigo" />
+        <StatBox label="회수" value={`${summary.recovery}건`} icon={RotateCcw} tone="cyan" />
+        <StatBox label="최근 처리일" value={summary.latest} icon={CalendarClock} tone="slate" />
       </div>
 
-      <form className="panel space-y-4 p-3 sm:p-4" onSubmit={submit}>
-        <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-[minmax(220px,1fr)_minmax(130px,170px)_minmax(130px,170px)_minmax(140px,170px)_minmax(140px,170px)_auto]">
-          <input className="input col-span-2 sm:col-span-1" placeholder="키워드" value={filters.keyword} onChange={(event) => update("keyword", event.target.value)} />
-          <input className="input" placeholder="장비번호" value={filters.device_id} onChange={(event) => update("device_id", event.target.value)} />
-          <input className="input" placeholder="대상자/기관" value={filters.user_name} onChange={(event) => update("user_name", event.target.value)} />
-          <input className="input" type="date" value={filters.from} onChange={(event) => update("from", event.target.value)} />
-          <input className="input" type="date" value={filters.to} onChange={(event) => update("to", event.target.value)} />
-          <button className="btn-primary col-span-2 w-full justify-center sm:col-span-2 xl:col-span-1 xl:w-auto">
-            <Search size={18} />
-            조회
+      <form className="panel space-y-3 p-3 sm:p-4" onSubmit={submit}>
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
+          <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input className="input pl-10" placeholder="납품·회수 이력 검색" value={filters.keyword} onChange={(event) => update("keyword", event.target.value)} />
+          </div>
+          <button
+            className={`btn-secondary relative h-11 w-11 shrink-0 p-0 ${advancedFiltersOpen || advancedFilterCount ? "border-[#b9cdfa] bg-[#eef4ff] text-brand" : ""}`}
+            type="button"
+            onClick={() => setAdvancedFiltersOpen((current) => !current)}
+            aria-label={advancedFiltersOpen ? "상세 필터 닫기" : "상세 필터 열기"}
+            aria-expanded={advancedFiltersOpen}
+            aria-controls="delivery-advanced-filters"
+            title="상세 필터"
+          >
+            <SlidersHorizontal size={18} />
+            {advancedFilterCount ? (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-extrabold text-white">
+                {advancedFilterCount}
+              </span>
+            ) : null}
+          </button>
+          <button className="btn-primary h-11 w-11 shrink-0 whitespace-nowrap p-0 sm:w-auto sm:px-5" aria-label="납품 이력 조회하기">
+            <Search size={17} />
+            <span className="hidden sm:inline">조회하기</span>
           </button>
         </div>
-        {Object.values(filters).some(Boolean) ? (
-          <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            {Object.entries(filters).filter(([, value]) => value).map(([key, value]) => (
-              <button
-                key={key}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-extrabold text-ink transition hover:bg-[#e5e9f1]"
-                type="button"
-                onClick={() => clearFilter(key)}
-              >
-                {value}
-                <X size={16} />
+
+        {advancedFiltersOpen ? (
+          <div id="delivery-advanced-filters" className="space-y-3 border-t border-line pt-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="text-brand" size={17} />
+                <div>
+                  <p className="text-sm font-extrabold text-ink">상세 필터</p>
+                  <p className="text-xs font-bold text-slate-500">장비, 대상자와 처리 기간을 조합할 수 있습니다.</p>
+                </div>
+              </div>
+              <button className="btn-secondary h-9 shrink-0 px-2.5 text-xs sm:px-3" type="button" onClick={resetFilters}>
+                <RotateCcw size={15} />
+                <span className="hidden sm:inline">필터 초기화</span>
               </button>
-            ))}
+            </div>
+            <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(11rem,14rem)_minmax(11rem,14rem)_minmax(21rem,1fr)]">
+              <input className="input" placeholder="장비번호" value={filters.device_id} onChange={(event) => update("device_id", event.target.value)} />
+              <input className="input" placeholder="대상자/기관" value={filters.user_name} onChange={(event) => update("user_name", event.target.value)} />
+              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:col-span-2 xl:col-span-1">
+                <input className="input min-w-0 px-2 text-sm" type="date" value={filters.from} onChange={(event) => update("from", event.target.value)} aria-label="시작일" />
+                <span className="text-xs font-extrabold text-slate-400">~</span>
+                <input className="input min-w-0 px-2 text-sm" type="date" value={filters.to} onChange={(event) => update("to", event.target.value)} aria-label="종료일" />
+              </div>
+            </div>
           </div>
         ) : null}
       </form>
 
       <section className="panel overflow-hidden">
+        <div className="border-b border-line bg-white px-3 py-3 sm:px-4">
+          <p className="text-sm font-extrabold text-ink">납품·회수 이력</p>
+          <p className="mt-0.5 text-xs font-bold text-slate-500">조회 결과 {rows.length}건</p>
+        </div>
         {rows.length ? (
           <>
             <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">

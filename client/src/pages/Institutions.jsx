@@ -618,26 +618,37 @@ export default function Institutions() {
 
   return (
     <div className="app-page">
-      <section className="hero-strip">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="page-title">기관 관리</h1>
-            <p className="mt-1 text-sm text-slate-500">기관 정보와 대여 이력을 관리합니다.</p>
+      <section className="device-list-hero hidden sm:block">
+        <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-between gap-5 md:flex-row md:items-start">
+          <div className="max-w-xl">
+            <p className="page-kicker">Institution Management</p>
+            <h1 className="page-title mt-1">기관 관리</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">기관 기본 정보와 담당자, 대여·납품 장비를 관리합니다.</p>
           </div>
           <button className="btn-primary h-11 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", institution: null })}>
             <Plus size={18} />
             기관 등록
           </button>
         </div>
+        <div className="management-visual institution-hero-visual" aria-hidden="true">
+          <span className="institution-hero-ground" />
+          <span className="institution-hero-wing institution-hero-wing-left"><i /><i /><i /><i /></span>
+          <span className="institution-hero-building"><Building2 size={55} strokeWidth={1.55} /></span>
+          <span className="institution-hero-wing institution-hero-wing-right"><i /><i /><i /></span>
+          <span className="institution-hero-pin"><MapPin size={24} strokeWidth={2} /></span>
+        </div>
       </section>
 
       {error ? <div className="rounded-lg border border-[#ffc8d6] bg-[#fff0f4] px-4 py-3 text-sm font-extrabold text-[#d84f71]">{error}</div> : null}
 
-      <form className="panel flex flex-col gap-3 p-3 sm:p-4 md:flex-row" onSubmit={submitSearch}>
-        <input className="input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="기관명, 담당자, 연락처, 주소 검색" />
+      <form className="panel grid grid-cols-[minmax(0,1fr)_auto] gap-2 p-3 sm:p-4" onSubmit={submitSearch}>
+        <div className="relative min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input className="input pl-10" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="기관명, 담당자, 연락처, 주소 검색" />
+        </div>
         <button className="btn-primary w-full md:w-32">
-          <Search size={18} />
-          조회
+          <Search size={17} />
+          <span className="hidden sm:inline">조회하기</span>
         </button>
       </form>
 

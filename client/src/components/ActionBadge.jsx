@@ -19,9 +19,10 @@ const actionTones = {
   STATUS_CHANGE: "bg-[#eef1f7] text-[#657186] border-[#d8deea]"
 };
 
-export default function ActionBadge({ action }) {
+export default function ActionBadge({ action, size = "default" }) {
+  const sizeClass = size === "large" ? "px-3 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
   return (
-    <span className={`inline-flex max-w-full shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-extrabold ${actionTones[action] || actionTones.STATUS_CHANGE}`}>
+    <span className={`inline-flex max-w-full shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-extrabold ${sizeClass} ${actionTones[action] || actionTones.STATUS_CHANGE}`}>
       {actionLabel(action)}
     </span>
   );

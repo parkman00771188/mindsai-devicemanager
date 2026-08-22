@@ -863,6 +863,7 @@ function attachDevice(rows, devices) {
       ...row,
       photo_paths: rowPhotos.length ? row.photo_paths : row.action_type === "REGISTER" ? devicePhotos.join(";") : row.photo_paths,
       device_name: device?.device_name || "",
+      device_memo: device?.memo || "",
       device_owner_organization: device?.owner_organization || "",
       device_legacy_device_id: device?.legacy_device_id || "",
       device_category: device?.category || "",

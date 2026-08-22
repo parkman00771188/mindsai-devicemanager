@@ -1,4 +1,4 @@
-import { AlertTriangle, Camera, CheckCircle2, ChevronLeft, ChevronRight, Download, Edit, Info, ListChecks, PackageCheck, RotateCcw, SearchX, Stethoscope, Trash2, Truck, X } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle2, ChevronLeft, ChevronRight, Download, Edit, Info, ListChecks, PackageCheck, QrCode, RotateCcw, SearchX, Stethoscope, Trash2, Truck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -66,11 +66,19 @@ const statusPanels = {
   }
 };
 
+function recentItemsPerPage() {
+  if (typeof window === "undefined") return 2;
+  if (window.innerWidth >= 1920) return 4;
+  if (window.innerWidth >= 1536) return 3;
+  if (window.innerWidth >= 640) return 2;
+  return 1;
+}
+
 function InfoItem({ label, value, preserveWhitespace = false }) {
   return (
     <div className="grid min-w-0 grid-cols-[5.25rem_minmax(0,1fr)] gap-3 border-b border-line py-2.5 last:border-b-0 sm:grid-cols-[5.75rem_minmax(0,1fr)]">
       <dt className="whitespace-nowrap text-sm font-extrabold text-slate-500">{label}</dt>
-      <dd className={`min-w-0 break-words text-left text-base font-extrabold text-ink ${preserveWhitespace ? "whitespace-pre-wrap" : ""}`}>{value || "-"}</dd>
+      <dd className={`min-w-0 break-words text-left text-sm font-extrabold leading-6 text-ink ${preserveWhitespace ? "whitespace-pre-wrap" : ""}`}>{value || "-"}</dd>
     </div>
   );
 }
@@ -278,14 +286,14 @@ function HistorySummaryModal({ rows, onClose }) {
   );
 }
 
-function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onOpenPhoto }) {
+function BasicInfoModal({ device, photos, onClose, onOpenPhoto }) {
   if (!device) return null;
   const title = deviceTitle(device);
   const isLaptop = isLaptopDevice(device);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-6" onClick={onClose}>
-      <section className="max-h-[92vh] w-full max-w-6xl overflow-auto rounded-lg bg-white p-5 shadow-lift sm:p-6" onClick={(event) => event.stopPropagation()}>
+      <section className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-xl bg-white p-4 shadow-lift sm:p-5" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 border-b border-line pb-4">
           <div>
             <p className="page-kicker">장비 상세 정보</p>
@@ -296,7 +304,7 @@ function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onO
             <X size={18} />
           </button>
         </div>
-        <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
+        <dl className="mt-3 grid gap-x-6 sm:grid-cols-2">
           <InfoItem label="분류" value={device.category} />
           <InfoItem label="기존 장비번호" value={device.legacy_device_id} />
           <InfoItem label="제조사" value={device.manufacturer} />
@@ -324,7 +332,7 @@ function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onO
           <InfoItem label="비고" value={device.memo} preserveWhitespace />
         </dl>
         {photos.length ? (
-          <div className="mt-5 border-t border-line pt-4">
+          <div className="mt-4 border-t border-line pt-3">
             <h3 className="text-sm font-extrabold text-ink">장비 사진</h3>
             <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
               {photos.map((path, index) => (
@@ -341,39 +349,54 @@ function BasicInfoModal({ device, photos, qrStyle, onQrStyleChange, onClose, onO
             </div>
           </div>
         ) : null}
-        <div className="mt-5 border-t border-line pt-4">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-extrabold text-ink">QR 코드</h3>
-            <button className="btn-secondary h-10 px-3 text-sm" type="button" onClick={() => downloadQrImage(device.device_id, qrStyle)}>
-              <Download size={16} />
-              다운로드
-            </button>
+      </section>
+    </div>
+  );
+}
+
+function QrCodeModal({ device, qrStyle, onQrStyleChange, onClose }) {
+  if (!device) return null;
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-[2px]" onClick={onClose}>
+      <section className="w-full max-w-xl rounded-2xl border border-white/70 bg-white p-5 shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:p-6" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 border-b border-line pb-4">
+          <div>
+            <p className="page-kicker">QR Code</p>
+            <h2 className="mt-1 text-xl font-extrabold text-ink">{deviceTitle(device)}</h2>
+            <p className="mt-1 text-sm font-extrabold text-brand">{device.device_id}</p>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {[
-              ["plain", "1"],
-              ["label", "2"]
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={`h-10 rounded-lg text-sm font-extrabold transition ${
-                  qrStyle === value ? "bg-brand text-white shadow-soft" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-                onClick={() => onQrStyleChange(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 flex h-52 items-center justify-center rounded-lg border border-line bg-slate-50 p-3 sm:h-56">
-            <img
-              src={qrImageUrl(device.device_id, qrStyle)}
-              alt={`${device.device_id} QR 코드`}
-              className={`${qrStyle === "label" ? "max-h-16 w-full max-w-[360px]" : "h-44 w-44"} rounded-lg bg-white object-contain`}
-            />
-          </div>
+          <button className="btn-secondary h-10 w-10 shrink-0 p-0" type="button" onClick={onClose} aria-label="QR 코드 닫기">
+            <X size={18} />
+          </button>
         </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {[
+            ["plain", "QR 코드"],
+            ["label", "라벨형"]
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`h-11 rounded-lg text-sm font-extrabold transition ${
+                qrStyle === value ? "bg-brand text-white shadow-soft" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+              onClick={() => onQrStyleChange(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 flex h-64 items-center justify-center rounded-xl border border-line bg-[#f6f8fc] p-4">
+          <img
+            src={qrImageUrl(device.device_id, qrStyle)}
+            alt={`${device.device_id} QR 코드`}
+            className={`${qrStyle === "label" ? "max-h-20 w-full max-w-[420px]" : "h-52 w-52"} rounded-lg bg-white object-contain`}
+          />
+        </div>
+        <button className="btn-primary mt-4 w-full" type="button" onClick={() => downloadQrImage(device.device_id, qrStyle)}>
+          <Download size={18} />
+          QR 코드 다운로드
+        </button>
       </section>
     </div>
   );
@@ -480,7 +503,9 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   const [transactionUpdateBusy, setTransactionUpdateBusy] = useState(false);
   const [transactionDetail, setTransactionDetail] = useState(null);
   const [qrStyle, setQrStyle] = useState("plain");
+  const [qrOpen, setQrOpen] = useState(false);
   const [recentPage, setRecentPage] = useState(0);
+  const [recentPageSize, setRecentPageSize] = useState(recentItemsPerPage);
   const [error, setError] = useState("");
 
   async function load() {
@@ -495,7 +520,16 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
 
   useEffect(() => {
     setRecentPage(0);
-  }, [deviceId, transactions.length]);
+  }, [deviceId, transactions.length, recentPageSize]);
+
+  useEffect(() => {
+    function updateRecentPageSize() {
+      setRecentPageSize(recentItemsPerPage());
+    }
+    updateRecentPageSize();
+    window.addEventListener("resize", updateRecentPageSize);
+    return () => window.removeEventListener("resize", updateRecentPageSize);
+  }, []);
 
   async function dispose(reason) {
     setActionBusy(true);
@@ -707,10 +741,10 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     [currentRental?.user_organization, currentRental?.user_department].filter(Boolean).join(" / ") ||
     currentRental?.user_department ||
     device.borrower_department;
-  const recentPageSize = 4;
   const recentPageCount = Math.max(1, Math.ceil(transactions.length / recentPageSize));
   const safeRecentPage = Math.min(recentPage, recentPageCount - 1);
   const pagedTransactions = transactions.slice(safeRecentPage * recentPageSize, safeRecentPage * recentPageSize + recentPageSize);
+  const recentGridClass = recentPageSize === 1 ? "grid-cols-1" : recentPageSize === 2 ? "grid-cols-2" : recentPageSize === 3 ? "grid-cols-3" : "grid-cols-4";
   const statusActionConfig = {
     broken: {
       title: "고장 등록",
@@ -753,19 +787,19 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   const detailShellClass = inModal ? "space-y-3 sm:space-y-5" : "app-page";
   const heroClass = inModal ? "rounded-lg border border-line bg-white p-3 shadow-soft sm:p-4" : "hero-strip";
   const heroLayoutClass = inModal
-    ? "flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+    ? "grid gap-3"
     : "flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between";
   const heroIdentityClass = inModal
-    ? "grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-3 sm:flex sm:items-center sm:gap-4"
+    ? "grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-3 pr-12 sm:flex sm:items-center sm:gap-4 sm:pr-14"
     : "flex flex-col gap-4 sm:flex-row sm:items-center";
   const heroPhotoClass = inModal
     ? "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#eef4ff] transition hover:ring-4 hover:ring-[#dbe7ff] sm:h-20 sm:w-20"
     : "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#eef4ff] transition hover:ring-4 hover:ring-[#dbe7ff]";
   const actionGridClass = inModal
-    ? "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end"
+    ? "grid grid-cols-2 gap-2 border-t border-line pt-3 sm:flex sm:flex-wrap sm:justify-end"
     : "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
   const mainGridClass = inModal
-    ? "grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]"
+    ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem]"
     : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]";
   const statusTopClass = inModal
     ? "flex flex-col justify-between gap-3 lg:flex-row lg:items-start"
@@ -775,7 +809,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   const rentalMetricGridClass = inModal
     ? "mt-3 grid grid-cols-1 rounded-lg border border-white/70 bg-white/75 px-3 sm:grid-cols-2 2xl:grid-cols-3"
     : "mt-3 grid grid-cols-1 rounded-lg border border-white/70 bg-white/75 px-3 sm:grid-cols-2 2xl:grid-cols-3";
-  const asideClass = inModal ? "grid gap-3 md:grid-cols-3 xl:block xl:space-y-4" : "grid gap-4 md:grid-cols-3 xl:block xl:space-y-4";
+  const asideClass = inModal ? "grid gap-3 md:grid-cols-2 lg:block lg:space-y-3" : "grid gap-4 md:grid-cols-3 xl:block xl:space-y-4";
 
   return (
     <div className={detailShellClass}>
@@ -807,8 +841,17 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             <div className="min-w-0">
               <div className={inModal ? "flex min-w-0 flex-wrap items-center gap-2" : "flex flex-wrap items-center gap-3"}>
                 <h1 className={inModal ? "min-w-0 break-words text-xl font-extrabold leading-tight tracking-normal text-ink sm:text-2xl" : "text-2xl font-extrabold tracking-normal text-ink sm:text-3xl"}>{displayName}</h1>
+                <button
+                  className="btn-secondary h-9 w-9 shrink-0 border-[#dbe7ff] p-0 text-brand hover:bg-[#eef4ff]"
+                  type="button"
+                  onClick={() => setQrOpen(true)}
+                  aria-label="QR 코드 보기"
+                  title="QR 코드 보기"
+                >
+                  <QrCode size={18} />
+                </button>
                 <span className={`rounded-lg border px-3 py-1 text-sm font-extrabold ${currentStatus.className}`}>{currentStatus.label}</span>
-                <button className="btn-secondary h-9 px-3 text-xs xl:hidden" type="button" onClick={() => setBasicOpen(true)}>
+                <button className={`btn-secondary h-9 px-3 text-xs ${inModal ? "lg:hidden" : "xl:hidden"}`} type="button" onClick={() => setBasicOpen(true)}>
                   <Info size={15} />
                   상세
                 </button>
@@ -895,7 +938,75 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
 
       <div className={mainGridClass}>
         <section className="overflow-hidden rounded-lg border border-line bg-white shadow-soft">
-          <div className={`border-b ${inModal ? "p-3 sm:p-5" : "p-4 sm:p-5"} ${currentStatus.className}`}>
+          {inModal ? (
+            <div className={`border-b ${currentStatus.className}`}>
+              <div className="border-b border-current/15 px-3 py-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/85 shadow-soft">
+                    <CurrentStatusIcon size={21} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-extrabold opacity-80">현재 상태</p>
+                    <p className="mt-1 break-words text-base font-extrabold leading-tight text-current">{currentStatus.title}</p>
+                    <p className="mt-1 hidden text-xs font-bold leading-5 text-current opacity-75 sm:block">{currentStatus.description}</p>
+                  </div>
+                  {canReturnOrRecover ? (
+                    <div className="hidden shrink-0 items-center gap-2 sm:flex">
+                      <button className="btn-secondary h-9 px-3 text-xs" type="button" onClick={() => setProcessMode("rentalEdit")}>
+                        <Edit size={15} />
+                        {currentRentalIsDelivery ? "납품 정보 수정" : "대여 정보 수정"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 p-3 lg:grid-cols-4">
+                <div className="min-w-0 rounded-lg border border-line bg-[#fbfcff] px-3 py-2.5">
+                  <p className="text-sm font-extrabold text-slate-500">상태</p>
+                  <p className="mt-1 truncate text-sm font-extrabold text-ink">{currentStatus.label}</p>
+                </div>
+                <div className="min-w-0 rounded-lg border border-line bg-[#fbfcff] px-3 py-2.5">
+                  <p className="text-sm font-extrabold text-slate-500">{currentRentalIsDelivery ? "현재 납품처" : "현재 대여자"}</p>
+                  <p className="mt-1 truncate text-sm font-extrabold text-ink">{device.current_borrower || (canRent ? "대여 가능" : "-")}</p>
+                </div>
+                <div className="min-w-0 rounded-lg border border-line bg-[#fbfcff] px-3 py-2.5">
+                  <p className="text-sm font-extrabold text-slate-500">{currentRentalIsDelivery ? "납품일" : "대여일"}</p>
+                  <p className="mt-1 truncate text-sm font-extrabold text-ink">{formatDate(device.borrowed_at || currentRental?.rented_at)}</p>
+                </div>
+                <div className="min-w-0 rounded-lg border border-line bg-[#fbfcff] px-3 py-2.5">
+                  <p className="text-sm font-extrabold text-slate-500">목적/사유</p>
+                  <p className="mt-1 truncate text-sm font-extrabold text-ink">{currentRental?.purpose || currentIssue?.reason || "-"}</p>
+                </div>
+              </div>
+
+              <dl className="mx-3 mb-3 grid rounded-lg border border-line bg-white px-3 sm:grid-cols-2">
+                <div className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] gap-3 border-b border-line py-3 sm:border-r sm:pr-3">
+                  <dt className="text-sm font-extrabold text-slate-500">소속/부서</dt>
+                  <dd className="min-w-0 break-words text-sm font-extrabold leading-6 text-ink">{currentRentalOrgDepartment || "-"}</dd>
+                </div>
+                <div className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] gap-3 border-b border-line py-3 sm:pl-3">
+                  <dt className="text-sm font-extrabold text-slate-500">연락처</dt>
+                  <dd className="min-w-0 break-words text-sm font-extrabold leading-6 text-ink">{currentRental?.user_contact || "-"}</dd>
+                </div>
+                <div className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] gap-3 border-b border-line py-3 sm:border-b-0 sm:border-r sm:pr-3">
+                  <dt className="text-sm font-extrabold text-slate-500">{currentRentalIsDelivery ? "납품 장소" : "대여 장소"}</dt>
+                  <dd className="min-w-0 break-words text-sm font-extrabold leading-6 text-ink">{currentRentalPlace || "-"}</dd>
+                </div>
+                <div className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] gap-3 py-3 sm:pl-3">
+                  <dt className="text-sm font-extrabold text-slate-500">메모</dt>
+                  <dd className="min-w-0 whitespace-pre-wrap break-words text-sm font-extrabold leading-6 text-ink">{statusMemo}</dd>
+                </div>
+                {showSeparateDeviceMemo ? (
+                  <div className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] gap-3 border-t border-line py-3 sm:col-span-2">
+                    <dt className="text-sm font-extrabold text-slate-500">장비 메모</dt>
+                    <dd className="min-w-0 whitespace-pre-wrap break-words text-sm font-extrabold leading-6 text-ink">{deviceMemo}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          ) : (
+          <div className={`border-b p-4 sm:p-5 ${currentStatus.className}`}>
             <div className={statusTopClass}>
               <div className={inModal ? "flex min-w-0 items-start gap-3" : "flex min-w-0 items-start gap-4"}>
                 <span className={inModal ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/80 shadow-soft" : "flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-white/80 shadow-soft"}>
@@ -961,6 +1072,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
               ) : null}
             </div>
           </div>
+          )}
 
           <div className="border-t border-line bg-white text-ink">
             <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -977,7 +1089,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                   총 {transactions.length}건
                 </span>
                 {transactions.length > recentPageSize ? (
-                  <div className="hidden items-center gap-1 lg:flex">
+                  <div className="flex items-center gap-1">
                     <button className="btn-secondary h-9 w-9 p-0" type="button" onClick={() => moveRecentPage(-1)} aria-label="이전 이력">
                       <ChevronLeft size={17} />
                     </button>
@@ -992,28 +1104,21 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
               </div>
             </div>
             {transactions.length ? (
-              <>
-                <div className="grid gap-2 px-3 pb-3 sm:grid-cols-2 sm:gap-3 sm:px-4 sm:pb-4 xl:hidden">
-                  {transactions.slice(0, recentPageSize).map((row) => (
-                    <RecentTransactionCard
-                      key={`${row.transaction_id}-mobile`}
-                      row={row}
-                      className="w-full"
-                      onOpenPhoto={openPhotoViewer}
-                      canDelete={isAdmin}
-                      canEdit={isAdmin}
-                      deleteBusy={transactionDeleteBusy}
-                      onDelete={deleteTransaction}
-                      onEdit={setTransactionDetail}
-                    />
-                  ))}
-                </div>
-                <div className="hidden gap-3 px-5 pb-5 xl:grid xl:grid-cols-2 2xl:grid-cols-4">
-                  {pagedTransactions.map((row) => (
-                    <RecentTransactionCard key={row.transaction_id} row={row} onOpenPhoto={openPhotoViewer} canDelete={isAdmin} canEdit={isAdmin} deleteBusy={transactionDeleteBusy} onDelete={deleteTransaction} onEdit={setTransactionDetail} />
-                  ))}
-                </div>
-              </>
+              <div className={`grid gap-2 px-3 pb-3 sm:gap-3 sm:px-4 sm:pb-4 ${recentGridClass}`}>
+                {pagedTransactions.map((row) => (
+                  <RecentTransactionCard
+                    key={row.transaction_id}
+                    row={row}
+                    className="w-full"
+                    onOpenPhoto={openPhotoViewer}
+                    canDelete={isAdmin}
+                    canEdit={isAdmin}
+                    deleteBusy={transactionDeleteBusy}
+                    onDelete={deleteTransaction}
+                    onEdit={setTransactionDetail}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="px-5 pb-5">
                 <EmptyState title="이력이 없습니다." />
@@ -1023,41 +1128,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
         </section>
 
         <aside className={asideClass}>
-          <section className="panel hidden p-3 sm:p-4 xl:block">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="section-title">QR 코드</h2>
-              <button className="btn-secondary h-10 px-3" type="button" onClick={() => downloadQrImage(device.device_id, qrStyle)}>
-                <Download size={16} />
-                다운로드
-              </button>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {[
-                ["plain", "1"],
-                ["label", "2"]
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`h-10 rounded-lg text-sm font-extrabold transition ${
-                    qrStyle === value ? "bg-brand text-white shadow-soft" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                  onClick={() => setQrStyle(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 flex h-48 items-center justify-center rounded-lg border border-line bg-slate-50 p-3 sm:mt-4 sm:h-56">
-              <img
-                src={qrImageUrl(device.device_id, qrStyle)}
-                alt={`${device.device_id} QR 코드`}
-                className={`${qrStyle === "label" ? "max-h-16 w-full max-w-[360px]" : "h-44 w-44"} rounded-lg bg-white object-contain`}
-              />
-            </div>
-          </section>
-
-          <section className="panel hidden p-4 xl:block">
+          <section className={`panel p-4 ${inModal ? "hidden lg:block" : "hidden xl:block"}`}>
             <div className="flex items-center justify-between gap-3">
               <h2 className="section-title">기본 정보</h2>
               <button className="btn-secondary h-10 px-3" type="button" onClick={() => setBasicOpen(true)}>
@@ -1083,7 +1154,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             </dl>
           </section>
 
-          <section className="panel hidden p-4 xl:block">
+          <section className={`panel p-4 ${inModal ? "hidden lg:block" : "hidden xl:block"}`}>
             <div className="flex items-center justify-between gap-3">
               <h2 className="section-title">장비 사진</h2>
               <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-500">{devicePhotos.length}장</span>
@@ -1119,8 +1190,6 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
       <BasicInfoModal
         device={basicOpen ? device : null}
         photos={devicePhotos}
-        qrStyle={qrStyle}
-        onQrStyleChange={setQrStyle}
         onClose={() => setBasicOpen(false)}
         onOpenPhoto={(index) =>
           setPhotoViewer({
@@ -1130,6 +1199,12 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             description: `${device.device_name} · ${device.device_id}`
           })
         }
+      />
+      <QrCodeModal
+        device={qrOpen ? device : null}
+        qrStyle={qrStyle}
+        onQrStyleChange={setQrStyle}
+        onClose={() => setQrOpen(false)}
       />
       <HistorySummaryModal
         rows={summaryOpen ? transactions : null}

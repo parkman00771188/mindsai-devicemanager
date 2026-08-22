@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Settings2,
   Tags,
   Trash2,
   UsersRound,
@@ -2022,17 +2023,26 @@ export default function Settings() {
 
   return (
     <div className="app-page">
-      <section className="hero-strip">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="page-title">설정</h1>
-            <p className="mt-1 text-sm text-slate-500">분류, 사유, 사용자 옵션과 프로필 정보를 관리합니다.</p>
+      <section className="device-list-hero hidden sm:block">
+        <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-between gap-5 md:flex-row md:items-start">
+          <div className="max-w-xl">
+            <p className="page-kicker">System Settings</p>
+            <h1 className="page-title mt-1">설정</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">분류, 사유, 사용자 옵션과 프로필 환경을 관리합니다.</p>
           </div>
-          <Link className="btn-secondary justify-center" to="/">대시보드로 이동</Link>
+        </div>
+        <div className="management-visual settings-hero-visual" aria-hidden="true">
+          <span className="settings-hero-panel">
+            <i><b /></i>
+            <i><b /></i>
+            <i><b /></i>
+          </span>
+          <span className="settings-hero-gear"><Settings2 size={47} strokeWidth={1.65} /></span>
+          <span className="settings-hero-database"><DatabaseBackup size={25} strokeWidth={1.8} /></span>
         </div>
       </section>
       <Message message={message} />
-      <nav className="panel scrollbar-none sticky top-[3.65rem] z-10 flex max-w-full gap-2 overflow-x-auto p-2 sm:top-[5.75rem] lg:top-[4.5rem]">
+      <nav className="panel scrollbar-none sticky top-[3.65rem] z-10 flex max-w-full gap-2 overflow-x-auto p-2 sm:top-[5.75rem] lg:top-3">
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;

@@ -114,6 +114,7 @@ export default function Layout() {
   const notificationInitialized = useRef(false);
   const knownNotificationIds = useRef(new Set());
   const notificationRef = useRef(null);
+  const sidebarNotificationRef = useRef(null);
   const notificationsLoadingRef = useRef(false);
   const [quickScanOpen, setQuickScanOpen] = useState(false);
   const navigate = useNavigate();
@@ -303,7 +304,7 @@ export default function Layout() {
   useEffect(() => {
     if (!notificationOpen) return;
     const closeOnOutsideClick = (event) => {
-      if (!notificationRef.current?.contains(event.target)) {
+      if (!notificationRef.current?.contains(event.target) && !sidebarNotificationRef.current?.contains(event.target)) {
         setNotificationOpen(false);
       }
     };
@@ -313,6 +314,114 @@ export default function Layout() {
 
   const unreadCount = notifications.filter((row) => !row.is_read).length;
   const deletableCount = notifications.filter(canDeleteNotification).length;
+
+  function renderNotificationControl({ desktopSidebar = false } = {}) {
+    return (
+      <div
+        className={desktopSidebar ? "relative hidden lg:block" : "relative lg:hidden"}
+        ref={desktopSidebar ? sidebarNotificationRef : notificationRef}
+      >
+        <button
+          className={
+            desktopSidebar
+              ? `relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-brand ${unreadCount ? "text-brand" : ""}`
+              : `btn-secondary relative h-11 w-11 shrink-0 p-0 ${unreadCount ? "text-brand" : ""}`
+          }
+          type="button"
+          onClick={() => setNotificationOpen((value) => !value)}
+          aria-label="알림"
+          aria-expanded={notificationOpen}
+          title="알림"
+        >
+          <Bell size={desktopSidebar ? 17 : 18} />
+          {unreadCount ? (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff4f7a] px-1 text-xs font-extrabold text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          ) : null}
+        </button>
+        {notificationOpen ? (
+          <div
+            className={
+              desktopSidebar
+                ? "fixed bottom-3 z-40 max-h-[min(680px,calc(100vh-24px))] overflow-hidden rounded-lg border border-line bg-white shadow-lift"
+                : "fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-lg border border-line bg-white shadow-lift sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-[min(92vw,380px)]"
+            }
+            style={desktopSidebar ? { left: "calc(var(--dm-sidebar-width) + 12px)", width: "min(380px, calc(100vw - var(--dm-sidebar-width) - 24px))" } : undefined}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-line bg-[#f8fafc] px-4 py-3">
+              <div>
+                <p className="text-sm font-extrabold text-ink">알림</p>
+                <p className="text-xs font-bold text-slate-500">반납 요청과 장비 관련 안내</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button className="btn-secondary h-9 px-2 text-xs" type="button" onClick={readAllNotifications} disabled={!unreadCount}>
+                  <CheckCheck size={15} />
+                  모두 읽음
+                </button>
+                <button
+                  className="btn-secondary h-9 px-2 text-xs text-[#d84f71]"
+                  type="button"
+                  onClick={deleteDeletableNotifications}
+                  disabled={!deletableCount}
+                  title="완료된 요청과 일반 알림만 삭제됩니다."
+                >
+                  <Trash2 size={15} />
+                  정리
+                </button>
+              </div>
+            </div>
+            <div className="h-full max-h-[420px] overflow-auto p-2 sm:h-auto">
+              {notifications.length ? notifications.slice(0, 20).map((notification) => {
+                const deletable = canDeleteNotification(notification);
+                return (
+                  <div
+                    key={notification.notification_id}
+                    className={`w-full rounded-lg p-3 text-left transition hover:bg-[#f8fafc] ${
+                      notification.is_read ? "bg-white" : "bg-[#eef4ff]"
+                    }`}
+                  >
+                    <button className="block w-full text-left" type="button" onClick={() => openNotification(notification)}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-extrabold text-ink">{notification.title || "알림"}</p>
+                          {notification.device_id ? (
+                            <p className="mt-1 truncate text-xs font-extrabold text-brand">{notification.device_id} · {deviceTitle(notification)}</p>
+                          ) : (
+                            <p className="mt-1 truncate text-xs font-extrabold text-brand">{notification.type === "ROLE_CHANGE" ? "계정 권한" : "시스템 알림"}</p>
+                          )}
+                        </div>
+                        {!notification.is_read ? <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand" /> : null}
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-600">{notification.message}</p>
+                    </button>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-xs font-bold text-slate-400">{formatDateTime(notification.created_at)}</p>
+                      {deletable ? (
+                        <button
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-slate-400 transition hover:border-[#ffc8d6] hover:bg-[#fff0f4] hover:text-[#d84f71]"
+                          type="button"
+                          onClick={(event) => deleteNotification(notification, event)}
+                          aria-label="알림 삭제"
+                          title="알림 삭제"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      ) : (
+                        <span className="shrink-0 rounded-lg bg-[#fff4ee] px-2 py-1 text-xs font-extrabold text-[#d47a3d]">요청 진행 중</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="px-4 py-8 text-center text-sm font-bold text-slate-500">새 알림이 없습니다.</div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f3f5f9]">
@@ -343,6 +452,7 @@ export default function Layout() {
                 <p className="truncate text-sm font-bold text-ink">{user?.name || "사용자"}</p>
                 <p className="truncate text-xs font-semibold text-slate-400">{user?.organization || roleLabel(user?.role)}</p>
               </div>
+              {renderNotificationControl({ desktopSidebar: true })}
               <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-[#ef4444]" onClick={logout} aria-label="로그아웃" title="로그아웃">
                 <LogOut size={17} />
               </button>
@@ -392,7 +502,7 @@ export default function Layout() {
       </aside>
 
       <main className="app-main">
-        <header className="sticky top-0 z-20 border-b border-line bg-white/95 px-3 py-2 backdrop-blur-xl sm:px-4 sm:py-3 lg:px-7">
+        <header className="sticky top-0 z-20 border-b border-line bg-white/95 px-3 py-2 backdrop-blur-xl sm:px-4 sm:py-3 lg:hidden">
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <button className="btn-secondary h-10 w-10 shrink-0 p-0 sm:h-11 sm:w-11 lg:hidden" onClick={() => setOpen(true)} aria-label="메뉴 열기">
@@ -411,93 +521,7 @@ export default function Layout() {
                   <p className="truncate text-xs font-bold text-slate-500">{[user?.organization, user?.department, user?.position].filter(Boolean).join(" / ") || roleLabel(user?.role)}</p>
                 </div>
               </div>
-              <div className="relative" ref={notificationRef}>
-                <button
-                  className={`btn-secondary relative h-11 w-11 shrink-0 p-0 ${unreadCount ? "text-brand" : ""}`}
-                  type="button"
-                  onClick={() => setNotificationOpen((value) => !value)}
-                  aria-label="알림"
-                >
-                  <Bell size={18} />
-                  {unreadCount ? (
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff4f7a] px-1 text-xs font-extrabold text-white">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  ) : null}
-                </button>
-                {notificationOpen ? (
-                  <div className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-lg border border-line bg-white shadow-lift sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-12 sm:max-h-none sm:w-[min(92vw,380px)]">
-                    <div className="flex items-center justify-between gap-3 border-b border-line bg-[#f8fafc] px-4 py-3">
-                      <div>
-                        <p className="text-sm font-extrabold text-ink">알림</p>
-                        <p className="text-xs font-bold text-slate-500">반납 요청과 장비 관련 안내</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <button className="btn-secondary h-9 px-2 text-xs" type="button" onClick={readAllNotifications} disabled={!unreadCount}>
-                          <CheckCheck size={15} />
-                          모두 읽음
-                        </button>
-                        <button
-                          className="btn-secondary h-9 px-2 text-xs text-[#d84f71]"
-                          type="button"
-                          onClick={deleteDeletableNotifications}
-                          disabled={!deletableCount}
-                          title="완료된 요청과 일반 알림만 삭제됩니다."
-                        >
-                          <Trash2 size={15} />
-                          정리
-                        </button>
-                      </div>
-                    </div>
-                    <div className="h-full max-h-[420px] overflow-auto p-2 sm:h-auto">
-                      {notifications.length ? notifications.slice(0, 20).map((notification) => {
-                        const deletable = canDeleteNotification(notification);
-                        return (
-                          <div
-                            key={notification.notification_id}
-                            className={`w-full rounded-lg p-3 text-left transition hover:bg-[#f8fafc] ${
-                              notification.is_read ? "bg-white" : "bg-[#eef4ff]"
-                            }`}
-                          >
-                            <button className="block w-full text-left" type="button" onClick={() => openNotification(notification)}>
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-extrabold text-ink">{notification.title || "알림"}</p>
-                                  {notification.device_id ? (
-                                    <p className="mt-1 truncate text-xs font-extrabold text-brand">{notification.device_id} · {deviceTitle(notification)}</p>
-                                  ) : (
-                                    <p className="mt-1 truncate text-xs font-extrabold text-brand">{notification.type === "ROLE_CHANGE" ? "계정 권한" : "시스템 알림"}</p>
-                                  )}
-                                </div>
-                                {!notification.is_read ? <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand" /> : null}
-                              </div>
-                              <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-600">{notification.message}</p>
-                            </button>
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              <p className="min-w-0 truncate text-xs font-bold text-slate-400">{formatDateTime(notification.created_at)}</p>
-                              {deletable ? (
-                                <button
-                                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-slate-400 transition hover:border-[#ffc8d6] hover:bg-[#fff0f4] hover:text-[#d84f71]"
-                                  type="button"
-                                  onClick={(event) => deleteNotification(notification, event)}
-                                  aria-label="알림 삭제"
-                                  title="알림 삭제"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              ) : (
-                                <span className="shrink-0 rounded-lg bg-[#fff4ee] px-2 py-1 text-xs font-extrabold text-[#d47a3d]">요청 진행 중</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      }) : (
-                        <div className="px-4 py-8 text-center text-sm font-bold text-slate-500">새 알림이 없습니다.</div>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              {renderNotificationControl()}
               <button className="btn-secondary hidden h-10 shrink-0 px-3 sm:flex sm:h-11 lg:hidden" onClick={logout}>
                 <LogOut size={17} />
                 <span className="hidden sm:inline">로그아웃</span>

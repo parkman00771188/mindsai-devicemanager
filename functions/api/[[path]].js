@@ -1528,6 +1528,7 @@ function attachTransaction(state, row) {
     ...row,
     photo_paths: photoPaths,
     device_name: device.device_name || "",
+    device_memo: device.memo || "",
     device_owner_organization: device.owner_organization || "",
     device_category: device.category || "",
     device_model_name: device.model_name || "",

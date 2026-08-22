@@ -1,4 +1,4 @@
-import { ArrowDownAZ, Building2, Check, ChevronDown, Eye, EyeOff, Info, KeyRound, PackagePlus, Plus, Save, Search, Send, ShieldCheck, Trash2, Truck, UserCog, X } from "lucide-react";
+import { ArrowDownAZ, Building2, Check, ChevronDown, Eye, EyeOff, Info, KeyRound, PackagePlus, Plus, Save, Search, Send, ShieldCheck, Trash2, Truck, UserCog, UserRound, UsersRound, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
@@ -304,7 +304,7 @@ function UserModal({ user, mode, busy, userOptions = [], onClose, onSubmit, onPh
 function ConfirmDialog({ title, description, children, confirmText = "확인", cancelText = "취소", busy, danger, confirmDisabled, onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 px-4 py-6" onClick={onCancel}>
-      <section className="w-full max-w-lg rounded-lg bg-white p-5 shadow-lift sm:p-6" onClick={(event) => event.stopPropagation()}>
+      <section className="max-h-[92vh] w-full max-w-lg overflow-auto rounded-lg bg-white p-5 shadow-lift sm:p-6" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 border-b border-line pb-4">
           <div>
             <p className="page-kicker">{danger ? "Confirm Delete" : "Confirm"}</p>
@@ -332,6 +332,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
   const [devices, setDevices] = useState(null);
   const [reasons, setReasons] = useState([]);
   const [purpose, setPurpose] = useState("");
+  const [memo, setMemo] = useState("");
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("전체");
   const [selectedIds, setSelectedIds] = useState([]);
@@ -420,7 +421,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
       return;
     }
     try {
-      await onAssign(selectedDevices, { purpose });
+      await onAssign(selectedDevices, { purpose, memo: memo.trim() });
     } catch (err) {
       setConfirmOpen(false);
       setError(err.message);
@@ -587,6 +588,17 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
                     {!purpose ? <span className="text-xs font-semibold text-[#d84f71]">대여 사유를 선택해야 할당할 수 있습니다.</span> : null}
                   </label>
                   <div className="flex justify-between gap-3 sm:col-span-2"><dt>대여 위치</dt><dd className="text-ink">{user.department ? `${user.department} 자리` : "사용자 할당"}</dd></div>
+                  <label className="grid gap-1.5 sm:col-span-2">
+                    <span className="text-sm font-bold text-slate-600">메모 <span className="text-xs font-semibold text-slate-400">(선택)</span></span>
+                    <textarea
+                      className="textarea min-h-20"
+                      value={memo}
+                      maxLength={500}
+                      onChange={(event) => setMemo(event.target.value)}
+                      placeholder="장비 전달 사항이나 사용자에게 남길 메모를 입력하세요."
+                    />
+                    <span className="text-right text-xs font-semibold text-slate-400">{memo.length}/500 · 선택한 모든 장비 이력에 저장됩니다.</span>
+                  </label>
                 </dl>
               </div>
               <div className="rounded-lg border border-line bg-white p-4">
@@ -893,14 +905,16 @@ export default function Users() {
 
   async function assignDevicesToUser(devices, options = {}) {
     if (!selected) return;
-    const assignmentMemo = "관리자가 사용자에게 장비를 할당함";
+    const assignmentMemo = String(options.memo || "").trim() || "관리자가 사용자에게 장비를 할당함";
     setBusy(true);
     setError("");
     try {
       for (const device of devices) {
         const formData = new FormData();
         formData.append("user_name", selected.name || "");
+        formData.append("user_organization", selected.organization || "");
         formData.append("user_department", selected.department || "");
+        formData.append("user_position", selected.position || "");
         formData.append("user_contact", selected.contact || "");
         formData.append("purpose", options.purpose || "사용자 장비 할당");
         formData.append("rent_location", selected.department ? `${selected.department} 자리` : "사용자 할당");
@@ -1099,30 +1113,41 @@ export default function Users() {
 
   return (
     <div className="app-page">
-      <section className="hero-strip">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="page-title">사용자 관리</h1>
-            <p className="mt-1 text-sm text-slate-500">사용자 정보와 할당 장비를 관리합니다.</p>
+      <section className="device-list-hero hidden sm:block">
+        <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-between gap-5 md:flex-row md:items-start">
+          <div className="max-w-xl">
+            <p className="page-kicker">User Management</p>
+            <h1 className="page-title mt-1">사용자 관리</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">사용자 정보와 권한, 할당 장비를 한곳에서 관리합니다.</p>
           </div>
           <button className="btn-primary h-11 shrink-0 whitespace-nowrap px-4 sm:px-5" type="button" onClick={() => setModal({ mode: "create", user: null })}>
             <Plus size={18} />
             사용자 등록
           </button>
         </div>
+        <div className="management-visual users-hero-visual" aria-hidden="true">
+          <span className="users-hero-connector" />
+          <span className="users-hero-person users-hero-person-left"><UserRound size={25} strokeWidth={1.8} /></span>
+          <span className="users-hero-person users-hero-person-main"><UsersRound size={41} strokeWidth={1.7} /></span>
+          <span className="users-hero-person users-hero-person-right"><UserRound size={25} strokeWidth={1.8} /></span>
+          <span className="users-hero-shield"><ShieldCheck size={23} strokeWidth={2} /></span>
+        </div>
       </section>
 
       {error ? <div className="rounded-lg border border-[#ffc8d6] bg-[#fff0f4] px-4 py-3 text-sm font-extrabold text-[#d84f71]">{error}</div> : null}
 
-      <form className="panel grid gap-3 p-3 sm:p-4 md:grid-cols-[minmax(0,1fr)_minmax(12rem,20rem)_8rem]" onSubmit={submitSearch}>
-        <input className="input" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="이름, ID, 소속, 부서, 연락처 검색" />
+      <form className="panel grid gap-2 p-3 sm:p-4 md:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)_8rem]" onSubmit={submitSearch}>
         <select className="select" value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)} aria-label="사용자 소속 필터">
           <option value="">전체 소속</option>
           {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
         </select>
+        <div className="relative min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input className="input pl-10" value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="이름, ID, 소속, 부서, 연락처 검색" />
+        </div>
         <button className="btn-primary w-full">
-          <Search size={18} />
-          조회
+          <Search size={17} />
+          조회하기
         </button>
       </form>
 
