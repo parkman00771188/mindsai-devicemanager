@@ -1,4 +1,4 @@
-import { Camera, ImagePlus, Plus, Trash2, Wand2 } from "lucide-react";
+import { Camera, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client.js";
 import { DEVICE_FIELDS, isLaptopDevice, splitPhotoPaths } from "../constants.js";
@@ -180,7 +180,6 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [compressing, setCompressing] = useState(false);
   const isCreate = mode === "create";
-  const canGenerate = useMemo(() => isCreate && form.category, [isCreate, form.category]);
   const previewName = form.category && form.model_name ? `${form.category} (${form.model_name})` : form.category || form.model_name || form.device_name || "장비 정보를 입력하세요";
   const hasCurrentCategory = categories.some((category) => category.category_name === form.category);
   const selectedCategory = categories.find((category) => category.category_name === form.category);
@@ -373,15 +372,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
         <div className="mt-3 border-t-2 border-ink/70 pt-5">
           <div className="grid gap-4">
             <FormRow label="장비번호" required hint="분류를 기준으로 자동 생성되며, 등록된 모델이 있으면 모델명도 반영됩니다.">
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-                <input name="device_id" className="input bg-slate-50 text-base text-slate-600" value={form.device_id || ""} readOnly required placeholder="분류 선택 후 자동 생성" />
-                {isCreate ? (
-                  <button type="button" className="btn-secondary shrink-0 px-4" onClick={() => generateId()} disabled={!canGenerate}>
-                    <Wand2 size={17} />
-                    자동
-                  </button>
-                ) : null}
-              </div>
+              <input name="device_id" className="input bg-slate-50 text-base text-slate-600" value={form.device_id || ""} readOnly required placeholder="분류 선택 후 자동 생성" />
             </FormRow>
 
             <FormRow label="분류" required hint="설정의 분류 관리에서 등록한 항목을 선택합니다.">

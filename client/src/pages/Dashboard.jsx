@@ -1,4 +1,4 @@
-import { ArrowRight, Bell, BellRing, Boxes, CheckCircle2, ClipboardList, LayoutGrid, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, UserRound, Wrench } from "lucide-react";
+import { Bell, BellRing, Boxes, CheckCircle2, ClipboardList, LayoutGrid, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, UserRound, Wrench } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -409,15 +409,6 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
-
-      <Link className="dashboard-mobile-cta sm:hidden" to="/scan?auto=1">
-        <span className="dashboard-mobile-cta-icon"><QrCode size={23} /></span>
-        <span className="relative z-10 min-w-0 flex-1">
-          <strong className="block text-lg font-extrabold">QR로 장비 확인</strong>
-          <span className="mt-1 block text-sm font-medium text-white/80">스캔하여 대여·반납을 빠르게 처리하세요.</span>
-        </span>
-        <span className="dashboard-mobile-cta-arrow"><ArrowRight size={23} /></span>
-      </Link>
 
       {isMineScope ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy={scopeBusy}>
