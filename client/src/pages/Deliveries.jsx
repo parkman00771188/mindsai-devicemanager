@@ -215,7 +215,7 @@ export default function Deliveries() {
         </div>
         {rows.length ? (
           <>
-            <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+            <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
               {rows.map((row) => {
                 const photos = splitPhotoPaths(row.photo_paths);
                 const summaryText = transactionPlace(row) || transactionMemo(row) || "메모 없음";

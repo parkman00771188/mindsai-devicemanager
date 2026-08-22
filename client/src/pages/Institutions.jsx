@@ -283,7 +283,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
                 ))}
               </div>
             </div>
-            <div className="max-h-[52vh] overflow-auto p-3">
+            <div className="max-h-[52vh] overflow-auto bg-[#f3f5f9] p-3 sm:bg-[#f6f8fc]">
               {devices === null ? (
                 <Loading />
               ) : filteredDevices.length ? (
@@ -737,7 +737,7 @@ export default function Institutions() {
                   </button>
                 </div>
               </div>
-              <div className="grid gap-2 p-2 sm:grid-cols-2 md:grid-cols-1 xl:hidden">
+              <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] md:grid-cols-1 xl:hidden">
                 {sortedInstitutions.map((institution) => {
                   const isSelected = selected?.institution_id === institution.institution_id;
                   return (

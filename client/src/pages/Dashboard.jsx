@@ -451,7 +451,7 @@ export default function Dashboard() {
           </div>
           <NoticeTabs value={noticeTab} onChange={setNoticeTab} requestCount={requestNotifications.length} />
         </div>
-        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mobile-list-surface mt-4 grid rounded-lg sm:bg-[#f6f8fc] md:grid-cols-2 xl:grid-cols-3">
           {visibleNotifications.length ? (
             visibleNotifications.map((notification) => (
               <NotificationCard

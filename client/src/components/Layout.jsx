@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   MoreHorizontal,
+  Plus,
   QrCode,
   Settings,
   TabletSmartphone,
@@ -16,7 +17,7 @@ import {
   X
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { clearCurrentUser, getCurrentUser, isAdminUser, roleLabel, setCurrentUser } from "../auth.js";
 import { deviceTitle, formatDateTime } from "../constants.js";
@@ -521,6 +522,12 @@ export default function Layout() {
                   <p className="truncate text-xs font-bold text-slate-500">{[user?.organization, user?.department, user?.position].filter(Boolean).join(" / ") || roleLabel(user?.role)}</p>
                 </div>
               </div>
+              {location.pathname === "/devices" ? (
+                <Link className="btn-primary h-10 shrink-0 gap-1 px-2.5 text-xs sm:hidden" to="/devices/new">
+                  <Plus size={15} />
+                  장비 등록
+                </Link>
+              ) : null}
               {renderNotificationControl()}
               <button className="btn-secondary hidden h-10 shrink-0 px-3 sm:flex sm:h-11 lg:hidden" onClick={logout}>
                 <LogOut size={17} />

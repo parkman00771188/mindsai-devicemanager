@@ -1,6 +1,7 @@
 import {
   Building2,
   Check,
+  ChevronDown,
   ClipboardList,
   DatabaseBackup,
   Download,
@@ -252,7 +253,7 @@ function DeviceCollectionBody({ devices, error, emptyText, busy, onOpenDetail, o
 
       {devices.length ? (
         <>
-          <div className="grid gap-2 xl:hidden">
+          <div className="mobile-list-surface grid xl:hidden">
             {devices.map((device) => (
               <div key={device.device_id} className="rounded-lg border border-line bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -724,7 +725,7 @@ function UserOptionMembersModal({ option, userOptions, onClose, onUpdated }) {
             </div>
           </div>
 
-          <div className="grid gap-2 p-3 xl:hidden">
+          <div className="mobile-list-surface grid xl:hidden">
             {filteredUsers.map((user) => (
               <button key={user.user_id} className="soft-row text-left" type="button" onClick={() => toggleUser(user.user_id)}>
                 <div className="flex items-start gap-3">
@@ -860,6 +861,8 @@ export default function Settings() {
   const isAdmin = isAdminUser(currentUser);
   const visibleTabs = useMemo(() => tabs.filter((tab) => isAdmin || !tab.adminOnly), [isAdmin]);
   const [activeTab, setActiveTab] = useState("profile");
+  const activeSettingsTab = visibleTabs.find((tab) => tab.id === activeTab) || visibleTabs[0];
+  const ActiveSettingsIcon = activeSettingsTab?.icon || Settings2;
   const [categoryManagerTab, setCategoryManagerTab] = useState("categories");
   const [categoryFilterTab, setCategoryFilterTab] = useState("");
   const [reasonManagerTab, setReasonManagerTab] = useState("RENT");
@@ -1507,7 +1510,7 @@ export default function Settings() {
         <SegmentedTabs items={managerTabs} value={categoryManagerTab} onChange={setCategoryManagerTab} />
 
         {categoryManagerTab === "categories" ? (
-          <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="grid gap-4 bg-[#f3f5f9] p-3 sm:bg-[#f6f8fc] sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
             <section className="rounded-lg border border-line bg-white p-4">
               <div className="mb-4">
                 <p className="page-kicker">Category</p>
@@ -1521,7 +1524,7 @@ export default function Settings() {
                 <h2 className="section-title">분류 목록</h2>
                 <p className="mt-1 text-sm font-semibold text-slate-500">장비번호의 큰 접두어와 분류명을 관리합니다.</p>
               </div>
-              <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+              <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
                 {categories.map((category, index) => {
                   const types = typesByCategory.get(category.category_id) || typesByCategory.get(category.category_name) || [];
                   return (
@@ -1583,7 +1586,7 @@ export default function Settings() {
             </section>
           </div>
         ) : (
-          <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="grid gap-4 bg-[#f3f5f9] p-3 sm:bg-[#f6f8fc] sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
             <section className="rounded-lg border border-line bg-white p-4">
               <div className="mb-4">
                 <p className="page-kicker">Device Item</p>
@@ -1594,7 +1597,7 @@ export default function Settings() {
 
             <section className="overflow-hidden rounded-lg border border-line bg-white">
               <UnderlineTabs items={typeFilterTabs} value={categoryFilterTab} onChange={setCategoryFilterTab} />
-              <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+              <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
                 {filteredTypes.map((type, index) => (
                   <div key={type.type_id} className="rounded-lg border border-line bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -1679,7 +1682,7 @@ export default function Settings() {
     return (
       <section className="panel overflow-hidden">
         <SegmentedTabs items={reasonTabs} value={reasonManagerTab} onChange={setReasonManagerTab} />
-        <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid gap-4 bg-[#f3f5f9] p-3 sm:bg-[#f6f8fc] sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <section className="rounded-lg border border-line bg-white p-4">
             <div className="mb-4">
               <p className="page-kicker">Reasons</p>
@@ -1702,7 +1705,7 @@ export default function Settings() {
               <h3 className="section-title">{currentLabel} 목록</h3>
               <p className="mt-1 text-sm font-semibold text-slate-500">현재 탭에 등록된 항목 {rows.length}개</p>
             </div>
-            <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+            <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
               {rows.map((reason) => (
                 <div key={reason.reason_id} className="rounded-lg border border-line bg-white p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -1775,7 +1778,7 @@ export default function Settings() {
           }}
         />
 
-        <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid gap-4 bg-[#f3f5f9] p-3 sm:bg-[#f6f8fc] sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <section className="rounded-lg border border-line bg-white p-4">
             <div className="mb-4">
               <p className="page-kicker">User Options</p>
@@ -1804,7 +1807,7 @@ export default function Settings() {
                 </div>
               </div>
             </div>
-            <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+            <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
               {rows.map((option) => (
                 <div key={option.option_id} className="rounded-lg border border-line bg-white p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -1864,7 +1867,7 @@ export default function Settings() {
 
     return (
       <section className="panel overflow-hidden">
-        <div className="grid gap-4 p-3 sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
+        <div className="grid gap-4 bg-[#f3f5f9] p-3 sm:bg-[#f6f8fc] sm:p-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]">
           <section className="rounded-lg border border-line bg-white p-4">
             <div className="mb-4">
               <p className="page-kicker">Institution</p>
@@ -1894,7 +1897,7 @@ export default function Settings() {
                 기관 관리로 이동
               </Link>
             </div>
-            <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+            <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
               {rows.map((institution) => (
                 <div key={institution.institution_id} className="rounded-lg border border-line bg-white p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -2042,7 +2045,29 @@ export default function Settings() {
         </div>
       </section>
       <Message message={message} />
-      <nav className="panel scrollbar-none sticky top-[3.65rem] z-10 flex max-w-full gap-2 overflow-x-auto p-2 sm:top-[5.75rem] lg:top-3">
+      <div className="panel sticky top-[3.65rem] z-10 p-2 sm:hidden">
+        <label
+          className="relative flex min-h-12 items-center overflow-hidden rounded-[11px] border border-[#d4dae4] bg-white transition focus-within:border-brand focus-within:ring-[3px] focus-within:ring-[#dbe7ff]"
+          htmlFor="settings-mobile-menu"
+        >
+          <span className="sr-only">설정 메뉴 선택</span>
+          <span className="pointer-events-none absolute left-2.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-[#eef4ff] text-brand">
+            <ActiveSettingsIcon size={17} />
+          </span>
+          <select
+            id="settings-mobile-menu"
+            className="h-12 w-full cursor-pointer appearance-none border-0 bg-transparent pl-14 pr-12 text-[15px] font-extrabold text-ink outline-none"
+            value={activeTab}
+            onChange={(event) => setActiveTab(event.target.value)}
+          >
+            {visibleTabs.map((tab) => (
+              <option key={tab.id} value={tab.id}>{tab.label}</option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={19} />
+        </label>
+      </div>
+      <nav className="panel scrollbar-none sticky top-[5.75rem] z-10 hidden max-w-full gap-2 overflow-x-auto p-2 sm:flex lg:top-3">
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -2122,7 +2147,7 @@ export default function Settings() {
 
               {typeDevicesView.devices.length ? (
                 <>
-                  <div className="grid gap-2 xl:hidden">
+                  <div className="mobile-list-surface grid xl:hidden">
                     {typeDevicesView.devices.map((device) => (
                       <div key={device.device_id} className="rounded-lg border border-line bg-white p-4">
                         <div className="flex items-start justify-between gap-3">

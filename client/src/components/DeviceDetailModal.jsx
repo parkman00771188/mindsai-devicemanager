@@ -1,20 +1,46 @@
 import { X } from "lucide-react";
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { DeviceDetailContent } from "../pages/DeviceDetail.jsx";
 
 export default function DeviceDetailModal({ device, deviceId, onClose, onChanged }) {
   const resolvedDeviceId = deviceId || device?.device_id;
+
+  useEffect(() => {
+    if (!resolvedDeviceId) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [resolvedDeviceId]);
+
   if (!resolvedDeviceId) return null;
 
-  return (
-    <div className="fixed inset-0 z-[70] flex bg-slate-950/55 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-slate-950/55 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm"
+      onClick={onClose}
+    >
       <section
-        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f3f5f9] shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:h-auto sm:max-h-[94vh] sm:max-w-6xl sm:rounded-2xl"
+        className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[20px] border border-white/70 bg-[#f3f5f9] shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:max-h-[94vh] sm:max-w-6xl sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <button className="btn-secondary absolute right-3 top-3 z-30 h-11 w-11 bg-white/95 p-0 shadow-soft sm:right-9 sm:top-9 sm:shadow-none" type="button" onClick={onClose} aria-label="상세 팝업 닫기">
+        <header className="flex min-h-14 items-center justify-between gap-3 border-b border-line bg-white px-3 py-2 sm:hidden">
+          <div className="min-w-0">
+            <p className="text-xs font-extrabold text-brand">장비 상세</p>
+            <p className="mt-0.5 truncate text-sm font-extrabold text-ink">{resolvedDeviceId}</p>
+          </div>
+          <button className="btn-secondary h-10 w-10 shrink-0 p-0" type="button" onClick={onClose} aria-label="상세 팝업 닫기">
+            <X size={19} />
+          </button>
+        </header>
+        <button className="btn-secondary absolute right-9 top-9 z-30 hidden h-11 w-11 bg-white/95 p-0 sm:flex" type="button" onClick={onClose} aria-label="상세 팝업 닫기">
           <X size={20} />
         </button>
-        <div className="min-h-0 flex-1 overflow-auto px-3 pb-4 pt-16 sm:px-5 sm:pb-5 sm:pt-5">
+        <div className="min-h-0 flex-1 overscroll-contain overflow-auto p-3 sm:p-5">
           <DeviceDetailContent
             deviceId={resolvedDeviceId}
             inModal
@@ -26,6 +52,7 @@ export default function DeviceDetailModal({ device, deviceId, onClose, onChanged
           />
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }

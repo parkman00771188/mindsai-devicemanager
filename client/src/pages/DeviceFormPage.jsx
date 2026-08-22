@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -27,9 +28,18 @@ export default function DeviceFormPage({ mode }) {
   if (isEdit && !device && !error) return <Loading />;
   return (
     <div className="app-page">
-      <section className="hero-strip">
-        <h1 className="page-title">{isEdit ? "장비 수정" : "장비 등록"}</h1>
+      <section className="hero-strip relative">
+        <h1 className="page-title pr-14 sm:pr-0">{isEdit ? "장비 수정" : "장비 등록"}</h1>
         <p className="mt-1 text-sm text-slate-500">{isEdit ? "장비 정보 변경은 이력에 기록됩니다." : "장비번호와 QR 코드는 등록 시 자동 생성됩니다."}</p>
+        <button
+          className="btn-secondary absolute right-3 top-3 h-10 w-10 p-0 sm:hidden"
+          type="button"
+          onClick={() => navigate("/devices")}
+          aria-label={`${isEdit ? "장비 수정" : "장비 등록"} 닫기`}
+          title="닫기"
+        >
+          <X size={18} />
+        </button>
       </section>
       {error ? <div className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
       <DeviceForm initialDevice={device} mode={isEdit ? "edit" : "create"} onSubmit={submit} busy={busy} />

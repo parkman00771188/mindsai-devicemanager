@@ -44,7 +44,7 @@ export default function SearchPage() {
           <span className="text-sm font-semibold text-slate-500">{results.length}건</span>
         </div>
         {results.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mobile-list-surface grid rounded-lg sm:bg-[#f6f8fc] md:grid-cols-2 xl:grid-cols-3">
             {results.map((device) => (
               <Link key={device.device_id} to={`/devices/${device.device_id}`} className="mobile-card transition hover:border-cyan-200">
                 <div className="flex items-start justify-between gap-3">

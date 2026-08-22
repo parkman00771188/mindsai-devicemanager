@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ClipboardList, HardDrive, LayoutGrid, Menu, Monitor, MoreHorizontal, PackageCheck, Plus, Printer, QrCode, RotateCcw, Search, TabletSmartphone, UserRound, Wrench, X } from "lucide-react";
+import { Building2, CheckCircle2, ChevronRight, ClipboardList, HardDrive, LayoutGrid, Menu, Monitor, PackageCheck, Plus, Printer, QrCode, RotateCcw, Search, SlidersHorizontal, TabletSmartphone, UserRound, Wrench, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
@@ -8,7 +8,6 @@ import DeviceProcessModal from "../components/DeviceProcessModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import Loading from "../components/Loading.jsx";
 import PhotoViewer from "../components/PhotoViewer.jsx";
-import QrDownloadModal from "../components/QrDownloadModal.jsx";
 import QrPrintModal from "../components/QrPrintModal.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { deviceCapacity, deviceTitle, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
@@ -154,8 +153,7 @@ function MobileStatusPill({ status }) {
   );
 }
 
-function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
-  const mineSelected = isMineFilter(mine);
+function CategoryTabs({ categories, value, onChange, compact = false }) {
   if (compact) {
     return (
       <div className="flex items-center border-b border-line bg-white px-2 py-2.5 sm:px-3">
@@ -164,7 +162,7 @@ function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
             <button
               type="button"
               className={`flex min-h-9 snap-start items-center rounded-lg px-4 text-sm font-extrabold transition ${
-                !value && !mineSelected ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
+                !value ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
               }`}
               onClick={() => onChange("")}
             >
@@ -198,7 +196,7 @@ function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
           <button
             type="button"
             className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
-              !value && !mineSelected ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
+              !value ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
             }`}
             onClick={() => onChange("")}
           >
@@ -225,7 +223,7 @@ function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
   );
 }
 
-function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
+function StatusFilters({ value, mine, onChange, compact = false }) {
   const mineSelected = isMineFilter(mine);
   const orderedStatuses = [
     ...STATUS_OPTIONS.filter(([status]) => ["AVAILABLE", "RENTED", "DELIVERED"].includes(status)),
@@ -233,60 +231,34 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
   ];
 
   if (compact) {
+    if (mineSelected) return null;
+
     const buttonClass = (active) =>
-      `inline-flex min-h-10 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-3.5 text-sm font-extrabold leading-tight transition ${
+      `inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3.5 text-sm font-extrabold leading-tight transition ${
         active
           ? "border-brand bg-white text-brand shadow-[0_0_0_1px_rgba(37,99,235,0.08)]"
           : "border-line bg-white text-slate-700 hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand"
       }`;
 
     return (
-      <div className="space-y-3 border-t border-line pt-3">
-        {onMine ? (
-          <div className="grid gap-2 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-center">
-            <p className="text-sm font-extrabold text-ink">조회 범위</p>
-            <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-fit" role="group" aria-label="장비 조회 범위">
-              <button
-                className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
-                type="button"
-                onClick={() => onChange("")}
-                aria-pressed={!mineSelected}
-              >
-                <LayoutGrid size={16} />
-                전체
-              </button>
-              <button
-                className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
-                type="button"
-                onClick={onMine}
-                aria-pressed={mineSelected}
-              >
-                <UserRound size={16} />
-                내 장비
-              </button>
-            </div>
+      <div className="border-t border-line pt-3">
+        <div className="grid gap-2 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-start">
+          <p className="text-sm font-extrabold text-ink lg:pt-2.5">상태</p>
+          <div className="flex flex-wrap gap-2">
+            <button className={buttonClass(!value)} type="button" onClick={() => onChange("")}>
+              전체 상태
+            </button>
+            {orderedStatuses.map(([status, label]) => {
+              const Icon = statusIconMap[status] || PackageCheck;
+              return (
+                <button key={status} className={buttonClass(value === status)} type="button" onClick={() => onChange(status)}>
+                  <Icon size={16} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
-        ) : null}
-
-        {!onMine || !mineSelected ? (
-          <div className="grid gap-2 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-start">
-            <p className="text-sm font-extrabold text-ink lg:pt-2.5">상태</p>
-            <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
-              <button className={buttonClass(!value)} type="button" onClick={() => onChange("")}>
-                전체 상태
-              </button>
-              {orderedStatuses.map(([status, label]) => {
-                const Icon = statusIconMap[status] || PackageCheck;
-                return (
-                  <button key={status} className={buttonClass(value === status)} type="button" onClick={() => onChange(status)}>
-                    <Icon size={16} />
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
+        </div>
       </div>
     );
   }
@@ -305,18 +277,6 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
           <LayoutGrid size={18} />
           전체
         </button>
-        {onMine ? (
-          <button
-            className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-              mineSelected ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
-            }`}
-            type="button"
-            onClick={onMine}
-          >
-            <UserRound size={18} />
-            내 장비
-          </button>
-        ) : null}
         {orderedStatuses.map(([status, label]) => {
           const Icon = statusIconMap[status] || PackageCheck;
           return (
@@ -333,6 +293,35 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function DeviceScopeSelector({ mine, onChange }) {
+  const mineSelected = isMineFilter(mine);
+  return (
+    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <p className="shrink-0 text-sm font-extrabold text-ink">조회 범위</p>
+      <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-auto" role="group" aria-label="장비 조회 범위">
+        <button
+          className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+          type="button"
+          onClick={() => onChange(false)}
+          aria-pressed={!mineSelected}
+        >
+          <LayoutGrid size={16} />
+          전체
+        </button>
+        <button
+          className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+          type="button"
+          onClick={() => onChange(true)}
+          aria-pressed={mineSelected}
+        >
+          <UserRound size={16} />
+          내 장비
+        </button>
       </div>
     </div>
   );
@@ -365,33 +354,16 @@ function DetailItem({ label, value }) {
 }
 
 function MobileActionPanel({ isAdmin, onOpenCatalog }) {
-  if (!isAdmin) {
-    return (
-      <section className="panel grid grid-cols-2 gap-2 p-3 sm:hidden">
-        <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" type="button" onClick={onOpenCatalog}>
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
-            <PackageCheck size={21} />
-          </span>
-          <span className="line-clamp-2 text-xs font-extrabold text-ink">대여하기</span>
-        </button>
-        <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
-            <Plus size={22} />
-          </span>
-          <span className="line-clamp-2 text-xs font-extrabold text-ink">장비 등록</span>
-        </Link>
-      </section>
-    );
-  }
+  if (isAdmin) return null;
 
   return (
     <section className="panel grid grid-cols-1 gap-2 p-3 sm:hidden">
-      <Link className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" to="/devices/new">
+      <button className="group flex min-w-0 flex-col items-center justify-center gap-2 rounded-lg p-2 text-center" type="button" onClick={onOpenCatalog}>
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-lift transition group-hover:bg-[#1d4ed8]">
-          <Plus size={22} />
+          <PackageCheck size={21} />
         </span>
-        <span className="line-clamp-2 text-xs font-extrabold text-ink">장비 등록</span>
-      </Link>
+        <span className="line-clamp-2 text-xs font-extrabold text-ink">대여하기</span>
+      </button>
     </section>
   );
 }
@@ -410,7 +382,7 @@ function MobileInfoTile({ icon: Icon, label, value }) {
   );
 }
 
-function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
+function DeviceMobileCard({ device, index, onOpen, action }) {
   const photos = splitPhotoPaths(device.photo_paths || device.main_photo_path);
   const context = currentStatusContext(device);
   const currentLabel = device.status === "DELIVERED" ? "납품처" : "현재 사용자";
@@ -420,7 +392,7 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
 
   return (
     <article
-      className="mobile-card cursor-pointer overflow-hidden p-3"
+      className="mobile-card cursor-pointer overflow-hidden !border-[#dbe7ff] bg-white p-3 shadow-[0_4px_14px_rgba(54,77,125,0.11)]"
       role="button"
       tabIndex={0}
       onClick={onOpen}
@@ -458,30 +430,18 @@ function DeviceMobileCard({ device, index, onOpen, onQr, action }) {
       {action ? (
         <div className="mt-3">{action}</div>
       ) : (
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+        <div className="mt-3 border-t border-line pt-3">
           <p className="flex min-w-0 items-start gap-2 text-xs font-bold leading-5 text-slate-600" title={memoValue === "-" ? "" : memoValue}>
             <Building2 size={15} className="shrink-0 text-slate-500" />
             <span className="min-w-0 break-words">{memoValue}</span>
           </p>
-          <button
-            className="btn-secondary h-10 shrink-0 border-[#dbe7ff] px-3 text-xs text-brand"
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onQr?.();
-            }}
-          >
-            <QrCode size={16} />
-            QR 보기
-          </button>
         </div>
       )}
     </article>
   );
 }
 
-function DeviceTable({ devices, onOpen, onQr, actionForDevice, startIndex = 0 }) {
+function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
   return (
     <div className="hidden p-2 lg:block">
       <div className="overflow-x-auto rounded-lg border border-line/70">
@@ -497,8 +457,7 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice, startIndex = 0 })
               <th className="w-[7%]">용량</th>
               <th className="w-[8%]">대여자</th>
               <th className="w-[9%]">목적/사유</th>
-              <th className="w-[10%]">소유 소속</th>
-              <th className="w-[4%]" aria-label="관리" />
+              <th className="w-[14%]">소유 소속</th>
             </tr>
           </thead>
           <tbody>
@@ -516,24 +475,6 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice, startIndex = 0 })
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_status_purpose || device.current_purpose || ""}>{device.current_status_purpose || device.current_purpose || "-"}</span></td>
                 <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
-                <td className="table-cell text-center">
-                  {actionForDevice ? (
-                    actionForDevice(device)
-                  ) : (
-                    <button
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-[#eef4ff] hover:text-brand"
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onQr?.(device);
-                      }}
-                      aria-label={`${device.device_id} QR 코드 보기`}
-                      title="QR 코드 보기"
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
@@ -543,62 +484,22 @@ function DeviceTable({ devices, onOpen, onQr, actionForDevice, startIndex = 0 })
   );
 }
 
-function DeviceList({ devices, onOpen, onQr, actionForDevice, startIndex = 0 }) {
+function DeviceList({ devices, onOpen, actionForDevice, startIndex = 0 }) {
   return (
     <>
-      <div className="grid gap-3 p-2 sm:grid-cols-2 lg:hidden">
+      <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] lg:hidden">
         {devices.map((device, index) => (
           <DeviceMobileCard
             key={device.device_id}
             device={device}
             index={startIndex + index}
             onOpen={() => onOpen(device)}
-            onQr={() => onQr?.(device)}
             action={actionForDevice?.(device, true)}
           />
         ))}
       </div>
-      <DeviceTable devices={devices} onOpen={onOpen} onQr={onQr} actionForDevice={actionForDevice} startIndex={startIndex} />
+      <DeviceTable devices={devices} onOpen={onOpen} actionForDevice={actionForDevice} startIndex={startIndex} />
     </>
-  );
-}
-
-function DevicePagination({ total, page, pageSize, onChange }) {
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const firstVisible = Math.max(0, Math.min(page - 2, pageCount - 5));
-  const visiblePages = Array.from({ length: Math.min(5, pageCount) }, (_, index) => firstVisible + index);
-  const pageButtonClass = "inline-flex h-8 w-8 !min-h-8 items-center justify-center rounded-lg border border-line bg-white p-0 text-xs font-extrabold text-slate-600 transition hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand disabled:cursor-not-allowed disabled:opacity-35";
-
-  return (
-    <div className="flex flex-col gap-3 border-t border-line px-3 py-3 text-sm font-bold text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-      <p>전체 {total}건</p>
-      <div className="flex items-center justify-center gap-1">
-        <button className={pageButtonClass} type="button" onClick={() => onChange(0)} disabled={page === 0} aria-label="첫 페이지">
-          <ChevronsLeft size={15} />
-        </button>
-        <button className={pageButtonClass} type="button" onClick={() => onChange(page - 1)} disabled={page === 0} aria-label="이전 페이지">
-          <ChevronLeft size={15} />
-        </button>
-        {visiblePages.map((pageIndex) => (
-          <button
-            key={pageIndex}
-            className={`${pageButtonClass} ${pageIndex === page ? "!border-brand !bg-brand !text-white shadow-lift" : ""}`}
-            type="button"
-            onClick={() => onChange(pageIndex)}
-            aria-current={pageIndex === page ? "page" : undefined}
-          >
-            {pageIndex + 1}
-          </button>
-        ))}
-        <button className={pageButtonClass} type="button" onClick={() => onChange(page + 1)} disabled={page >= pageCount - 1} aria-label="다음 페이지">
-          <ChevronRight size={15} />
-        </button>
-        <button className={pageButtonClass} type="button" onClick={() => onChange(pageCount - 1)} disabled={page >= pageCount - 1} aria-label="마지막 페이지">
-          <ChevronsRight size={15} />
-        </button>
-      </div>
-      <p className="text-left sm:text-right">{pageSize}개씩 보기</p>
-    </div>
   );
 }
 
@@ -714,12 +615,11 @@ export default function Devices() {
   const [devices, setDevices] = useState(null);
   const [categoryRows, setCategoryRows] = useState([]);
   const [organizations, setOrganizations] = useState([]);
-  const [qrDevice, setQrDevice] = useState(null);
   const [detailDevice, setDetailDevice] = useState(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [qrPrintOpen, setQrPrintOpen] = useState(false);
   const [processDevice, setProcessDevice] = useState(null);
-  const [devicePage, setDevicePage] = useState(0);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({
     keyword: searchParams.get("keyword") || "",
     status: searchParams.get("status") || "",
@@ -738,7 +638,6 @@ export default function Devices() {
   }
 
   function applyFilters(nextFilters) {
-    setDevicePage(0);
     setFilters(nextFilters);
     setSearchParams(visibleFilters(nextFilters));
   }
@@ -774,14 +673,10 @@ export default function Devices() {
   }, [categoryRows, devices]);
 
   const sortedDevices = useMemo(() => sortDeviceRows(devices || []), [devices]);
-  const devicePageSize = 50;
-  const devicePageCount = Math.max(1, Math.ceil(sortedDevices.length / devicePageSize));
-  const safeDevicePage = Math.min(devicePage, devicePageCount - 1);
-  const visibleDevices = sortedDevices.slice(safeDevicePage * devicePageSize, (safeDevicePage + 1) * devicePageSize);
-
-  useEffect(() => {
-    if (devicePage !== safeDevicePage) setDevicePage(safeDevicePage);
-  }, [devicePage, safeDevicePage]);
+  const mobileAdvancedFilterCount = [
+    filters.owner_organization,
+    filters.status
+  ].filter(Boolean).length;
 
   if (!devices) return <Loading />;
 
@@ -842,12 +737,82 @@ export default function Devices() {
           applyFilters(filters);
         }}
       >
-        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(11rem,15rem)_minmax(22rem,1fr)_auto_auto] xl:items-center">
+        <DeviceScopeSelector
+          mine={filters.mine}
+          onChange={(mine) => applyFilters({ ...filters, status: "", mine: mine ? "1" : allDevicesFilter })}
+        />
+
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:hidden">
+          <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input
+              className="input pl-10"
+              value={filters.keyword}
+              onChange={(event) => setFilters((current) => ({ ...current, keyword: event.target.value }))}
+              placeholder="장비 검색"
+            />
+          </div>
+          <button
+            className={`btn-secondary relative h-11 w-11 shrink-0 p-0 ${mobileFiltersOpen || mobileAdvancedFilterCount ? "border-[#b9cdfa] bg-[#eef4ff] text-brand" : ""}`}
+            type="button"
+            onClick={() => setMobileFiltersOpen((current) => !current)}
+            aria-label={mobileFiltersOpen ? "상세 필터 닫기" : "상세 필터 열기"}
+            aria-expanded={mobileFiltersOpen}
+            aria-controls="device-mobile-filters"
+            title="상세 필터"
+          >
+            <SlidersHorizontal size={18} />
+            {mobileAdvancedFilterCount ? (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-extrabold text-white">
+                {mobileAdvancedFilterCount}
+              </span>
+            ) : null}
+          </button>
+          <button className="btn-primary h-11 w-11 shrink-0 p-0" aria-label="장비 조회하기">
+            <Search size={17} />
+          </button>
+        </div>
+
+        {mobileFiltersOpen ? (
+          <div id="device-mobile-filters" className="space-y-3 border-t border-line pt-3 sm:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <SlidersHorizontal className="shrink-0 text-brand" size={17} />
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-ink">상세 필터</p>
+                  <p className="text-xs font-bold text-slate-500">상태와 소속을 선택할 수 있습니다.</p>
+                </div>
+              </div>
+              <button className="btn-secondary h-9 shrink-0 px-2.5 text-xs" type="button" onClick={() => applyFilters({ ...emptyFilters, mine: filters.mine })}>
+                <RotateCcw size={15} />
+                초기화
+              </button>
+            </div>
+            <select
+              id="device-mobile-owner-organization-filter"
+              className="select"
+              value={filters.owner_organization}
+              onChange={(event) => setFilters((current) => ({ ...current, owner_organization: event.target.value }))}
+              aria-label="장비 소유 소속"
+            >
+              <option value="">전체 소속</option>
+              {organizations.map((organization) => <option key={organization} value={organization}>{organization}</option>)}
+            </select>
+            <StatusFilters
+              value={filters.status}
+              mine={filters.mine}
+              onChange={(status) => applyFilters({ ...filters, status, mine: allDevicesFilter })}
+              compact
+            />
+          </div>
+        ) : null}
+
+        <div className="hidden min-w-0 gap-2 sm:grid sm:grid-cols-2 xl:grid-cols-[minmax(11rem,15rem)_minmax(22rem,1fr)_auto_auto] xl:items-center">
           <select
             id="device-owner-organization-filter"
             className="select"
             value={filters.owner_organization}
-            onChange={(event) => setFilters((current) => ({ ...current, owner_organization: event.target.value, mine: allDevicesFilter }))}
+            onChange={(event) => setFilters((current) => ({ ...current, owner_organization: event.target.value }))}
             aria-label="장비 소유 소속"
           >
             <option value="">전체 소속</option>
@@ -862,7 +827,7 @@ export default function Devices() {
               placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
             />
           </div>
-          <button className="btn-secondary w-full whitespace-nowrap px-4" type="button" onClick={() => applyFilters({ ...emptyFilters, mine: defaultMineFilter })}>
+          <button className="btn-secondary w-full whitespace-nowrap px-4" type="button" onClick={() => applyFilters({ ...emptyFilters, mine: filters.mine })}>
             <RotateCcw size={16} />
             필터 초기화
           </button>
@@ -871,13 +836,14 @@ export default function Devices() {
             조회하기
           </button>
         </div>
-        <StatusFilters
-          value={filters.status}
-          mine={filters.mine}
-          onMine={() => applyFilters({ ...filters, status: "", mine: "1", category: "" })}
-          onChange={(status) => applyFilters({ ...filters, status, mine: allDevicesFilter })}
-          compact
-        />
+        <div className="hidden sm:block">
+          <StatusFilters
+            value={filters.status}
+            mine={filters.mine}
+            onChange={(status) => applyFilters({ ...filters, status, mine: allDevicesFilter })}
+            compact
+          />
+        </div>
         <KeywordChip keyword={appliedKeyword} onClear={() => applyFilters({ ...filters, keyword: "" })} />
       </form>
 
@@ -885,16 +851,12 @@ export default function Devices() {
         <CategoryTabs
           categories={categories}
           value={filters.category}
-          mine={filters.mine}
-          onChange={(category) => applyFilters({ ...filters, category, mine: allDevicesFilter })}
+          onChange={(category) => applyFilters({ ...filters, category })}
           compact
         />
 
         {sortedDevices.length ? (
-          <>
-            <DeviceList devices={visibleDevices} onOpen={setDetailDevice} onQr={setQrDevice} startIndex={safeDevicePage * devicePageSize} />
-            <DevicePagination total={sortedDevices.length} page={safeDevicePage} pageSize={devicePageSize} onChange={setDevicePage} />
-          </>
+          <DeviceList devices={sortedDevices} onOpen={setDetailDevice} />
         ) : (
           <div className="p-4">
             <EmptyState
@@ -932,7 +894,6 @@ export default function Devices() {
         onClose={() => setDetailDevice(null)}
         onChanged={() => load()}
       />
-      <QrDownloadModal device={qrDevice} onClose={() => setQrDevice(null)} />
     </div>
   );
 }

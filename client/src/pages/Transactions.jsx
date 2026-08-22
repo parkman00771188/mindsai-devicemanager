@@ -96,6 +96,8 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
     return grouped;
   }, [rows]);
   const currentMonthKey = monthKey(cursor);
+  const today = new Date();
+  const todayKey = dateKey(today);
   const monthDateKeys = useMemo(
     () => [...groupedRows.keys()].filter((key) => key.startsWith(currentMonthKey)).sort(),
     [groupedRows, currentMonthKey]
@@ -104,10 +106,15 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
 
   useEffect(() => {
     setSelectedDateKey((current) => {
-      if (current.startsWith(currentMonthKey) && groupedRows.has(current)) return current;
+      if (current.startsWith(currentMonthKey)) return current;
       return monthDateKeys.at(-1) || "";
     });
   }, [currentMonthKey, groupedRows, monthDateKeys]);
+
+  function focusToday() {
+    onCursorChange(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedDateKey(todayKey);
+  }
 
   const firstOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const gridStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1 - firstOfMonth.getDay());
@@ -118,7 +125,6 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
   });
   const selectedRows = selectedDateKey ? groupedRows.get(selectedDateKey) || [] : [];
   const monthCount = monthDateKeys.reduce((count, key) => count + (groupedRows.get(key)?.length || 0), 0);
-  const todayKey = dateKey(new Date());
   const weekdayLabels = ["일", "월", "화", "수", "목", "금", "토"];
 
   return (
@@ -132,7 +138,7 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
           <button className="btn-secondary h-9 w-9 shrink-0 p-0" type="button" onClick={() => onCursorChange(shiftMonth(cursor, -1))} aria-label="이전 달" title="이전 달">
             <ChevronLeft size={17} />
           </button>
-          <button className="btn-secondary h-9 px-3 text-xs" type="button" onClick={() => onCursorChange(new Date())}>이번 달</button>
+          <button className="btn-secondary h-9 px-3 text-xs" type="button" onClick={focusToday}>오늘</button>
           <button className="btn-secondary h-9 w-9 shrink-0 p-0" type="button" onClick={() => onCursorChange(shiftMonth(cursor, 1))} aria-label="다음 달" title="다음 달">
             <ChevronRight size={17} />
           </button>
@@ -221,7 +227,9 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
           </div>
         </div>
       ) : (
-        <div className="border-t border-line px-4 py-6 text-center text-sm font-bold text-slate-500">이력이 있는 날짜를 선택하면 상세 목록이 표시됩니다.</div>
+        <div className="border-t border-line px-4 py-6 text-center text-sm font-bold text-slate-500">
+          {selectedDateKey ? `${calendarDateTitle(selectedDateKey)}에 등록된 이력이 없습니다.` : "이력이 있는 날짜를 선택하면 상세 목록이 표시됩니다."}
+        </div>
       )}
     </div>
   );
@@ -502,9 +510,9 @@ export default function Transactions() {
 
             <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2 border-t border-line pt-3">
               <p className="pt-2 text-sm font-extrabold text-ink">작업</p>
-              <div className="scrollbar-none flex max-w-full snap-x gap-1.5 overflow-x-auto pb-1">
+              <div className="flex max-w-full flex-wrap gap-1.5">
                 <button
-                  className={`inline-flex min-h-9 shrink-0 snap-start items-center justify-center rounded-lg border px-3 text-[13px] font-extrabold transition ${!filters.action_type ? "border-brand bg-brand text-white" : "border-line bg-white text-slate-600 hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand"}`}
+                  className={`inline-flex min-h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-extrabold transition ${!filters.action_type ? "border-brand bg-brand text-white" : "border-line bg-white text-slate-600 hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand"}`}
                   type="button"
                   onClick={() => selectAction("")}
                 >
@@ -513,7 +521,7 @@ export default function Transactions() {
                 {actionChoices.map((action) => (
                   <button
                     key={action}
-                    className={`inline-flex min-h-9 shrink-0 snap-start items-center justify-center rounded-lg border px-3 text-[13px] font-extrabold transition ${filters.action_type === action ? "border-brand bg-brand text-white" : "border-line bg-white text-slate-600 hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand"}`}
+                    className={`inline-flex min-h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-extrabold transition ${filters.action_type === action ? "border-brand bg-brand text-white" : "border-line bg-white text-slate-600 hover:border-[#b9cdfa] hover:bg-[#eef4ff] hover:text-brand"}`}
                     type="button"
                     onClick={() => selectAction(action)}
                   >
@@ -586,7 +594,7 @@ export default function Transactions() {
           )
         ) : rows.length ? (
           <>
-            <div className="grid gap-2 p-2 sm:grid-cols-2 xl:hidden">
+            <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] xl:hidden">
               {rows.map((row) => {
                 const photos = splitPhotoPaths(row.photo_paths);
                 const summary = transactionPlace(row) || transactionMemo(row) || row.issue_description || "메모 없음";

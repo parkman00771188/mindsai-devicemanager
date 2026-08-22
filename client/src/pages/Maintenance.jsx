@@ -71,7 +71,7 @@ export default function Maintenance() {
           <div className="panel overflow-hidden">
             {rows.length ? (
               <>
-                <div className="grid gap-2 p-2 sm:grid-cols-2 md:grid-cols-1 xl:hidden">
+                <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] md:grid-cols-1 xl:hidden">
                   {rows.map((row) => (
                     <article key={`${row.maintenance_id}-mobile`} className="rounded-lg border border-line bg-white p-4 shadow-soft">
                       <div className="flex flex-wrap items-start justify-between gap-3">

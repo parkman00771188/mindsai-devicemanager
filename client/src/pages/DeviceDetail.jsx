@@ -785,12 +785,12 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   }
 
   const detailShellClass = inModal ? "space-y-3 sm:space-y-5" : "app-page";
-  const heroClass = inModal ? "rounded-lg border border-line bg-white p-3 shadow-soft sm:p-4" : "hero-strip";
+  const heroClass = inModal ? "rounded-xl border border-line bg-white p-3 shadow-soft sm:p-4" : "hero-strip";
   const heroLayoutClass = inModal
     ? "grid gap-3"
     : "flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between";
   const heroIdentityClass = inModal
-    ? "grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-3 pr-12 sm:flex sm:items-center sm:gap-4 sm:pr-14"
+    ? "grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-3 sm:flex sm:items-center sm:gap-4 sm:pr-14"
     : "flex flex-col gap-4 sm:flex-row sm:items-center";
   const heroPhotoClass = inModal
     ? "flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#eef4ff] transition hover:ring-4 hover:ring-[#dbe7ff] sm:h-20 sm:w-20"
@@ -920,12 +920,12 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
                   수정
                 </Link>
                 {canDelete ? (
-                  <button className={inModal ? "btn-dispose col-span-2" : "btn-dispose"} type="button" onClick={() => setDeleteOpen(true)}>
+                  <button className="btn-dispose" type="button" onClick={() => setDeleteOpen(true)}>
                     <Trash2 size={18} />
                     삭제
                   </button>
                 ) : canDispose ? (
-                  <button className={inModal ? "btn-dispose col-span-2" : "btn-dispose"} type="button" onClick={() => setDisposeOpen(true)}>
+                  <button className="btn-dispose" type="button" onClick={() => setDisposeOpen(true)}>
                     <Trash2 size={18} />
                     폐기
                   </button>
@@ -937,7 +937,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
       </section>
 
       <div className={mainGridClass}>
-        <section className="overflow-hidden rounded-lg border border-line bg-white shadow-soft">
+        <section className={`overflow-hidden border border-line bg-white shadow-soft ${inModal ? "rounded-xl" : "rounded-lg"}`}>
           {inModal ? (
             <div className={`border-b ${currentStatus.className}`}>
               <div className="border-b border-current/15 px-3 py-3">
@@ -1104,7 +1104,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
               </div>
             </div>
             {transactions.length ? (
-              <div className={`grid gap-2 px-3 pb-3 sm:gap-3 sm:px-4 sm:pb-4 ${recentGridClass}`}>
+              <div className={`mobile-list-surface grid sm:bg-[#f6f8fc] ${recentGridClass}`}>
                 {pagedTransactions.map((row) => (
                   <RecentTransactionCard
                     key={row.transaction_id}
