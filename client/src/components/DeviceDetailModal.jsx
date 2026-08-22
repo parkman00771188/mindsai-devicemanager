@@ -28,11 +28,7 @@ export default function DeviceDetailModal({ device, deviceId, onClose, onChanged
         className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[20px] border border-white/70 bg-[#f3f5f9] shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:max-h-[94vh] sm:max-w-6xl sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex min-h-14 items-center justify-between gap-3 border-b border-line bg-white px-3 py-2 sm:hidden">
-          <div className="min-w-0">
-            <p className="text-xs font-extrabold text-brand">장비 상세</p>
-            <p className="mt-0.5 truncate text-sm font-extrabold text-ink">{resolvedDeviceId}</p>
-          </div>
+        <header className="flex min-h-14 items-center justify-end border-b border-line bg-white px-3 py-2 sm:hidden">
           <button className="btn-secondary h-10 w-10 shrink-0 p-0" type="button" onClick={onClose} aria-label="상세 팝업 닫기">
             <X size={19} />
           </button>

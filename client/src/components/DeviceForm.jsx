@@ -169,7 +169,7 @@ function photoNameFromPath(path) {
   }
 }
 
-export default function DeviceForm({ initialDevice, mode = "create", onSubmit, busy }) {
+export default function DeviceForm({ initialDevice, mode = "create", onSubmit, busy, inModal = false }) {
   const [form, setForm] = useState(initialDevice || emptyDevice);
   const [categories, setCategories] = useState([]);
   const [deviceTypes, setDeviceTypes] = useState([]);
@@ -355,15 +355,17 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
   }
 
   return (
-    <form className="mx-auto max-w-5xl space-y-5" onSubmit={submit}>
-      <section className="panel px-4 py-6 sm:px-8 sm:py-8">
-        <div className="text-center">
-          <p className="page-kicker">{isCreate ? "신규 등록" : "정보 수정"}</p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-normal text-ink">{isCreate ? "장비 등록" : "장비 정보 수정"}</h2>
-          <p className="mt-2 text-sm font-semibold text-slate-500">{previewName}</p>
-        </div>
+    <form className={`mx-auto max-w-5xl ${inModal ? "space-y-3 sm:space-y-4" : "space-y-5"}`} onSubmit={submit}>
+      <section className={`panel ${inModal ? "px-3 py-4 sm:px-6 sm:py-5" : "px-4 py-6 sm:px-8 sm:py-8"}`}>
+        {!inModal ? (
+          <div className="text-center">
+            <p className="page-kicker">{isCreate ? "신규 등록" : "정보 수정"}</p>
+            <h2 className="mt-1 text-2xl font-extrabold tracking-normal text-ink">{isCreate ? "장비 등록" : "장비 정보 수정"}</h2>
+            <p className="mt-2 text-sm font-semibold text-slate-500">{previewName}</p>
+          </div>
+        ) : null}
 
-        <div className="mt-8 flex justify-end text-xs font-extrabold text-slate-500">
+        <div className={`${inModal ? "" : "mt-8"} flex justify-end text-xs font-extrabold text-slate-500`}>
           <span className="text-[#ef5f7a]">*</span>
           필수입력사항
         </div>
@@ -604,7 +606,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
         </FormRow>
       </section>
 
-      <div className="sticky bottom-20 z-10 flex justify-center rounded-lg bg-white/80 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0">
+      <div className={`sticky z-10 flex justify-center rounded-lg bg-white/80 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0 ${inModal ? "bottom-0" : "bottom-20"}`}>
         <button type="submit" className="btn-primary w-full max-w-sm" disabled={busy || compressing}>
           <Camera size={18} />
           {compressing ? "사진 압축 중" : busy ? "저장 중" : isCreate ? "장비 등록" : "수정 저장"}

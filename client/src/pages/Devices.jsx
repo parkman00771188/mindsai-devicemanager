@@ -1,8 +1,9 @@
 import { Building2, CheckCircle2, ChevronRight, ClipboardList, HardDrive, LayoutGrid, Menu, Monitor, PackageCheck, Plus, Printer, QrCode, RotateCcw, Search, SlidersHorizontal, TabletSmartphone, UserRound, Wrench, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { api, queryString } from "../api/client.js";
 import { getCurrentUser, isAdminUser } from "../auth.js";
+import DeviceCreateModal from "../components/DeviceCreateModal.jsx";
 import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import DeviceProcessModal from "../components/DeviceProcessModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -607,7 +608,6 @@ function RentalCatalogModal({ categories, onClose, onRent, onOpenDevice }) {
 
 export default function Devices() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const isAdmin = isAdminUser(currentUser);
   const defaultMineFilter = isAdmin ? "" : "1";
@@ -629,6 +629,14 @@ export default function Devices() {
   }));
   const searchKey = searchParams.toString();
   const appliedKeyword = searchParams.get("keyword") || "";
+  const createOpen = searchParams.get("register") === "1";
+
+  function setCreateModalOpen(open) {
+    const nextParams = new URLSearchParams(searchParams);
+    if (open) nextParams.set("register", "1");
+    else nextParams.delete("register");
+    setSearchParams(nextParams, { replace: true });
+  }
 
   async function load(nextFilters = filters) {
     const { mine, ...restFilters } = nextFilters;
@@ -699,20 +707,20 @@ export default function Devices() {
               </button>
             ) : null}
             {isAdmin ? (
-              <Link className="btn-primary w-full md:w-auto" to="/devices/new">
+              <button className="btn-primary w-full md:w-auto" type="button" onClick={() => setCreateModalOpen(true)}>
                 <Plus size={18} />
                 장비 등록
-              </Link>
+              </button>
             ) : (
               <>
                 <button className="btn-secondary w-full md:w-auto" type="button" onClick={() => setCatalogOpen(true)}>
                   <PackageCheck size={18} />
                   대여하기
                 </button>
-                <Link className="btn-primary w-full md:w-auto" to="/devices/new">
+                <button className="btn-primary w-full md:w-auto" type="button" onClick={() => setCreateModalOpen(true)}>
                   <Plus size={18} />
                   장비 등록
-                </Link>
+                </button>
               </>
             )}
           </div>
@@ -882,6 +890,15 @@ export default function Devices() {
         />
       ) : null}
       {qrPrintOpen ? <QrPrintModal devices={sortedDevices} categories={categories} onClose={() => setQrPrintOpen(false)} /> : null}
+      {createOpen ? (
+        <DeviceCreateModal
+          onClose={() => setCreateModalOpen(false)}
+          onCreated={async () => {
+            setCreateModalOpen(false);
+            await load(filters);
+          }}
+        />
+      ) : null}
       <DeviceProcessModal
         key={processDevice?.device_id || "rent-catalog"}
         device={processDevice}

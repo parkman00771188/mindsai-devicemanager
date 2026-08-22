@@ -523,7 +523,7 @@ export default function Layout() {
                 </div>
               </div>
               {location.pathname === "/devices" ? (
-                <Link className="btn-primary h-10 shrink-0 gap-1 px-2.5 text-xs sm:hidden" to="/devices/new">
+                <Link className="btn-primary h-10 shrink-0 gap-1 px-2.5 text-xs sm:hidden" to="/devices?register=1">
                   <Plus size={15} />
                   장비 등록
                 </Link>
