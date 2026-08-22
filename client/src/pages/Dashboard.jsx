@@ -386,16 +386,6 @@ export default function Dashboard() {
             </Link>
             <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-auto" role="group" aria-label="대시보드 장비 조회 범위">
               <button
-                className={`flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${isMineScope ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
-                type="button"
-                onClick={() => setDeviceScope("mine")}
-                aria-pressed={isMineScope}
-                disabled={scopeBusy}
-              >
-                <UserRound size={16} />
-                내 장비
-              </button>
-              <button
                 className={`flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!isMineScope ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
                 type="button"
                 onClick={() => setDeviceScope("all")}
@@ -404,6 +394,16 @@ export default function Dashboard() {
               >
                 <LayoutGrid size={16} />
                 전체
+              </button>
+              <button
+                className={`flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${isMineScope ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+                type="button"
+                onClick={() => setDeviceScope("mine")}
+                aria-pressed={isMineScope}
+                disabled={scopeBusy}
+              >
+                <UserRound size={16} />
+                내 장비
               </button>
             </div>
           </div>

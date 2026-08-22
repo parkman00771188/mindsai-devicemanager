@@ -424,15 +424,6 @@ export default function Transactions() {
           <p className="shrink-0 text-sm font-extrabold text-ink">조회 범위</p>
           <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-auto" role="group" aria-label="이력 조회 범위">
             <button
-              className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${isMineHistory ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
-              type="button"
-              onClick={() => selectHistoryScope(true)}
-              aria-pressed={isMineHistory}
-            >
-              <UserRound size={16} />
-              내 장비
-            </button>
-            <button
               className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!isMineHistory ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
               type="button"
               onClick={() => selectHistoryScope(false)}
@@ -440,6 +431,15 @@ export default function Transactions() {
             >
               <LayoutGrid size={16} />
               전체
+            </button>
+            <button
+              className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${isMineHistory ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+              type="button"
+              onClick={() => selectHistoryScope(true)}
+              aria-pressed={isMineHistory}
+            >
+              <UserRound size={16} />
+              내 장비
             </button>
           </div>
         </div>

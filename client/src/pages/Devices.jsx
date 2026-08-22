@@ -247,15 +247,6 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
             <p className="text-sm font-extrabold text-ink">조회 범위</p>
             <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-fit" role="group" aria-label="장비 조회 범위">
               <button
-                className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
-                type="button"
-                onClick={onMine}
-                aria-pressed={mineSelected}
-              >
-                <UserRound size={16} />
-                내 장비
-              </button>
-              <button
                 className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
                 type="button"
                 onClick={() => onChange("")}
@@ -263,6 +254,15 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
               >
                 <LayoutGrid size={16} />
                 전체
+              </button>
+              <button
+                className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+                type="button"
+                onClick={onMine}
+                aria-pressed={mineSelected}
+              >
+                <UserRound size={16} />
+                내 장비
               </button>
             </div>
           </div>
@@ -295,6 +295,16 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
     <div className="grid gap-3 pt-1 sm:border-t sm:border-line sm:pt-3 lg:grid-cols-[88px_minmax(0,1fr)] lg:items-start lg:pt-4">
       <p className="text-sm font-extrabold text-ink lg:pt-2 lg:text-base">상태</p>
       <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+        <button
+          className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
+            !value && !mineSelected ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
+          }`}
+          type="button"
+          onClick={() => onChange("")}
+        >
+          <LayoutGrid size={18} />
+          전체
+        </button>
         {onMine ? (
           <button
             className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
@@ -307,16 +317,6 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
             내 장비
           </button>
         ) : null}
-        <button
-          className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-            !value && !mineSelected ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
-          }`}
-          type="button"
-          onClick={() => onChange("")}
-        >
-          <LayoutGrid size={18} />
-          전체
-        </button>
         {orderedStatuses.map(([status, label]) => {
           const Icon = statusIconMap[status] || PackageCheck;
           return (
