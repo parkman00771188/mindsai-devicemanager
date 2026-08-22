@@ -1,21 +1,16 @@
 import {
   CalendarCheck2,
   Clock3,
-  Cpu,
   FileText,
   Flag,
-  Glasses,
-  HardDrive,
-  Laptop,
-  Monitor,
   Pencil,
   Save,
-  TabletSmartphone,
   Trash2,
   UserRound,
   X
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { getCurrentUser, isAdminUser } from "../auth.js";
 import { actionLabel, deviceTitle, formatDate, formatDateTime, splitPhotoPaths, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
 import DeviceDetailModal from "./DeviceDetailModal.jsx";
@@ -40,27 +35,6 @@ function SummaryCard({ icon: Icon, label, children }) {
         <p className="text-xs font-extrabold text-slate-500">{label}</p>
         <div className="mt-1 min-w-0 break-words text-sm font-extrabold text-ink sm:text-[15px]">{children || "-"}</div>
       </div>
-    </div>
-  );
-}
-
-function deviceIcon(row = {}) {
-  const category = String(row.device_category || row.category || "").replace(/\s+/g, "").toLowerCase();
-  if (category.includes("노트북") || category.includes("laptop")) return Laptop;
-  if (category.includes("모니터") || category.includes("monitor")) return Monitor;
-  if (category.includes("그래픽") || category.includes("gpu")) return Cpu;
-  if (category.includes("vr") || category.includes("가상현실")) return Glasses;
-  if (category.includes("ssd") || category.includes("저장") || category.includes("하드")) return HardDrive;
-  return TabletSmartphone;
-}
-
-function DeviceVisual({ row }) {
-  const Icon = deviceIcon(row);
-  return (
-    <div className="flex h-[6.75rem] w-[6.75rem] shrink-0 items-center justify-center rounded-xl border border-[#dbe7ff] bg-gradient-to-br from-[#f7faff] to-[#edf3ff] text-brand shadow-[inset_0_0_24px_rgba(37,99,235,0.05)]">
-      <span className="flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-[1.15rem] border-2 border-brand/75 bg-white/85 shadow-[0_10px_22px_rgba(37,99,235,0.12)]">
-        <Icon size={43} strokeWidth={1.55} />
-      </span>
     </div>
   );
 }
@@ -134,6 +108,17 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
     setEditForm(editFormFromRow(row));
   }, [row?.transaction_id, row?.created_at, row?.rented_at, row?.expected_return_at, row?.returned_at, row?.user_name, row?.user_organization, row?.user_department, row?.user_position, row?.user_contact, row?.purpose, row?.condition_status, row?.issue_description, row?.handled_by, row?.memo]);
 
+  useEffect(() => {
+    if (!row) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [row?.transaction_id]);
+
   if (!row) return null;
 
   const canDeleteTransaction = canDelete && isAdminUser(getCurrentUser());
@@ -190,16 +175,15 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
     }
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-3 py-3 backdrop-blur-[2px] sm:px-5 sm:py-6"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-slate-950/60 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-[2px] sm:px-5 sm:py-6"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="max-h-[94vh] w-full max-w-6xl overflow-auto rounded-2xl border border-white/70 bg-[#fbfcff] p-4 shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:p-6" onClick={(event) => event.stopPropagation()}>
-        <header className="relative grid min-w-0 gap-4 pr-12 md:grid-cols-[6.75rem_minmax(0,1fr)] lg:grid-cols-[6.75rem_minmax(0,1fr)_22rem] lg:items-center">
-          <DeviceVisual row={row} />
+      <section className="max-h-full w-full max-w-6xl overflow-auto overscroll-contain rounded-2xl border border-white/70 bg-[#fbfcff] p-4 shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:max-h-[94vh] sm:p-6" onClick={(event) => event.stopPropagation()}>
+        <header className="relative grid min-w-0 gap-4 pr-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
           <div className="min-w-0 self-center">
             <ActionBadge action={row.action_type} />
             <h2 className="mt-2 break-words text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-[28px]">{deviceTitle(row)}</h2>
@@ -211,7 +195,7 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
               </span>
             </div>
           </div>
-          <dl className="grid min-w-0 gap-3 rounded-xl border border-line bg-white/70 px-4 py-3 md:col-start-2 lg:col-auto lg:border-y-0 lg:border-r-0 lg:border-l lg:bg-transparent lg:py-1 lg:pl-6">
+          <dl className="grid min-w-0 gap-3 rounded-xl border border-line bg-white/70 px-4 py-3 lg:border-y-0 lg:border-r-0 lg:border-l lg:bg-transparent lg:py-1 lg:pl-6">
             <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3">
               <dt className="text-xs font-extrabold text-slate-500">출납번호</dt>
               <dd className="text-sm font-extrabold text-brand">{transactionNumber(row)}</dd>
@@ -377,25 +361,26 @@ export default function TransactionDetailModal({ row, onClose, onOpenPhoto, canD
           </section>
         ) : null}
 
-        <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-col-reverse gap-2 border-t border-line bg-[#fbfcff]/95 px-4 pt-3 backdrop-blur sm:-mx-6 sm:flex-row sm:justify-end sm:px-6">
-          <button className="btn-secondary" type="button" onClick={onClose} disabled={deleteBusy}>
+        <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-row-reverse gap-2 border-t border-line bg-[#fbfcff]/95 px-4 pt-3 backdrop-blur sm:-mx-6 sm:flex-row sm:justify-end sm:px-6">
+          <button className="btn-secondary min-w-0 flex-1 px-2 text-xs sm:flex-none sm:px-4 sm:text-sm" type="button" onClick={onClose} disabled={deleteBusy}>
             닫기
           </button>
           {canEditTransaction && !editing ? (
-            <button className="btn-secondary border-[#b9d1ff] text-brand hover:bg-[#eef4ff]" type="button" onClick={() => setEditing(true)} disabled={deleteBusy || updateBusy}>
-              <Pencil size={18} />
+            <button className="btn-secondary min-w-0 flex-1 border-[#b9d1ff] px-2 text-xs text-brand hover:bg-[#eef4ff] sm:flex-none sm:px-4 sm:text-sm" type="button" onClick={() => setEditing(true)} disabled={deleteBusy || updateBusy}>
+              <Pencil size={16} />
               수정
             </button>
           ) : null}
           {canDeleteTransaction ? (
-            <button className="btn border border-[#ff9d9d] bg-white text-[#ef4444] hover:bg-[#fff0f0]" type="button" onClick={requestDelete} disabled={deleteBusy}>
-              <Trash2 size={18} />
+            <button className="btn min-w-0 flex-1 border border-[#ff9d9d] bg-white px-2 text-xs text-[#ef4444] hover:bg-[#fff0f0] sm:flex-none sm:px-4 sm:text-sm" type="button" onClick={requestDelete} disabled={deleteBusy}>
+              <Trash2 size={16} />
               {deleteBusy ? "삭제 중" : "이력 삭제"}
             </button>
           ) : null}
         </div>
       </section>
       <DeviceDetailModal deviceId={deviceDetailId} onClose={() => setDeviceDetailId(null)} onChanged={onDeviceChanged} />
-    </div>
+    </div>,
+    document.body
   );
 }
