@@ -8,7 +8,6 @@ import DeviceDetailModal from "../components/DeviceDetailModal.jsx";
 import DeviceProcessModal from "../components/DeviceProcessModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import Loading from "../components/Loading.jsx";
-import PhotoViewer from "../components/PhotoViewer.jsx";
 import QrPrintModal from "../components/QrPrintModal.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { deviceTitle, splitPhotoPaths, STATUS_OPTIONS, statusLabel, transactionMemo, transactionNumber, transactionPlace } from "../constants.js";
@@ -442,7 +441,7 @@ function DeviceMobileCard({ device, index, onOpen, action }) {
   );
 }
 
-function DeviceTable({ devices, onOpen, onOpenPhotos, actionForDevice, startIndex = 0 }) {
+function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
   return (
     <div className="hidden p-2 lg:block">
       <div className="overflow-x-auto rounded-lg border border-line/70">
@@ -452,12 +451,12 @@ function DeviceTable({ devices, onOpen, onOpenPhotos, actionForDevice, startInde
               <th className="w-[4%]">순번</th>
               <th className="w-[8%]">상태</th>
               <th className="w-[10%]">분류</th>
-              <th className="w-[18%]">장비번호</th>
+              <th className="w-[17%]">장비번호</th>
+              <th className="w-[13%]">소속/부서</th>
               <th className="w-[9%]">대여자</th>
               <th className="w-[12%]">목적/사유</th>
               <th className="w-[11%]">소유/소속</th>
-              <th className="w-[18%]">기존 장비번호</th>
-              <th className="w-[10%]">사진</th>
+              <th className="w-[16%]">기존 장비번호</th>
             </tr>
           </thead>
           <tbody>
@@ -466,7 +465,9 @@ function DeviceTable({ devices, onOpen, onOpenPhotos, actionForDevice, startInde
               const purpose = device.status === "AVAILABLE"
                 ? "-"
                 : statusContext.purpose || device.current_status_purpose || device.current_purpose || "-";
-              const photos = [...new Set([...splitPhotoPaths(device.photo_paths), ...splitPhotoPaths(device.main_photo_path)])];
+              const borrowerOrgDepartment = ["RENTED", "DELIVERED"].includes(device.status)
+                ? statusContext.orgDepartment || "-"
+                : "-";
               return (
                 <tr key={device.device_id} className="cursor-pointer hover:bg-slate-50" onClick={() => onOpen(device)}>
                   <td className="table-cell font-bold text-slate-500">{startIndex + index + 1}</td>
@@ -475,34 +476,11 @@ function DeviceTable({ devices, onOpen, onOpenPhotos, actionForDevice, startInde
                   </td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.category || ""}>{device.category || "-"}</span></td>
                   <td className="table-cell font-extrabold text-brand"><span className="block whitespace-nowrap" title={device.device_id}>{device.device_id}</span></td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={borrowerOrgDepartment === "-" ? "" : borrowerOrgDepartment}>{borrowerOrgDepartment}</span></td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={purpose === "-" ? "" : purpose}>{purpose}</span></td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
                   <td className="table-cell font-bold text-slate-600"><span className="block whitespace-nowrap" title={device.legacy_device_id || ""}>{device.legacy_device_id || "-"}</span></td>
-                  <td className="table-cell">
-                    {photos.length ? (
-                      <div className="flex items-center gap-1.5">
-                        {photos.slice(0, 3).map((path, photoIndex) => (
-                          <button
-                            key={`${device.device_id}-${path}-${photoIndex}`}
-                            type="button"
-                            className="h-7 w-7 shrink-0 overflow-hidden rounded-lg border border-line bg-slate-100"
-                            title="사진 크게 보기"
-                            onClick={(event) => {
-                              if (!onOpenPhotos) return;
-                              event.stopPropagation();
-                              onOpenPhotos(photos, photoIndex, device);
-                            }}
-                          >
-                            <img src={path} alt={`${deviceTitle(device)} 사진 ${photoIndex + 1}`} className="h-full w-full object-cover" />
-                          </button>
-                        ))}
-                        {photos.length > 3 ? <span className="text-xs font-extrabold text-slate-500">+{photos.length - 3}</span> : null}
-                      </div>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
                 </tr>
               );
             })}
@@ -513,7 +491,7 @@ function DeviceTable({ devices, onOpen, onOpenPhotos, actionForDevice, startInde
   );
 }
 
-function DeviceList({ devices, onOpen, onOpenPhotos, actionForDevice, startIndex = 0 }) {
+function DeviceList({ devices, onOpen, actionForDevice, startIndex = 0 }) {
   return (
     <>
       <div className="mobile-list-surface grid sm:grid-cols-2 sm:bg-[#f6f8fc] lg:hidden">
@@ -527,7 +505,7 @@ function DeviceList({ devices, onOpen, onOpenPhotos, actionForDevice, startIndex
           />
         ))}
       </div>
-      <DeviceTable devices={devices} onOpen={onOpen} onOpenPhotos={onOpenPhotos} actionForDevice={actionForDevice} startIndex={startIndex} />
+      <DeviceTable devices={devices} onOpen={onOpen} actionForDevice={actionForDevice} startIndex={startIndex} />
     </>
   );
 }
@@ -644,7 +622,6 @@ export default function Devices() {
   const [categoryRows, setCategoryRows] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [detailDevice, setDetailDevice] = useState(null);
-  const [photoViewer, setPhotoViewer] = useState(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [qrPrintOpen, setQrPrintOpen] = useState(false);
   const [processDevice, setProcessDevice] = useState(null);
@@ -677,23 +654,6 @@ export default function Devices() {
   function applyFilters(nextFilters) {
     setFilters(nextFilters);
     setSearchParams(visibleFilters(nextFilters));
-  }
-
-  function openDevicePhotoViewer(paths, index, device) {
-    setPhotoViewer({
-      paths,
-      index,
-      title: `${deviceTitle(device)} 사진`,
-      description: device.device_id || ""
-    });
-  }
-
-  function movePhoto(offset) {
-    setPhotoViewer((current) => {
-      if (!current) return current;
-      const nextIndex = (current.index + offset + current.paths.length) % current.paths.length;
-      return { ...current, index: nextIndex };
-    });
   }
 
   useEffect(() => {
@@ -910,7 +870,7 @@ export default function Devices() {
         />
 
         {sortedDevices.length ? (
-          <DeviceList devices={sortedDevices} onOpen={setDetailDevice} onOpenPhotos={openDevicePhotoViewer} />
+          <DeviceList devices={sortedDevices} onOpen={setDetailDevice} />
         ) : (
           <div className="p-4">
             <EmptyState
@@ -957,7 +917,6 @@ export default function Devices() {
         onClose={() => setDetailDevice(null)}
         onChanged={() => load()}
       />
-      <PhotoViewer viewer={photoViewer} onClose={() => setPhotoViewer(null)} onMove={movePhoto} />
     </div>
   );
 }
