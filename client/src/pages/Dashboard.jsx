@@ -1,5 +1,5 @@
-import { ArrowRight, Bell, BellRing, Boxes, CheckCircle2, ClipboardList, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, Wrench } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Bell, BellRing, Boxes, CheckCircle2, ClipboardList, LayoutGrid, PackageCheck, QrCode, RefreshCw, Stethoscope, TabletSmartphone, Truck, UserRound, Wrench } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { getCurrentUser, isAdminUser } from "../auth.js";
@@ -24,6 +24,20 @@ function StatCard({ label, value, icon: Icon, tone, to }) {
   );
   const className = "metric-card block p-4 sm:px-5 sm:py-[18px] xl:px-3 xl:py-4 2xl:px-5 2xl:py-[18px]";
   return to ? <Link className={className} to={to}>{content}</Link> : <div className={className}>{content}</div>;
+}
+
+function summarizeDevices(rows = []) {
+  const live = rows.filter((device) => device.status !== "DISPOSED");
+  return {
+    total: live.length,
+    available: live.filter((device) => device.status === "AVAILABLE").length,
+    rented: live.filter((device) => device.status === "RENTED").length,
+    delivered: live.filter((device) => device.status === "DELIVERED").length,
+    maintenance: live.filter((device) => device.status === "MAINTENANCE").length,
+    broken: live.filter((device) => device.status === "BROKEN").length,
+    lost: live.filter((device) => device.status === "LOST").length,
+    disposed: rows.filter((device) => device.status === "DISPOSED").length
+  };
 }
 
 function NoticeTabs({ value, onChange, requestCount }) {
@@ -106,7 +120,7 @@ const inventoryColors = [
   "#84cc16"
 ];
 
-function InventoryDonut({ items, total }) {
+function InventoryDonut({ items, total, mine, isAdmin }) {
   let cursor = 0;
   const segments = items.map((item, index) => {
     const start = cursor;
@@ -115,15 +129,16 @@ function InventoryDonut({ items, total }) {
     return `${inventoryColors[index % inventoryColors.length]} ${start}deg ${end}deg`;
   });
   const chartBackground = total && segments.length ? `conic-gradient(${segments.join(", ")})` : "#e8edf5";
+  const deviceListTarget = mine ? "/devices?mine=1" : isAdmin ? "/devices" : "/devices?mine=0";
 
   return (
     <section className="panel overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-4">
         <div>
-          <h2 className="section-title">장비별 재고 현황</h2>
-          <p className="mt-1 text-xs font-bold text-slate-500">분류별 보유 장비 비율</p>
+          <h2 className="section-title">{mine ? "내 장비 현황" : "장비별 재고 현황"}</h2>
+          <p className="mt-1 text-xs font-bold text-slate-500">{mine ? "내 장비의 분류별 비율" : "분류별 보유 장비 비율"}</p>
         </div>
-        <Link className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef4ff] text-brand transition hover:bg-[#dbe7ff]" to="/devices" aria-label="장비 목록 보기" title="장비 목록 보기">
+        <Link className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef4ff] text-brand transition hover:bg-[#dbe7ff]" to={deviceListTarget} aria-label="장비 목록 보기" title="장비 목록 보기">
           <Boxes size={18} />
         </Link>
       </div>
@@ -141,7 +156,10 @@ function InventoryDonut({ items, total }) {
         <div className="scrollbar-none max-h-[17rem] min-w-0 space-y-1 overflow-y-auto pr-1">
           {items.length ? items.map((item, index) => {
             const percentage = total ? ((item.count / total) * 100).toFixed(1) : "0.0";
-            const target = item.category === "미분류" ? "/devices" : `/devices?category=${encodeURIComponent(item.category)}`;
+            const scope = mine ? "mine=1" : isAdmin ? "" : "mine=0";
+            const category = item.category === "미분류" ? "" : `category=${encodeURIComponent(item.category)}`;
+            const query = [scope, category].filter(Boolean).join("&");
+            const target = query ? `/devices?${query}` : "/devices";
             return (
               <Link key={item.category} className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 rounded-lg px-2 py-2 transition hover:bg-[#f6f8fc]" to={target}>
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: inventoryColors[index % inventoryColors.length] }} />
@@ -159,16 +177,23 @@ function InventoryDonut({ items, total }) {
   );
 }
 
-function RecentHistoryPanel({ rows, onOpen }) {
+function RecentHistoryPanel({ rows, onOpen, mine, isAdmin, currentUser }) {
   const visibleRows = rows.slice(0, 7);
+  const historyTarget = mine
+    ? isAdmin
+      ? `/transactions?user_name=${encodeURIComponent(currentUser?.name || "")}`
+      : "/transactions?mine=1"
+    : isAdmin
+      ? "/transactions"
+      : "/transactions?mine=0";
   return (
     <section className="panel overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-4">
         <div>
           <h2 className="section-title">최근 이력</h2>
-          <p className="mt-1 text-xs font-bold text-slate-500">최근 처리된 장비 활동</p>
+          <p className="mt-1 text-xs font-bold text-slate-500">{mine ? "내 장비의 최근 처리 활동" : "최근 처리된 장비 활동"}</p>
         </div>
-        <Link className="chip chip-active" to="/transactions">전체 보기</Link>
+        <Link className="chip chip-active" to={historyTarget}>전체 보기</Link>
       </div>
       {visibleRows.length ? (
         <div className="divide-y divide-line px-2 sm:px-3">
@@ -204,6 +229,7 @@ function RecentHistoryPanel({ rows, onOpen }) {
 export default function Dashboard() {
   const currentUser = getCurrentUser();
   const isAdmin = isAdminUser(currentUser);
+  const [deviceScope, setDeviceScope] = useState(() => (isAdmin ? "all" : "mine"));
   const [summary, setSummary] = useState(null);
   const [recent, setRecent] = useState([]);
   const [devices, setDevices] = useState([]);
@@ -214,25 +240,41 @@ export default function Dashboard() {
   const [photoViewer, setPhotoViewer] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [updateBusy, setUpdateBusy] = useState(false);
+  const [scopeBusy, setScopeBusy] = useState(false);
+  const dashboardRequestId = useRef(0);
   const navigate = useNavigate();
+  const isMineScope = deviceScope === "mine";
 
-  async function loadDashboard() {
+  async function loadDashboard(nextScope = deviceScope) {
+    const requestId = dashboardRequestId.current + 1;
+    dashboardRequestId.current = requestId;
     setError("");
-    const [summaryData, recentData, deviceData, notificationData] = await Promise.all([
-      api("/dashboard/summary"),
-      api("/dashboard/recent-transactions?limit=10"),
-      api("/devices"),
-      api("/notifications?scope=dashboard")
-    ]);
-    setSummary(summaryData);
-    setRecent(recentData);
-    setDevices(deviceData);
-    setNotifications(notificationData);
+    setScopeBusy(true);
+    const mine = nextScope === "mine";
+    const userId = encodeURIComponent(currentUser?.user_id || "");
+    const devicePath = mine ? `/devices?assigned_to_user_id=${userId}` : "/devices";
+    const recentPath = mine
+      ? `/transactions?user_id=${userId}&exclude_actions=UPDATE%2CRENTAL_UPDATE`
+      : "/dashboard/recent-transactions?limit=10";
+    try {
+      const [recentData, deviceData, notificationData] = await Promise.all([
+        api(recentPath),
+        api(devicePath),
+        api("/notifications?scope=dashboard")
+      ]);
+      if (requestId !== dashboardRequestId.current) return;
+      setSummary(summarizeDevices(deviceData));
+      setRecent(recentData.slice(0, 10));
+      setDevices(deviceData);
+      setNotifications(notificationData);
+    } finally {
+      if (requestId === dashboardRequestId.current) setScopeBusy(false);
+    }
   }
 
   useEffect(() => {
-    loadDashboard().catch((err) => setError(err.message));
-  }, []);
+    loadDashboard(deviceScope).catch((err) => setError(err.message));
+  }, [deviceScope, currentUser?.user_id]);
 
   const categoryInventory = useMemo(() => {
     const counts = new Map();
@@ -321,6 +363,9 @@ export default function Dashboard() {
   }
 
   const requestNotifications = notifications.filter((notification) => notification.type === "RETURN_REQUEST" || (notification.type === "RETURN_COMPLETE" && !notification.is_read));
+  const myReturnRequestCount = notifications.filter(
+    (notification) => notification.type === "RETURN_REQUEST" && notification.recipient_user_id === currentUser?.user_id
+  ).length;
   const generalNotifications = notifications
     .filter((notification) => notification.type !== "RETURN_REQUEST" && notification.type !== "RETURN_COMPLETE")
     .slice(0, 5);
@@ -334,15 +379,33 @@ export default function Dashboard() {
             <h1 className="dashboard-greeting">안녕하세요, {currentUser?.name || "사용자"}님 👋</h1>
             <p className="mt-1.5 text-sm font-medium text-slate-500 sm:text-[15px]">오늘의 장비 현황과 최근 출납 이력을 한눈에 확인하세요.</p>
           </div>
-          <div className="hidden gap-2 sm:flex">
-            <Link className="btn-primary" to="/scan?auto=1">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <Link className="btn-primary hidden sm:inline-flex" to="/scan?auto=1">
               <QrCode size={18} />
               QR 스캔
             </Link>
-            <Link className="btn-secondary" to="/devices/new">
-              <ClipboardList size={18} />
-              장비 등록
-            </Link>
+            <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-auto" role="group" aria-label="대시보드 장비 조회 범위">
+              <button
+                className={`flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${isMineScope ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+                type="button"
+                onClick={() => setDeviceScope("mine")}
+                aria-pressed={isMineScope}
+                disabled={scopeBusy}
+              >
+                <UserRound size={16} />
+                내 장비
+              </button>
+              <button
+                className={`flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!isMineScope ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+                type="button"
+                onClick={() => setDeviceScope("all")}
+                aria-pressed={!isMineScope}
+                disabled={scopeBusy}
+              >
+                <LayoutGrid size={16} />
+                전체
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -356,18 +419,26 @@ export default function Dashboard() {
         <span className="dashboard-mobile-cta-arrow"><ArrowRight size={23} /></span>
       </Link>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="전체 장비" value={summary.total} icon={TabletSmartphone} tone="bg-[#eef4ff] text-brand" to="/devices" />
-        <StatCard label="대여 가능" value={summary.available} icon={ClipboardList} tone="bg-[#e9f8ef] text-[#16a34a]" to="/devices?status=AVAILABLE" />
-        <StatCard label="대여 중" value={summary.rented} icon={PackageCheck} tone="bg-[#eef4ff] text-[#2563eb]" to="/devices?status=RENTED" />
-        <StatCard label="납품" value={summary.delivered} icon={Truck} tone="bg-[#eef0f4] text-[#4e5968]" to="/devices?status=DELIVERED" />
-        <StatCard label="점검 중" value={summary.maintenance} icon={Stethoscope} tone="bg-[#fff4ee] text-[#d47a3d]" to="/devices?status=MAINTENANCE" />
-        <StatCard label="고장" value={summary.broken} icon={Wrench} tone="bg-[#fdecec] text-[#ef4444]" to="/devices?status=BROKEN" />
-      </div>
+      {isMineScope ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy={scopeBusy}>
+          <StatCard label="전체" value={summary.total} icon={TabletSmartphone} tone="bg-[#eef4ff] text-brand" to="/devices?mine=1" />
+          <StatCard label="대여 중" value={summary.rented} icon={PackageCheck} tone="bg-[#eef4ff] text-[#2563eb]" to="/devices?mine=1" />
+          <StatCard label="반납 요청" value={myReturnRequestCount} icon={BellRing} tone="bg-[#fff4ee] text-[#d47a3d]" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6" aria-busy={scopeBusy}>
+          <StatCard label="전체 장비" value={summary.total} icon={TabletSmartphone} tone="bg-[#eef4ff] text-brand" to={isAdmin ? "/devices" : "/devices?mine=0"} />
+          <StatCard label="대여 가능" value={summary.available} icon={ClipboardList} tone="bg-[#e9f8ef] text-[#16a34a]" to={isAdmin ? "/devices?status=AVAILABLE" : "/devices?mine=0&status=AVAILABLE"} />
+          <StatCard label="대여 중" value={summary.rented} icon={PackageCheck} tone="bg-[#eef4ff] text-[#2563eb]" to={isAdmin ? "/devices?status=RENTED" : "/devices?mine=0&status=RENTED"} />
+          <StatCard label="납품" value={summary.delivered} icon={Truck} tone="bg-[#eef0f4] text-[#4e5968]" to={isAdmin ? "/devices?status=DELIVERED" : "/devices?mine=0&status=DELIVERED"} />
+          <StatCard label="점검 중" value={summary.maintenance} icon={Stethoscope} tone="bg-[#fff4ee] text-[#d47a3d]" to={isAdmin ? "/devices?status=MAINTENANCE" : "/devices?mine=0&status=MAINTENANCE"} />
+          <StatCard label="고장" value={summary.broken} icon={Wrench} tone="bg-[#fdecec] text-[#ef4444]" to={isAdmin ? "/devices?status=BROKEN" : "/devices?mine=0&status=BROKEN"} />
+        </div>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(23rem,0.72fr)_minmax(0,1.28fr)]">
-        <InventoryDonut items={categoryInventory} total={inventoryTotal} />
-        <RecentHistoryPanel rows={recent} onOpen={setTransactionDetail} />
+        <InventoryDonut items={categoryInventory} total={inventoryTotal} mine={isMineScope} isAdmin={isAdmin} />
+        <RecentHistoryPanel rows={recent} onOpen={setTransactionDetail} mine={isMineScope} isAdmin={isAdmin} currentUser={currentUser} />
       </div>
 
       <section className="panel p-4">

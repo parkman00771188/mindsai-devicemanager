@@ -44,6 +44,10 @@ function visibleFilters(filters) {
   return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
 }
 
+function isMineFilter(value) {
+  return value === "1";
+}
+
 function currentStatusContext(device = {}) {
   const transactions = device.current_transactions || device.transactions || [];
   const isActiveCheckout = ["RENTED", "DELIVERED"].includes(device.status);
@@ -151,6 +155,7 @@ function MobileStatusPill({ status }) {
 }
 
 function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
+  const mineSelected = isMineFilter(mine);
   if (compact) {
     return (
       <div className="flex items-center border-b border-line bg-white px-2 py-2.5 sm:px-3">
@@ -159,7 +164,7 @@ function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
             <button
               type="button"
               className={`flex min-h-9 snap-start items-center rounded-lg px-4 text-sm font-extrabold transition ${
-                !value && !mine ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
+                !value && !mineSelected ? "bg-brand text-white shadow-lift" : "text-slate-600 hover:bg-[#eef4ff] hover:text-brand"
               }`}
               onClick={() => onChange("")}
             >
@@ -193,7 +198,7 @@ function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
           <button
             type="button"
             className={`flex min-h-11 snap-start items-center border-b-[3px] px-1 pb-1 text-sm font-extrabold transition sm:min-h-14 sm:text-base ${
-              !value && !mine ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
+              !value && !mineSelected ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-ink"
             }`}
             onClick={() => onChange("")}
           >
@@ -221,6 +226,7 @@ function CategoryTabs({ categories, value, mine, onChange, compact = false }) {
 }
 
 function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
+  const mineSelected = isMineFilter(mine);
   const orderedStatuses = [
     ...STATUS_OPTIONS.filter(([status]) => ["AVAILABLE", "RENTED", "DELIVERED"].includes(status)),
     ...STATUS_OPTIONS.filter(([status]) => !["AVAILABLE", "RENTED", "DELIVERED"].includes(status))
@@ -235,28 +241,52 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
       }`;
 
     return (
-      <div className="grid gap-2 border-t border-line pt-3 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-start">
-        <p className="text-sm font-extrabold text-ink lg:pt-2.5">상태</p>
-        <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
-          {onMine ? (
-            <button className={buttonClass(Boolean(mine))} type="button" onClick={onMine}>
-              <UserRound size={16} />
-              내 장비
-            </button>
-          ) : null}
-          <button className={buttonClass(!value && !mine)} type="button" onClick={() => onChange("")}>
-            전체
-          </button>
-          {orderedStatuses.map(([status, label]) => {
-            const Icon = statusIconMap[status] || PackageCheck;
-            return (
-              <button key={status} className={buttonClass(value === status && !mine)} type="button" onClick={() => onChange(status)}>
-                <Icon size={16} />
-                {label}
+      <div className="space-y-3 border-t border-line pt-3">
+        {onMine ? (
+          <div className="grid gap-2 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-center">
+            <p className="text-sm font-extrabold text-ink">조회 범위</p>
+            <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-fit" role="group" aria-label="장비 조회 범위">
+              <button
+                className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+                type="button"
+                onClick={onMine}
+                aria-pressed={mineSelected}
+              >
+                <UserRound size={16} />
+                내 장비
               </button>
-            );
-          })}
-        </div>
+              <button
+                className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!mineSelected ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+                type="button"
+                onClick={() => onChange("")}
+                aria-pressed={!mineSelected}
+              >
+                <LayoutGrid size={16} />
+                전체
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {!onMine || !mineSelected ? (
+          <div className="grid gap-2 lg:grid-cols-[4.5rem_minmax(0,1fr)] lg:items-start">
+            <p className="text-sm font-extrabold text-ink lg:pt-2.5">상태</p>
+            <div className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+              <button className={buttonClass(!value)} type="button" onClick={() => onChange("")}>
+                전체 상태
+              </button>
+              {orderedStatuses.map(([status, label]) => {
+                const Icon = statusIconMap[status] || PackageCheck;
+                return (
+                  <button key={status} className={buttonClass(value === status)} type="button" onClick={() => onChange(status)}>
+                    <Icon size={16} />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -268,7 +298,7 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
         {onMine ? (
           <button
             className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-              mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
+              mineSelected ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
             }`}
             type="button"
             onClick={onMine}
@@ -279,7 +309,7 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
         ) : null}
         <button
           className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-            !value && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
+            !value && !mineSelected ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
           }`}
           type="button"
           onClick={() => onChange("")}
@@ -293,7 +323,7 @@ function StatusFilters({ value, mine, onChange, onMine, compact = false }) {
             <button
               key={status}
               className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-lg border px-4 text-sm font-extrabold leading-tight transition lg:min-h-11 ${
-                value === status && !mine ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
+                value === status && !mineSelected ? "border-brand bg-brand text-white shadow-lift" : "border-line bg-white text-slate-700 hover:border-[#dbe7ff] hover:bg-[#eef4ff] hover:text-brand"
               }`}
               type="button"
               onClick={() => onChange(status)}
@@ -679,6 +709,8 @@ export default function Devices() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const isAdmin = isAdminUser(currentUser);
+  const defaultMineFilter = isAdmin ? "" : "1";
+  const allDevicesFilter = isAdmin ? "" : "0";
   const [devices, setDevices] = useState(null);
   const [categoryRows, setCategoryRows] = useState([]);
   const [organizations, setOrganizations] = useState([]);
@@ -693,14 +725,14 @@ export default function Devices() {
     status: searchParams.get("status") || "",
     category: searchParams.get("category") || "",
     owner_organization: searchParams.get("owner_organization") || "",
-    mine: searchParams.get("mine") || ""
+    mine: searchParams.has("mine") ? searchParams.get("mine") : defaultMineFilter
   }));
   const searchKey = searchParams.toString();
   const appliedKeyword = searchParams.get("keyword") || "";
 
   async function load(nextFilters = filters) {
     const { mine, ...restFilters } = nextFilters;
-    const scope = mine ? { ...restFilters, assigned_to_user_id: currentUser?.user_id || "" } : restFilters;
+    const scope = isMineFilter(mine) ? { ...restFilters, assigned_to_user_id: currentUser?.user_id || "" } : restFilters;
     const rows = await api(`/devices${queryString(scope)}`);
     setDevices(rows);
   }
@@ -717,7 +749,7 @@ export default function Devices() {
       status: searchParams.get("status") || "",
       category: searchParams.get("category") || "",
       owner_organization: searchParams.get("owner_organization") || "",
-      mine: searchParams.get("mine") || ""
+      mine: searchParams.has("mine") ? searchParams.get("mine") : defaultMineFilter
     };
     setFilters(nextFilters);
     load(nextFilters);
@@ -761,7 +793,7 @@ export default function Devices() {
             <p className="page-kicker">Device Manager</p>
             <h1 className="page-title mt-1">장비 목록</h1>
             <p className="mt-2 text-sm font-semibold text-slate-500">
-              {isAdmin ? "장비번호, 상태, 분류별로 장비를 조회합니다." : "전체 장비를 조회하고 내 장비 필터로 할당 장비를 확인합니다."}
+              {isAdmin ? "장비번호, 상태, 분류별로 장비를 조회합니다." : "내 장비를 먼저 확인하고 필요할 때 전체 장비로 전환할 수 있습니다."}
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:justify-end">
@@ -815,7 +847,7 @@ export default function Devices() {
             id="device-owner-organization-filter"
             className="select"
             value={filters.owner_organization}
-            onChange={(event) => setFilters((current) => ({ ...current, owner_organization: event.target.value, mine: "" }))}
+            onChange={(event) => setFilters((current) => ({ ...current, owner_organization: event.target.value, mine: allDevicesFilter }))}
             aria-label="장비 소유 소속"
           >
             <option value="">전체 소속</option>
@@ -830,7 +862,7 @@ export default function Devices() {
               placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
             />
           </div>
-          <button className="btn-secondary w-full whitespace-nowrap px-4" type="button" onClick={() => applyFilters(emptyFilters)}>
+          <button className="btn-secondary w-full whitespace-nowrap px-4" type="button" onClick={() => applyFilters({ ...emptyFilters, mine: defaultMineFilter })}>
             <RotateCcw size={16} />
             필터 초기화
           </button>
@@ -842,8 +874,8 @@ export default function Devices() {
         <StatusFilters
           value={filters.status}
           mine={filters.mine}
-          onMine={() => applyFilters({ ...filters, status: "", mine: filters.mine ? "" : "1", category: "" })}
-          onChange={(status) => applyFilters({ ...filters, status, mine: "" })}
+          onMine={() => applyFilters({ ...filters, status: "", mine: "1", category: "" })}
+          onChange={(status) => applyFilters({ ...filters, status, mine: allDevicesFilter })}
           compact
         />
         <KeywordChip keyword={appliedKeyword} onClear={() => applyFilters({ ...filters, keyword: "" })} />
@@ -854,7 +886,7 @@ export default function Devices() {
           categories={categories}
           value={filters.category}
           mine={filters.mine}
-          onChange={(category) => applyFilters({ ...filters, category, mine: "" })}
+          onChange={(category) => applyFilters({ ...filters, category, mine: allDevicesFilter })}
           compact
         />
 
@@ -866,8 +898,8 @@ export default function Devices() {
         ) : (
           <div className="p-4">
             <EmptyState
-              title={isAdmin || !filters.mine ? "등록된 장비가 없습니다." : "현재 할당된 장비가 없습니다."}
-              description={isAdmin ? "장비 등록에서 첫 장비를 추가해보세요." : filters.mine ? "내 장비 필터를 해제하면 전체 장비를 볼 수 있습니다." : "대여하기 버튼으로 사용 가능한 장비를 찾아보세요."}
+              title={isAdmin || !isMineFilter(filters.mine) ? "등록된 장비가 없습니다." : "현재 할당된 장비가 없습니다."}
+              description={isAdmin ? "장비 등록에서 첫 장비를 추가해보세요." : isMineFilter(filters.mine) ? "전체 필터로 전환하면 등록된 모든 장비를 볼 수 있습니다." : "대여하기 버튼으로 사용 가능한 장비를 찾아보세요."}
             />
           </div>
         )}

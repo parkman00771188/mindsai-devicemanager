@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Download, History, List, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Download, History, LayoutGrid, List, RotateCcw, Search, SlidersHorizontal, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, downloadUrl, queryString } from "../api/client.js";
@@ -25,7 +25,7 @@ function parseDeviceIds(value) {
     .filter(Boolean);
 }
 
-function initialFilters(searchParams) {
+function initialFilters(searchParams, defaultMine = "") {
   const deviceIds = searchParams.get("device_ids") || searchParams.get("device_id") || "";
   const actionType = searchParams.get("action_type") || "";
   const actionsValue = String(searchParams.get("actions") || "")
@@ -34,6 +34,7 @@ function initialFilters(searchParams) {
     .filter((action) => action && !hiddenTableActions.has(action))
     .join(",");
   return {
+    mine: searchParams.has("mine") ? searchParams.get("mine") : defaultMine,
     keyword: searchParams.get("keyword") || "",
     device_id: searchParams.get("device_ids") ? searchParams.get("device_id") || "" : "",
     device_ids: deviceIds,
@@ -228,8 +229,11 @@ function TransactionCalendar({ rows, cursor, onCursorChange, onOpen }) {
 
 export default function Transactions() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentUser = getCurrentUser();
+  const isAdmin = isAdminUser(currentUser);
+  const defaultMineFilter = isAdmin ? "" : "1";
   const [rows, setRows] = useState(null);
-  const [filters, setFilters] = useState(() => initialFilters(searchParams));
+  const [filters, setFilters] = useState(() => initialFilters(searchParams, defaultMineFilter));
   const [photoViewer, setPhotoViewer] = useState(null);
   const [transactionDetail, setTransactionDetail] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -238,10 +242,10 @@ export default function Transactions() {
   const [viewMode, setViewMode] = useState("list");
   const [calendarCursor, setCalendarCursor] = useState(() => new Date());
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(() => {
-    const initial = initialFilters(searchParams);
+    const initial = initialFilters(searchParams, defaultMineFilter);
     return Boolean(initial.device_id || initial.device_ids || initial.user_name || initial.owner_organization || initial.action_type || initial.from || initial.to);
   });
-  const isAdmin = isAdminUser(getCurrentUser());
+  const isMineHistory = filters.mine === "1";
   const isRentReturnView = filters.actions === "RENT";
   const searchKey = searchParams.toString();
   const selectedDeviceIds = useMemo(() => parseDeviceIds(filters.device_ids), [filters.device_ids]);
@@ -256,14 +260,16 @@ export default function Transactions() {
   ].filter(Boolean).length;
 
   async function load(nextFilters = filters) {
-    setRows(await api(`/transactions${queryString({ ...nextFilters, exclude_actions: excludedTableActions })}`));
+    const { mine, ...restFilters } = nextFilters;
+    const scope = mine === "1" ? { ...restFilters, user_id: currentUser?.user_id || "" } : restFilters;
+    setRows(await api(`/transactions${queryString({ ...scope, exclude_actions: excludedTableActions })}`));
   }
 
   useEffect(() => {
-    const nextFilters = initialFilters(searchParams);
+    const nextFilters = initialFilters(searchParams, defaultMineFilter);
     setFilters(nextFilters);
     load(nextFilters);
-  }, [searchKey]);
+  }, [searchKey, currentUser?.user_id, isAdmin]);
 
   useEffect(() => {
     api("/user-options?option_type=ORGANIZATION")
@@ -298,9 +304,16 @@ export default function Transactions() {
   }
 
   function resetFilters() {
-    const nextFilters = initialFilters(new URLSearchParams(isRentReturnView ? { actions: "RENT" } : {}));
+    const nextFilters = initialFilters(
+      new URLSearchParams(isRentReturnView ? { actions: "RENT" } : {}),
+      filters.mine === "1" ? "1" : filters.mine === "0" ? "0" : defaultMineFilter
+    );
     applyFilters(nextFilters);
     setAdvancedFiltersOpen(false);
+  }
+
+  function selectHistoryScope(mine) {
+    applyFilters({ ...filters, mine: mine ? "1" : "0", user_name: "" });
   }
 
   function openCalendarView() {
@@ -389,8 +402,10 @@ export default function Transactions() {
         <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-between gap-5 md:flex-row md:items-start">
           <div className="max-w-xl">
             <p className="page-kicker">Activity History</p>
-            <h1 className="page-title mt-1">{isRentReturnView ? "최근 대여 이력" : "전체 이력"}</h1>
-            <p className="mt-2 text-sm font-semibold text-slate-500">장비별 작업 흐름을 목록과 월별 캘린더로 조회합니다.</p>
+            <h1 className="page-title mt-1">{isRentReturnView ? "최근 대여 이력" : "최근 이력"}</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">
+              {isAdmin ? "장비별 작업 흐름을 목록과 월별 캘린더로 조회합니다." : "내 장비 이력을 먼저 확인하고 필요할 때 전체 이력으로 전환할 수 있습니다."}
+            </p>
           </div>
           <a className="btn-secondary w-full md:w-auto" href={downloadUrl("/excel/download")} download>
             <Download size={18} />
@@ -405,10 +420,33 @@ export default function Transactions() {
       </section>
 
       <form className="panel space-y-3 p-3 sm:p-4" onSubmit={submit}>
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+          <p className="shrink-0 text-sm font-extrabold text-ink">조회 범위</p>
+          <div className="inline-flex w-full min-w-0 items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1 sm:w-auto" role="group" aria-label="이력 조회 범위">
+            <button
+              className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${isMineHistory ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+              type="button"
+              onClick={() => selectHistoryScope(true)}
+              aria-pressed={isMineHistory}
+            >
+              <UserRound size={16} />
+              내 장비
+            </button>
+            <button
+              className={`flex min-h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold transition sm:flex-none ${!isMineHistory ? "bg-brand text-white shadow-soft" : "text-slate-600 hover:bg-white hover:text-brand"}`}
+              type="button"
+              onClick={() => selectHistoryScope(false)}
+              aria-pressed={!isMineHistory}
+            >
+              <LayoutGrid size={16} />
+              전체
+            </button>
+          </div>
+        </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input className="input pl-10" placeholder="전체 이력 검색" value={filters.keyword} onChange={(event) => update("keyword", event.target.value)} />
+            <input className="input pl-10" placeholder={isMineHistory ? "내 장비 이력 검색" : "전체 이력 검색"} value={filters.keyword} onChange={(event) => update("keyword", event.target.value)} />
           </div>
           <button
             className={`btn-secondary relative h-11 w-11 shrink-0 p-0 ${advancedFiltersOpen || advancedFilterCount ? "border-[#b9cdfa] bg-[#eef4ff] text-brand" : ""}`}
@@ -512,7 +550,7 @@ export default function Transactions() {
         <div className="flex items-center justify-between gap-3 border-b border-line bg-white px-3 py-3 sm:px-4">
           <div>
             <p className="text-sm font-extrabold text-ink">{viewMode === "list" ? "이력 목록" : "월별 캘린더"}</p>
-            <p className="mt-0.5 text-xs font-bold text-slate-500">조회 결과 {rows.length}건</p>
+            <p className="mt-0.5 text-xs font-bold text-slate-500">{isMineHistory ? "내 장비 이력" : "전체 이력"} · 조회 결과 {rows.length}건</p>
           </div>
           <div className="inline-flex items-center gap-1 rounded-lg border border-line bg-[#f6f8fc] p-1" role="group" aria-label="이력 보기 방식">
             <button

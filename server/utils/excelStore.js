@@ -3106,6 +3106,7 @@ function listTransactions(filters = {}) {
   return readData().then((data) => {
     let rows = [...data.Transactions];
     const keyword = text(filters.keyword).toLowerCase();
+    const scopedUser = filters.user_id ? findUser(data, filters.user_id) : null;
     const deviceIds = text(filters.device_ids || "")
       .split(",")
       .map((id) => text(id))
@@ -3127,6 +3128,7 @@ function listTransactions(filters = {}) {
     if (filters.owner_organization) {
       rows = rows.filter((row) => text(findDevice(data, row.device_id)?.owner_organization) === text(filters.owner_organization));
     }
+    if (filters.user_id) rows = rows.filter((row) => scopedUser && text(row.user_name) === text(scopedUser.name));
     if (filters.user_name) rows = rows.filter((row) => text(row.user_name).includes(filters.user_name));
     if (filters.from) rows = rows.filter((row) => text(row.created_at).slice(0, 10) >= filters.from);
     if (filters.to) rows = rows.filter((row) => text(row.created_at).slice(0, 10) <= filters.to);

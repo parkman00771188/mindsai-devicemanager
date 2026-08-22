@@ -1492,6 +1492,8 @@ function listTransactions(state, params = new URLSearchParams()) {
   const institutionId = text(params.get("institution_id"));
   const institutionName = lower(params.get("institution_name"));
   const ownerOrganization = text(params.get("owner_organization"));
+  const userId = text(params.get("user_id"));
+  const scopedUser = userId ? findUser(state, userId) : null;
   const userName = lower(params.get("user_name"));
   const from = text(params.get("from") || params.get("date_from"));
   const to = text(params.get("to") || params.get("date_to"));
@@ -1506,6 +1508,7 @@ function listTransactions(state, params = new URLSearchParams()) {
     .filter((row) => !institutionId || text(row.institution_id) === institutionId)
     .filter((row) => !institutionName || lower(row.institution_name || row.user_name).includes(institutionName))
     .filter((row) => !ownerOrganization || text(findDevice(state, row.device_id, true)?.owner_organization) === ownerOrganization)
+    .filter((row) => !userId || (scopedUser && text(row.user_name) === text(scopedUser.name)))
     .filter((row) => !userName || lower(row.user_name).includes(userName))
     .filter((row) => !from || text(row.created_at).slice(0, 10) >= from)
     .filter((row) => !to || text(row.created_at).slice(0, 10) <= to)
