@@ -1,7 +1,7 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Download, History, LayoutGrid, List, RotateCcw, Search, SlidersHorizontal, UserRound, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, History, LayoutGrid, List, RotateCcw, Search, SlidersHorizontal, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, downloadUrl, queryString } from "../api/client.js";
+import { api, queryString } from "../api/client.js";
 import { getCurrentUser, isAdminUser } from "../auth.js";
 import ActionBadge from "../components/ActionBadge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -419,10 +419,6 @@ export default function Transactions() {
               {isAdmin ? "장비별 작업 흐름을 목록과 월별 캘린더로 조회합니다." : "내 장비 이력을 먼저 확인하고 필요할 때 전체 이력으로 전환할 수 있습니다."}
             </p>
           </div>
-          <a className="btn-secondary w-full md:w-auto" href={downloadUrl("/excel/download")} download>
-            <Download size={18} />
-            Excel 다운로드
-          </a>
         </div>
         <div className="history-list-hero-art" aria-hidden="true">
           <span className="history-list-hero-calendar"><CalendarDays size={47} strokeWidth={1.7} /></span>
