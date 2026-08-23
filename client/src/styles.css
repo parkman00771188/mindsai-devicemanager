@@ -819,6 +819,22 @@ textarea {
   padding-left: var(--dm-sidebar-width);
 }
 
+.device-detail-modal-shell {
+  max-width: 72rem;
+}
+
+@media (min-width: 1280px) {
+  .device-detail-modal-shell {
+    max-width: calc(100vw - 3rem);
+  }
+}
+
+@media (min-width: 1536px) {
+  .device-detail-modal-shell {
+    max-width: min(2000px, calc(100vw - 5rem));
+  }
+}
+
 .app-content {
   padding: clamp(28px, 2vw, 40px) clamp(32px, 2.6vw, 56px) 40px;
 }

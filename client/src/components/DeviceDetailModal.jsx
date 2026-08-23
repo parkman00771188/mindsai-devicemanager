@@ -25,7 +25,7 @@ export default function DeviceDetailModal({ device, deviceId, onClose, onChanged
       onClick={onClose}
     >
       <section
-        className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[20px] border border-white/70 bg-[#f3f5f9] shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:max-h-[94vh] sm:max-w-6xl sm:rounded-2xl"
+        className="device-detail-modal-shell relative flex max-h-full w-full flex-col overflow-hidden rounded-[20px] border border-white/70 bg-[#f3f5f9] shadow-[0_28px_80px_rgba(15,23,42,0.3)] sm:max-h-[94vh] sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex min-h-14 items-center justify-end border-b border-line bg-white px-3 py-2 sm:hidden">

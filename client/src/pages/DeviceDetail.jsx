@@ -1,5 +1,5 @@
 import { AlertTriangle, Camera, CheckCircle2, ChevronLeft, ChevronRight, Download, Edit, Info, ListChecks, PackageCheck, QrCode, RotateCcw, SearchX, Stethoscope, Trash2, Truck, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { getCurrentUser, isAdminUser } from "../auth.js";
@@ -66,11 +66,11 @@ const statusPanels = {
   }
 };
 
-function recentItemsPerPage() {
-  if (typeof window === "undefined") return 2;
-  if (window.innerWidth >= 1920) return 4;
-  if (window.innerWidth >= 1536) return 3;
-  if (window.innerWidth >= 640) return 2;
+function recentItemsPerPage(containerWidth) {
+  const width = Number(containerWidth) || 0;
+  if (width >= 1160) return 4;
+  if (width >= 870) return 3;
+  if (width >= 570) return 2;
   return 1;
 }
 
@@ -505,8 +505,9 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   const [qrStyle, setQrStyle] = useState("plain");
   const [qrOpen, setQrOpen] = useState(false);
   const [recentPage, setRecentPage] = useState(0);
-  const [recentPageSize, setRecentPageSize] = useState(recentItemsPerPage);
+  const [recentPageSize, setRecentPageSize] = useState(1);
   const [error, setError] = useState("");
+  const recentSectionRef = useRef(null);
 
   async function load() {
     const detail = await api(`/devices/${deviceId}/detail`);
@@ -523,13 +524,26 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   }, [deviceId, transactions.length, recentPageSize]);
 
   useEffect(() => {
-    function updateRecentPageSize() {
-      setRecentPageSize(recentItemsPerPage());
+    const section = recentSectionRef.current;
+    if (!section) return undefined;
+
+    function updateRecentPageSize(width = section.getBoundingClientRect().width) {
+      setRecentPageSize(recentItemsPerPage(width));
     }
+
     updateRecentPageSize();
-    window.addEventListener("resize", updateRecentPageSize);
-    return () => window.removeEventListener("resize", updateRecentPageSize);
-  }, []);
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver((entries) => {
+        updateRecentPageSize(entries[0]?.contentRect.width);
+      });
+      observer.observe(section);
+      return () => observer.disconnect();
+    }
+
+    const handleWindowResize = () => updateRecentPageSize();
+    window.addEventListener("resize", handleWindowResize);
+    return () => window.removeEventListener("resize", handleWindowResize);
+  }, [device?.device_id]);
 
   async function dispose(reason) {
     setActionBusy(true);
@@ -799,7 +813,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     ? "grid grid-cols-2 gap-2 border-t border-line pt-3 sm:flex sm:flex-wrap sm:justify-end"
     : "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
   const mainGridClass = inModal
-    ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem]"
+    ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]"
     : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]";
   const statusTopClass = inModal
     ? "flex flex-col justify-between gap-3 lg:flex-row lg:items-start"
@@ -1074,7 +1088,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
           </div>
           )}
 
-          <div className="border-t border-line bg-white text-ink">
+          <div ref={recentSectionRef} className="min-w-0 border-t border-line bg-white text-ink">
             <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="page-kicker">Activity</p>
