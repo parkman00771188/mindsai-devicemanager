@@ -308,7 +308,7 @@ function BasicInfoModal({ device, photos, onClose, onOpenPhoto }) {
           <InfoItem label="분류" value={device.category} />
           <InfoItem label="기존 장비번호" value={device.legacy_device_id} />
           <InfoItem label="제조사" value={device.manufacturer} />
-          <InfoItem label="모델명" value={device.model_name} />
+          <InfoItem label="유형" value={device.model_name} />
           {!isLaptop ? <InfoItem label="용량" value={deviceCapacity(device)} /> : null}
           {isLaptop ? (
             <>
@@ -1139,7 +1139,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
             <dl className="mt-3">
               <InfoItem label="분류" value={device.category} />
               <InfoItem label="기존 장비번호" value={device.legacy_device_id} />
-              <InfoItem label="모델명" value={device.model_name} />
+              <InfoItem label="유형" value={device.model_name} />
               {isLaptop ? (
                 <>
                   <InfoItem label="램 용량" value={device.ram_capacity} />

@@ -371,7 +371,7 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
 
         <div className="mt-3 border-t-2 border-ink/70 pt-5">
           <div className="grid gap-4">
-            <FormRow label="장비번호" required hint="분류를 기준으로 자동 생성되며, 등록된 모델이 있으면 모델명도 반영됩니다.">
+            <FormRow label="장비번호" required hint="분류를 기준으로 자동 생성되며, 등록된 유형이 있으면 유형도 반영됩니다.">
               <input name="device_id" className="input bg-slate-50 text-base text-slate-600" value={form.device_id || ""} readOnly required placeholder="분류 선택 후 자동 생성" />
             </FormRow>
 
@@ -401,9 +401,9 @@ export default function DeviceForm({ initialDevice, mode = "create", onSubmit, b
             </FormRow>
 
             {showModelField ? (
-              <FormRow label="모델명" required>
+              <FormRow label="유형" required>
                 <select name="model_name" className="select text-base" value={form.model_name || ""} onChange={(event) => selectType(event.target.value)} required>
-                  <option value="">모델명 선택</option>
+                  <option value="">유형 선택</option>
                   {form.model_name && !hasCurrentType ? <option value={form.model_name}>{form.model_name}</option> : null}
                   {typesForCategory.map((type) => (
                     <option key={type.type_id} value={type.type_name}>

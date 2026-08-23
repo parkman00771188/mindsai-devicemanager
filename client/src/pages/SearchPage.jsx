@@ -27,7 +27,7 @@ export default function SearchPage() {
     <div className="app-page">
       <section className="hero-strip">
         <h1 className="page-title">장비 검색</h1>
-        <p className="mt-1 text-sm text-slate-500">장비번호, 장비명, 모델명, 시리얼번호, 위치로 검색합니다.</p>
+        <p className="mt-1 text-sm text-slate-500">장비번호, 장비명, 유형, 시리얼번호, 위치로 검색합니다.</p>
       </section>
       <form className="panel p-4" onSubmit={(event) => { event.preventDefault(); runSearch(); }}>
         <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -57,7 +57,7 @@ export default function SearchPage() {
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div><dt className="text-slate-500">분류</dt><dd className="font-semibold">{device.category || "-"}</dd></div>
                   <div><dt className="text-slate-500">위치</dt><dd className="font-semibold">{device.location || "-"}</dd></div>
-                  <div><dt className="text-slate-500">모델</dt><dd className="font-semibold">{device.model_name || "-"}</dd></div>
+                  <div><dt className="text-slate-500">유형</dt><dd className="font-semibold">{device.model_name || "-"}</dd></div>
                   <div><dt className="text-slate-500">시리얼</dt><dd className="font-semibold">{device.serial_number || "-"}</dd></div>
                 </dl>
               </Link>

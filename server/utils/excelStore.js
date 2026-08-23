@@ -2108,7 +2108,7 @@ const DEVICE_CHANGE_LABELS = {
   legacy_device_id: "기존 장비번호",
   category: "분류",
   manufacturer: "제조사",
-  model_name: "모델명",
+  model_name: "유형",
   capacity_gb: "용량",
   ram_capacity: "램 용량",
   storage_capacity: "저장장치 용량",
@@ -2405,7 +2405,7 @@ function deleteCategory(id, options = {}) {
       throw Object.assign(new Error("사용 중인 분류는 삭제할 수 없습니다. 장비 분류를 먼저 변경해주세요."), { statusCode: 400 });
     }
     if (activeDeviceTypes(data).some((type) => type.category_id === id || type.category_name === row.category_name)) {
-      throw Object.assign(new Error("모델명이 연결된 분류는 삭제할 수 없습니다. 모델명을 먼저 삭제해주세요."), { statusCode: 400 });
+      throw Object.assign(new Error("유형이 연결된 분류는 삭제할 수 없습니다. 유형을 먼저 삭제해주세요."), { statusCode: 400 });
     }
     const before = { ...row };
     row.is_deleted = true;
@@ -2430,13 +2430,13 @@ function createDeviceType(input, options = {}) {
     const category = findCategory(data, input.category_id || input.category_name);
     if (!category) throw Object.assign(new Error("분류를 먼저 선택해주세요."), { statusCode: 400 });
     const typeName = text(input.type_name);
-    if (!typeName) throw Object.assign(new Error("모델명은 필수입니다."), { statusCode: 400 });
+    if (!typeName) throw Object.assign(new Error("유형은 필수입니다."), { statusCode: 400 });
     if (activeDeviceTypes(data).some((row) => row.category_id === category.category_id && row.type_name === typeName)) {
-      throw Object.assign(new Error("이미 등록된 모델명입니다."), { statusCode: 409 });
+      throw Object.assign(new Error("이미 등록된 유형입니다."), { statusCode: 409 });
     }
     const typePrefix = normalizePrefix(input.type_prefix || "");
     if (typePrefix && activeDeviceTypes(data).some((row) => row.category_id === category.category_id && normalizePrefix(row.type_prefix) === typePrefix)) {
-      throw Object.assign(new Error("같은 분류에서 이미 사용 중인 모델명 접두어입니다."), { statusCode: 409 });
+      throw Object.assign(new Error("같은 분류에서 이미 사용 중인 유형 접두어입니다."), { statusCode: 409 });
     }
     const created = now();
     const row = rowFor("DeviceTypes", {
@@ -2459,18 +2459,18 @@ function createDeviceType(input, options = {}) {
 function updateDeviceType(id, changes, options = {}) {
   return withWrite((data) => {
     const row = data.DeviceTypes.find((type) => type.type_id === id && !bool(type.is_deleted));
-    if (!row) throw Object.assign(new Error("모델명을 찾을 수 없습니다."), { statusCode: 404 });
+    if (!row) throw Object.assign(new Error("유형을 찾을 수 없습니다."), { statusCode: 404 });
     const before = { ...row };
     const category = findCategory(data, changes.category_id || changes.category_name || row.category_id || row.category_name);
     if (!category) throw Object.assign(new Error("분류를 먼저 선택해주세요."), { statusCode: 400 });
     const typeName = changes.type_name !== undefined ? text(changes.type_name) : row.type_name;
-    if (!typeName) throw Object.assign(new Error("모델명은 필수입니다."), { statusCode: 400 });
+    if (!typeName) throw Object.assign(new Error("유형은 필수입니다."), { statusCode: 400 });
     if (activeDeviceTypes(data).some((type) => type.type_id !== id && type.category_id === category.category_id && type.type_name === typeName)) {
-      throw Object.assign(new Error("이미 등록된 모델명입니다."), { statusCode: 409 });
+      throw Object.assign(new Error("이미 등록된 유형입니다."), { statusCode: 409 });
     }
     const typePrefix = changes.type_prefix !== undefined ? normalizePrefix(changes.type_prefix) : normalizePrefix(row.type_prefix);
     if (typePrefix && activeDeviceTypes(data).some((type) => type.type_id !== id && type.category_id === category.category_id && normalizePrefix(type.type_prefix) === typePrefix)) {
-      throw Object.assign(new Error("같은 분류에서 이미 사용 중인 모델명 접두어입니다."), { statusCode: 409 });
+      throw Object.assign(new Error("같은 분류에서 이미 사용 중인 유형 접두어입니다."), { statusCode: 409 });
     }
     row.category_id = category.category_id;
     row.category_name = category.category_name;
@@ -2495,9 +2495,9 @@ function updateDeviceType(id, changes, options = {}) {
 function deleteDeviceType(id, options = {}) {
   return withWrite((data) => {
     const row = data.DeviceTypes.find((type) => type.type_id === id && !bool(type.is_deleted));
-    if (!row) throw Object.assign(new Error("모델명을 찾을 수 없습니다."), { statusCode: 404 });
+    if (!row) throw Object.assign(new Error("유형을 찾을 수 없습니다."), { statusCode: 404 });
     if (activeDevices(data).some((device) => device.category === row.category_name && device.model_name === row.type_name)) {
-      throw Object.assign(new Error("사용 중인 모델명은 삭제할 수 없습니다. 장비 모델명을 먼저 변경해주세요."), { statusCode: 400 });
+      throw Object.assign(new Error("사용 중인 유형은 삭제할 수 없습니다. 장비 유형을 먼저 변경해주세요."), { statusCode: 400 });
     }
     const before = { ...row };
     row.is_deleted = true;

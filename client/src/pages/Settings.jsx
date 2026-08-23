@@ -108,7 +108,7 @@ function deviceReportRows(devices = []) {
     장비명: exportValue(deviceTitle(device)),
     분류: exportValue(device.category),
     제조사: exportValue(device.manufacturer),
-    모델명: exportValue(device.model_name),
+    유형: exportValue(device.model_name),
     용량: exportValue(deviceCapacity(device)),
     시리얼번호: exportValue(device.serial_number),
     구매일: exportDate(device.purchase_date),
@@ -273,7 +273,7 @@ function DeviceCollectionBody({ devices, error, emptyText, busy, onOpenDetail, o
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <FieldLine label="보관위치" value={device.location} />
                   <FieldLine label="현재 사용자" value={device.current_borrower} />
-                  <FieldLine label="모델명" value={device.model_name} />
+                  <FieldLine label="유형" value={device.model_name} />
                   <FieldLine label="메모" value={device.memo} />
                 </div>
                 {device.status === "DISPOSED" ? (
@@ -293,7 +293,7 @@ function DeviceCollectionBody({ devices, error, emptyText, busy, onOpenDetail, o
                   <th className="w-36">장비번호</th>
                   <th className="w-40">기존 장비번호</th>
                   <th>장비명</th>
-                  <th className="w-36">모델명</th>
+                  <th className="w-36">유형</th>
                   <th className="w-28">현재 상태</th>
                   <th className="w-32">현재 사용자</th>
                   <th className="w-36">보관위치</th>
@@ -429,7 +429,7 @@ function CategoryForm({ value, categories = [], busy, submitLabel = "저장", on
       ) : null}
 
       <label>
-        <span className="field-label">{typeMode ? "모델명 *" : "분류명 *"}</span>
+        <span className="field-label">{typeMode ? "유형 *" : "분류명 *"}</span>
         <input
           className="input"
           value={typeMode ? value.type_name : value.category_name}
@@ -440,7 +440,7 @@ function CategoryForm({ value, categories = [], busy, submitLabel = "저장", on
       </label>
 
       <label>
-        <span className="field-label">{typeMode ? "모델 접두어" : "장비번호 접두어 *"}</span>
+        <span className="field-label">{typeMode ? "유형 접두어" : "장비번호 접두어 *"}</span>
         <input
           className="input"
           value={typeMode ? value.type_prefix : value.prefix}
@@ -1605,7 +1605,7 @@ export default function Settings() {
                         <p className="text-xs font-bold text-slate-500">No {index + 1} · {type.category_name}</p>
                         <p className="mt-1 truncate text-base font-extrabold text-ink">{type.type_name}</p>
                         <p className="mt-1 text-xs font-extrabold text-slate-500">분류 장비번호 접두어: {categoryPrefixForType(type, categories) || "-"}</p>
-                        <p className="mt-1 text-sm font-bold text-brand">모델 접두어: {type.type_prefix || "접두어 없음"}</p>
+                        <p className="mt-1 text-sm font-bold text-brand">유형 접두어: {type.type_prefix || "접두어 없음"}</p>
                         <p className="mt-1 max-w-full truncate text-xs font-extrabold text-slate-600" title={`예상 장비번호: ${expectedDeviceIdForType(type, categories)}`}>
                           예상 장비번호: {expectedDeviceIdForType(type, categories)}
                         </p>
@@ -1628,9 +1628,9 @@ export default function Settings() {
                       <tr>
                         <th className="w-20">No</th>
                         <th className="w-36">분류</th>
-                        <th>모델명</th>
+                        <th>유형</th>
                         <th className="w-52">분류 장비번호 접두어</th>
-                        <th className="w-40">모델 접두어</th>
+                        <th className="w-40">유형 접두어</th>
                         <th className="w-64">예상 장비번호</th>
                         <th>메모</th>
                         <th className="w-32 text-center">관리</th>
@@ -2112,7 +2112,7 @@ export default function Settings() {
         <Modal
           title={`${typeDevicesView.type.type_name} 등록 장비`}
           kicker="Device Item View"
-          description={`${typeDevicesView.type.category_name || "-"} 분류의 ${typeDevicesView.type.type_name} 모델명으로 등록된 장비를 확인합니다.`}
+          description={`${typeDevicesView.type.category_name || "-"} 분류의 ${typeDevicesView.type.type_name} 유형으로 등록된 장비를 확인합니다.`}
           onClose={() => {
             setTypeDevicesView(null);
             setDetailDeviceId(null);

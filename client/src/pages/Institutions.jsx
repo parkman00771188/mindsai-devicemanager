@@ -267,7 +267,7 @@ function InstitutionAssignDeviceModal({ institution, busy, onClose, onAssign }) 
                   className="input pl-10"
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="장비번호, 장비명, 모델명, 위치 검색"
+                  placeholder="장비번호, 장비명, 유형, 위치 검색"
                 />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">

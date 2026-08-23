@@ -416,7 +416,7 @@ function DeviceMobileCard({ device, index, onOpen, action }) {
             </div>
             <MobileStatusPill status={device.status} />
           </div>
-          <p className="mt-1 line-clamp-2 break-words text-xs font-bold leading-5 text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "모델 미입력"}</p>
+          <p className="mt-1 line-clamp-2 break-words text-xs font-bold leading-5 text-slate-500">No {index + 1} · {device.category || "분류 미입력"} · {device.model_name || "유형 미입력"}</p>
           {device.legacy_device_id ? <p className="mt-1 break-all text-xs font-bold text-slate-500">기존 {device.legacy_device_id}</p> : null}
         </div>
       </div>
@@ -452,7 +452,7 @@ function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
               <th className="w-[8%]">상태</th>
               <th className="w-[10%]">분류</th>
               <th className="w-[17%]">장비번호</th>
-              <th className="w-[13%]">모델명</th>
+              <th className="w-[13%]">유형</th>
               <th className="w-[9%]">대여자</th>
               <th className="w-[12%]">목적/사유</th>
               <th className="w-[11%]">소유/소속</th>
@@ -561,7 +561,7 @@ function RentalCatalogModal({ categories, onClose, onRent, onOpenDevice }) {
                 className="input"
                 value={filters.keyword}
                 onChange={(event) => setFilters((current) => ({ ...current, keyword: event.target.value }))}
-            placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
+            placeholder="장비번호, 기존 장비번호, 장비명, 유형"
               />
               <button className="btn-primary w-auto px-3 sm:px-4">
                 <Search size={18} />
@@ -835,7 +835,7 @@ export default function Devices() {
               className="input pl-11"
               value={filters.keyword}
               onChange={(event) => setFilters((current) => ({ ...current, keyword: event.target.value }))}
-              placeholder="장비번호, 기존 장비번호, 장비명, 모델명"
+              placeholder="장비번호, 기존 장비번호, 장비명, 유형"
             />
           </div>
           <button className="btn-secondary w-full whitespace-nowrap px-4" type="button" onClick={() => applyFilters({ ...emptyFilters, mine: filters.mine })}>

@@ -468,7 +468,7 @@ function AssignDeviceModal({ user, busy, onClose, onAssign }) {
                   className="input pl-10"
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="장비번호, 장비명, 모델명, 위치 검색"
+                  placeholder="장비번호, 장비명, 유형, 위치 검색"
                 />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -667,7 +667,7 @@ function AssignedDeviceDetailModal({ user, device, busy, onClose, onRequest, onC
             <dl className="mt-3">
               <DetailLine label="상태" value={<StatusBadge status={device.status} />} />
               <DetailLine label="분류" value={device.category} />
-              <DetailLine label="모델명" value={device.model_name} />
+              <DetailLine label="유형" value={device.model_name} />
               <DetailLine label="용량" value={deviceCapacity(device)} />
               <DetailLine label="제조사" value={device.manufacturer} />
               <DetailLine label="시리얼번호" value={device.serial_number} />

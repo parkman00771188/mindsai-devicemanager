@@ -41,7 +41,7 @@ export const DEVICE_FIELDS = [
   ["category", "분류", "text", true],
   ["legacy_device_id", "기존 장비번호", "text"],
   ["manufacturer", "제조사", "text"],
-  ["model_name", "모델명", "text"],
+  ["model_name", "유형", "text"],
   ["serial_number", "시리얼번호", "text"],
   ["purchase_date", "구매일", "date"],
   ["purchase_price", "구매금액", "number"],
