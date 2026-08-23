@@ -452,7 +452,7 @@ function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
               <th className="w-[8%]">상태</th>
               <th className="w-[10%]">분류</th>
               <th className="w-[17%]">장비번호</th>
-              <th className="w-[13%]">소속/부서</th>
+              <th className="w-[13%]">모델명</th>
               <th className="w-[9%]">대여자</th>
               <th className="w-[12%]">목적/사유</th>
               <th className="w-[11%]">소유/소속</th>
@@ -465,9 +465,6 @@ function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
               const purpose = device.status === "AVAILABLE"
                 ? "-"
                 : statusContext.purpose || device.current_status_purpose || device.current_purpose || "-";
-              const borrowerOrgDepartment = ["RENTED", "DELIVERED"].includes(device.status)
-                ? statusContext.orgDepartment || "-"
-                : "-";
               return (
                 <tr key={device.device_id} className="cursor-pointer hover:bg-slate-50" onClick={() => onOpen(device)}>
                   <td className="table-cell font-bold text-slate-500">{startIndex + index + 1}</td>
@@ -476,7 +473,7 @@ function DeviceTable({ devices, onOpen, actionForDevice, startIndex = 0 }) {
                   </td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.category || ""}>{device.category || "-"}</span></td>
                   <td className="table-cell font-extrabold text-brand"><span className="block whitespace-nowrap" title={device.device_id}>{device.device_id}</span></td>
-                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={borrowerOrgDepartment === "-" ? "" : borrowerOrgDepartment}>{borrowerOrgDepartment}</span></td>
+                  <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.model_name || ""}>{device.model_name || "-"}</span></td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.current_borrower || ""}>{device.current_borrower || "-"}</span></td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={purpose === "-" ? "" : purpose}>{purpose}</span></td>
                   <td className="table-cell"><span className="line-clamp-2 break-words leading-5" title={device.owner_organization || ""}>{device.owner_organization || "-"}</span></td>
