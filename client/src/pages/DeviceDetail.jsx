@@ -68,8 +68,6 @@ const statusPanels = {
 
 function recentItemsPerPage(containerWidth) {
   const width = Number(containerWidth) || 0;
-  if (width >= 1160) return 4;
-  if (width >= 870) return 3;
   if (width >= 570) return 2;
   return 1;
 }
@@ -758,7 +756,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
   const recentPageCount = Math.max(1, Math.ceil(transactions.length / recentPageSize));
   const safeRecentPage = Math.min(recentPage, recentPageCount - 1);
   const pagedTransactions = transactions.slice(safeRecentPage * recentPageSize, safeRecentPage * recentPageSize + recentPageSize);
-  const recentGridClass = recentPageSize === 1 ? "grid-cols-1" : recentPageSize === 2 ? "grid-cols-2" : recentPageSize === 3 ? "grid-cols-3" : "grid-cols-4";
+  const recentGridClass = recentPageSize === 1 ? "grid-cols-1" : "grid-cols-2";
   const statusActionConfig = {
     broken: {
       title: "고장 등록",
@@ -813,7 +811,7 @@ export function DeviceDetailContent({ deviceId, inModal = false, onChanged, onDe
     ? "grid grid-cols-2 gap-2 border-t border-line pt-3 sm:flex sm:flex-wrap sm:justify-end"
     : "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end";
   const mainGridClass = inModal
-    ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]"
+    ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_19rem]"
     : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]";
   const statusTopClass = inModal
     ? "flex flex-col justify-between gap-3 lg:flex-row lg:items-start"
